@@ -64,7 +64,9 @@ export async function createBrandAccess(fd: FormData) {
 export async function resendAccess(fd: FormData) {
   const { supabase, profile } = await requireModule("marcas");
   const email = g(fd, "email"), path = g(fd, "back") || "/marcas";
-  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${site()}/auth/confirm?next=/nova-senha` });
+  let admin;
+  try { admin = createAdminClient(); } catch (e: any) { back(path, e.message, false); }
+  const { error } = await admin.auth.resetPasswordForEmail(email, { redirectTo: `${site()}/auth/confirm?next=/nova-senha` });
   if (error) back(path, "Não foi possível reenviar: " + error.message, false);
   await logAction(supabase, profile, `reenviou o acesso para ${email}`, "Acesso da marca");
   back(path, `Enviamos para ${email} um link seguro para criar ou redefinir a senha.`);

@@ -17,5 +17,10 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     ok = !error;
   }
+  if (!token_hash && !code) {
+    // Modelo de e-mail padrão do Supabase: a sessão vem no "#" do link, que só o navegador lê.
+    // O navegador mantém o "#" no redirecionamento, então a página /auth/link termina o login.
+    return NextResponse.redirect(new URL(`/auth/link?next=${encodeURIComponent(next)}`, origin));
+  }
   return NextResponse.redirect(new URL(ok ? next : "/login?erro=link", origin));
 }

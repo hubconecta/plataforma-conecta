@@ -13,8 +13,8 @@ Tempo estimado: 30 minutos. Não mande senhas nem chaves por mensagem para ningu
    Ninguém cria conta sozinho; só a Conecta convida (creators usam o formulário de cadastro, que não cria login).
 2. **URL Configuration**:
    - **Site URL**: o endereço da plataforma na Vercel (ex.: `https://plataforma-conecta.vercel.app`).
-   - **Redirect URLs**: adicione `https://SEU-ENDERECO/auth/confirm`.
-3. **Emails → Templates**:
+   - **Redirect URLs**: adicione `https://SEU-ENDERECO/auth/confirm` e `https://SEU-ENDERECO/**`.
+3. **Emails → Templates** (opcional; o Supabase só deixa editar depois de configurar SMTP próprio, ex.: Resend. Os modelos padrão já funcionam com a plataforma):
    - **Invite user**: assunto `Seu acesso à plataforma Conecta`. Troque o link do botão por
      `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/nova-senha`
    - **Reset password**: troque o link por
