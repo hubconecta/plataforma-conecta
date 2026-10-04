@@ -5,6 +5,7 @@ import { requireModule, getSession, logAction } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { g, orNull, num, back, notifyProfiles } from "@/lib/act";
 import { COLORS } from "@/lib/metodo";
+import { processB4Event } from "@/lib/b4";
 
 const ADM = (pid: string, tab = "") => `/club/admin/${pid}${tab ? `?tab=${tab}` : ""}`;
 
@@ -207,4 +208,20 @@ export async function toggleLesson(fd: FormData) {
   else await s.supabase.from("method_progress").insert({ creator_id: s.profile.creator_id, lesson_id: id });
   revalidatePath("/club");
   redirect(!done && next ? `/club/${slug}/aula/${next}` : `/club/${slug}/aula/${id}`);
+}
+
+// Lê de novo um aviso guardado (depois de corrigir o ID do produto, por exemplo)
+export async function reprocessEvent(fd: FormData) {
+  await requireModule("metodo_adm");
+  const st = await processB4Event(createAdminClient(), g(fd, "id"));
+  back("/club/admin", st === "Processado" ? "Aviso processado: acesso liberado." : st === "Ignorado" ? "Aviso lido: não é um pagamento aprovado." : "Ainda não deu para liberar: veja o motivo no aviso.", st === "Processado" || st === "Ignorado");
+}
+
+export async function reprocessAll() {
+  const { supabase } = await requireModule("metodo_adm");
+  const { data } = await supabase.from("b4_events").select("id").eq("status", "Para revisar").order("created_at").limit(50);
+  const admin = createAdminClient();
+  let ok = 0;
+  for (const e of data || []) if ((await processB4Event(admin, e.id)) === "Processado") ok++;
+  back("/club/admin", `${ok} de ${data?.length || 0} aviso(s) liberados.`);
 }
