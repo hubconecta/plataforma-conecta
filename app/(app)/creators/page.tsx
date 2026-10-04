@@ -2,23 +2,25 @@ import { requireModule } from "@/lib/session";
 import { PageH, Pill, Person, Empty, Notice, fd } from "@/components/ui";
 import { creatorAccess, deleteCreator } from "../actions";
 import ConfirmDelete from "@/components/ConfirmDelete";
+import LevelBadge, { levelOf } from "@/components/LevelBadge";
 
 export default async function Creators({ searchParams }: { searchParams: Promise<any> }) {
   const q = await searchParams;
   const { supabase, profile } = await requireModule("creators");
   const isCeo = profile.role === "ceo";
   const [{ data }, { data: logins }] = await Promise.all([
-    supabase.from("creators").select("id,name,email,instagram,niche,city,state,followers,status,tags,kind").order("name"),
+    supabase.from("creators").select("id,name,email,instagram,niche,city,state,followers,status,tags,kind,xp").order("name"),
     supabase.from("profiles").select("creator_id,status,access_status,last_login_at").eq("role", "creator"),
   ]);
+  const { data: levels } = await supabase.from("levels").select("*").order("position");
   const acc = new Map((logins || []).map((l: any) => [l.creator_id, l]));
   const accLabel = (l: any) => !l ? "Sem acesso" : l.status !== "ativo" ? "Bloqueado" : l.last_login_at ? "Ativo" : "Link enviado";
   return (
     <>
       <PageH eyebrow="CRM de creators" title="Creators" sub={`${data?.length || 0} creators na base`} />
       <Notice q={q} />
-      <div className="card">{data?.length ? <div className="table-wrap"><table><thead><tr><th>Creator</th><th>Perfil</th><th>Nicho</th><th>Cidade</th><th className="r">Seguidores</th><th>Status</th><th>Clube</th><th></th></tr></thead><tbody>
-        {data.map((c: any) => { const l = acc.get(c.id); return <tr key={c.id}><td><Person name={c.name} sub={c.instagram || ""} /></td><td className="small">{c.kind || "—"}</td><td>{c.niche || "—"}</td><td>{c.city ? `${c.city}/${c.state || ""}` : "—"}</td><td className="r num">{(c.followers || 0).toLocaleString("pt-BR")}</td><td><Pill s={c.status} /></td>
+      <div className="card">{data?.length ? <div className="table-wrap"><table><thead><tr><th>Creator</th><th>Perfil</th><th>Nicho</th><th>Cidade</th><th className="r">Seguidores</th><th>Nível</th><th>Status</th><th>Clube</th><th></th></tr></thead><tbody>
+        {data.map((c: any) => { const l = acc.get(c.id); return <tr key={c.id}><td><Person name={c.name} sub={c.instagram || ""} /></td><td className="small">{c.kind || "—"}</td><td>{c.niche || "—"}</td><td>{c.city ? `${c.city}/${c.state || ""}` : "—"}</td><td className="r num">{(c.followers || 0).toLocaleString("pt-BR")}</td><td><LevelBadge level={levelOf(levels || [], c.xp || 0).cur} small /><div className="small muted">{c.xp || 0} pts</div></td><td><Pill s={c.status} /></td>
           <td><Pill s={accLabel(l)} />{l?.last_login_at ? <div className="small muted">último acesso {fd(l.last_login_at.slice(0, 10))}</div> : null}</td>
           <td><div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "flex-start" }}>
             <form action={creatorAccess}><input type="hidden" name="creator_id" value={c.id} /><button className="btn btn-ghost btn-sm">{l ? "Novo link do Clube" : "Liberar acesso ao Clube"}</button></form>

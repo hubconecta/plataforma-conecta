@@ -22,6 +22,7 @@ export const MODS: Mod[] = [
   { key: "formularios", label: "Formulários", icon: "form", href: "/formularios", roles: ST},
   { key: "demandas", label: "Tarefas", icon: "tasks", href: "/tarefas", roles: ST },
   { key: "calendario", label: "Calendário", icon: "calendar", href: "/calendario", roles: ST },
+  { key: "gamificacao", label: "Níveis e pontos", icon: "star", href: "/gamificacao", roles: ST },
   { key: "crm", label: "Leads de marcas", icon: "funnel", href: "/leads", roles: ST },
   { key: "relatorios", label: "Relatórios", icon: "chart", href: "/relatorios", roles: [...ST, "marca"] },
   { key: "metodo_adm", label: "Club Criadora", icon: "book", href: "/club/admin", roles: ST },
@@ -39,15 +40,16 @@ export const MODS: Mod[] = [
   { key: "metodo", label: "Club Criadora", icon: "play", href: "/club", roles: ["creator"] },
   { key: "comissoes", label: "Comissões e recompensas", icon: "coins", href: "/clube/comissoes", roles: ["creator"] },
   { key: "fin_marca", label: "Financeiro", icon: "wallet", href: "/portal/financeiro", roles: ["marca"] },
+  { key: "jornada", label: "Minha jornada", icon: "star", href: "/clube/jornada", roles: ["creator"] },
   { key: "meus_desafios", label: "Desafios", icon: "trophy", href: "/clube/desafios", roles: ["creator"] },
 ];
 
 export const MENU: Record<string, [string, string[]][]> = {
-  ceo: [["Visão", ["ceo", "ops"]], ["Pessoas", ["cad_creators", "creators", "marcas", "colaboradoras"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["notificacoes", "auditoria", "config"]]],
-  equipe: [["Visão", ["ops"]], ["Pessoas", ["cad_creators", "creators", "marcas"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["notificacoes"]]],
+  ceo: [["Visão", ["ceo", "ops"]], ["Pessoas", ["cad_creators", "creators", "marcas", "colaboradoras"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "gamificacao", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["notificacoes", "auditoria", "config"]]],
+  equipe: [["Visão", ["ops"]], ["Pessoas", ["cad_creators", "creators", "marcas"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "gamificacao", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["notificacoes"]]],
   financeiro: [["Financeiro", ["fin"]], ["Sistema", ["notificacoes"]]],
   marca: [["Sua marca", ["marca_home", "campanhas", "desafios", "conteudos", "marca_envios", "relatorios"]], ["Acompanhamento", ["fin_marca"]], ["Ajuda", ["notificacoes"]]],
-  creator: [["Clube", ["clube", "oportunidades", "minhas", "meus_desafios", "cr_presskits"]], ["Ganhos", ["comissoes"]], ["Educação", ["metodo"]], ["Você", ["perfil", "notificacoes"]]],
+  creator: [["Clube", ["clube", "oportunidades", "minhas", "meus_desafios", "cr_presskits"]], ["Evolução", ["jornada"]], ["Ganhos", ["comissoes"]], ["Educação", ["metodo"]], ["Você", ["perfil", "notificacoes"]]],
   pendente: [],
 };
 

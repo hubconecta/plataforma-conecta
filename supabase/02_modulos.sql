@@ -520,7 +520,7 @@ create policy cy_rw_sel on public.rewards for select using (public.can_mod('desa
 create policy cy_rw_ins on public.rewards for insert with check (public.can_mod('desafios') or public.can_mod('fin'));
 create policy cy_rw_upd on public.rewards for update using (public.can_mod('desafios') or public.can_mod('fin'));
 
-create policy cy_pts_sel on public.points_log for select using (public.can_mod('creators') or public.can_mod('desafios') or creator_id = public.my_creator());
+create policy cy_pts_sel on public.points_log for select using (public.can_mod('creators') or public.can_mod('desafios') or public.can_mod('gamificacao') or creator_id = public.my_creator());
 create policy cy_pts_ins on public.points_log for insert with check (public.can_mod('desafios') or public.can_mod('creators'));
 
 -- relatório vivo

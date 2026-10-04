@@ -501,3 +501,10 @@ details.side-drawer > summary::-webkit-details-marker{display:none}
 .top .toast a{color:inherit;text-decoration:none;flex:1}
 .top .toast .link-btn{color:inherit;font-size:18px;line-height:1}
 .top .toast .ico{flex:none;color:var(--pink-2)}
+
+/* selo de nível */
+.lvl{display:inline-flex;align-items:center;gap:4px;font-weight:800;border-radius:99px;padding:3px 10px;color:#fff;background:var(--lv);white-space:nowrap;line-height:1.3}
+.lv-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.lv-step{border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:6px;background:var(--surface)}
+.lv-step.on{border-color:var(--lv);box-shadow:inset 0 0 0 2px var(--lv)}
+.lv-step.done{opacity:.75}

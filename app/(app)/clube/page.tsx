@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireModule } from "@/lib/session";
 import { Kpi, Pill, fd } from "@/components/ui";
+import LevelBadge, { levelOf } from "@/components/LevelBadge";
 
 export default async function Clube() {
   const { supabase, profile } = await requireModule("clube");
@@ -16,13 +17,14 @@ export default async function Clube() {
     supabase.from("points_log").select("points").eq("creator_id", me),
   ]);
   const first = (c?.name || profile.name || "").split(" ")[0];
+  const { data: levels } = await supabase.from("levels").select("*").order("position");
   const joined = new Set((parts || []).map((p: any) => p.challenge_id));
   const avail = (chs || []).filter((x: any) => !joined.has(x.id)).slice(0, 2);
   const hasMethod = (buys || []).some((b: any) => b.status === "Pago");
   const xp = c?.xp || (pts || []).reduce((s: number, p: any) => s + p.points, 0);
   return (
     <>
-      <div className="club-hero"><span className="eyebrow" style={{ color: "#FF8CC4" }}>Clube Conecta</span><h1>Olá, {first} 👋</h1><p style={{ color: "#C9BFC6" }}>Você tem {open?.length || 0} campanhas com inscrições abertas.</p><div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><Link className="btn btn-primary" href="/clube/oportunidades">Ver oportunidades</Link><Link className="btn btn-ghost" style={{ background: "#111", color: "#fff", borderColor: "#333" }} href="/clube/desafios">Desafios</Link></div></div>
+      <div className="club-hero"><span className="eyebrow" style={{ color: "#FF8CC4" }}>Clube Conecta</span><h1>Olá, {first} 👋</h1>{(levels || []).length ? (() => { const lv = levelOf(levels || [], c?.xp || 0); return <Link href="/clube/jornada" style={{ textDecoration: "none", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}><LevelBadge level={lv.cur} />{lv.next ? <span className="small" style={{ color: "#C9BFC6" }}>faltam {lv.next.min_points - (c?.xp || 0)} pts para {lv.next.name}</span> : null}</Link>; })() : null}<p style={{ color: "#C9BFC6" }}>Você tem {open?.length || 0} campanhas com inscrições abertas.</p><div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><Link className="btn btn-primary" href="/clube/oportunidades">Ver oportunidades</Link><Link className="btn btn-ghost" style={{ background: "#111", color: "#fff", borderColor: "#333" }} href="/clube/desafios">Desafios</Link></div></div>
       {!addr ? <div className="notice info">Complete seu endereço em <Link href="/clube/perfil">Meu perfil e endereço</Link> para receber produtos e press kits.</div> : null}
       <div className="kpis"><Kpi k="Pontos" v={xp} hero /><Kpi k="Inscrições enviadas" v={mine?.length || 0} /><Kpi k="Aprovadas" v={(mine || []).filter((a: any) => a.status === "Aprovada").length} /><Kpi k="Desafios participando" v={joined.size} /></div>
       <div className="grid g2">

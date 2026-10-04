@@ -149,6 +149,7 @@ export async function saveChallengeResult(fd: FormData) {
     });
     if (toAdd.length) await supabase.from("rewards").insert(toAdd);
   }
+  for (const w of winners) await supabase.rpc("award_winner", { cr: w.creator_id, ch: id, place: w.place });
   if (first) for (const w of winners) await notifyProfiles(supabase, { creator_id: w.creator_id }, `🏆 Parabéns! Você ficou em ${PLACE(w.place)} no desafio "${ch.name}"${w.prize ? ` · ${w.prize}` : ""}`, "/clube/desafios");
   const wl = winners.map((w) => `${w.place}º ${w.name}`).join(", ");
   if (ch.brand_id) {
