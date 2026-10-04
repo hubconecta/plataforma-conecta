@@ -192,7 +192,14 @@ export async function setCampaignAppStatus(fd: FormData) {
     const cname = (a as any).campaigns?.name, crname = (a as any).creators?.name;
     if (status === "Aprovada") {
       await notifyProfiles(supabase, { creator_id: a.creator_id }, `🎉 Você foi aprovada na campanha ${cname}!`, "/clube/minhas");
-      await notifyProfiles(supabase, { brand_id: (a as any).campaigns?.brand_id }, `Creator aprovada: ${crname} em ${cname}`, "/portal");
+      const { data: cp } = await supabase.from("campaigns").select("requires_shipping, product, brand_id").eq("id", a.campaign_id).single();
+      let shipId: string | null = null;
+      if (cp?.requires_shipping) {
+        const { data: ex } = await supabase.from("shipments").select("id").eq("campaign_id", a.campaign_id).eq("creator_id", a.creator_id).limit(1);
+        if (ex?.length) shipId = ex[0].id;
+        else { const { data: sh } = await supabase.from("shipments").insert({ creator_id: a.creator_id, brand_id: cp.brand_id, campaign_id: a.campaign_id, product: cp.product || `Produto da campanha ${cname}`, qty: 1, reason: "Aprovada em campanha com envio", status: "Aguardando envio", approved_by: profile.id, approved_at: new Date().toISOString() }).select("id").single(); shipId = sh?.id || null; }
+      }
+      await notifyProfiles(supabase, { brand_id: (a as any).campaigns?.brand_id }, `Creator aprovada: ${crname} em ${cname}${shipId ? ". A campanha envolve envio de produto: consulte os dados de envio." : ""}`, shipId ? `/envios/${shipId}` : "/campanhas");
     } else if (status === "Reprovada") await notifyProfiles(supabase, { creator_id: a.creator_id }, `Sua inscrição para ${cname} não foi aprovada desta vez`, "/clube/minhas");
     else if (status === "Lista de espera") await notifyProfiles(supabase, { creator_id: a.creator_id }, `Você está na lista de espera de ${cname}`, "/clube/minhas");
     await logAction(supabase, profile, `marcou a inscrição de ${crname} em ${cname} como ${status}`, "Inscrições", id);
