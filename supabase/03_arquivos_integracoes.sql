@@ -44,4 +44,4 @@ alter table public.method_purchases add column if not exists email text;
 
 -- Regra de configurações: "b4you" fica fora da leitura pública
 drop policy if exists cy_set_sel on public.settings;
-create policy cy_set_sel on public.settings for select using ((key in ('whatsapp','metodo','lead_qs')) or (public.is_staff() and key <> 'b4you') or public.is_ceo());
+create policy cy_set_sel on public.settings for select using ((key in ('whatsapp','metodo','lead_qs','push_public')) or (public.is_staff() and key not in ('b4you','push')) or (public.is_ceo() and key <> 'push'));

@@ -589,7 +589,7 @@ create policy cy_sale_upd on public.sales for update using (public.can_mod('fin'
 create policy cy_sale_del on public.sales for delete using (public.is_ceo());
 
 -- configurações: o número do WhatsApp e o checkout do Método são públicos; o resto é da equipe
-create policy cy_set_sel on public.settings for select using ((key in ('whatsapp','metodo','lead_qs')) or (public.is_staff() and key <> 'b4you') or public.is_ceo());
+create policy cy_set_sel on public.settings for select using ((key in ('whatsapp','metodo','lead_qs','push_public')) or (public.is_staff() and key not in ('b4you','push')) or (public.is_ceo() and key <> 'push'));
 create policy cy_set_ins on public.settings for insert with check (public.is_ceo());
 create policy cy_set_upd on public.settings for update using (public.is_ceo() or (key = 'rem' and public.can_mod('fin')));
 
