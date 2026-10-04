@@ -1,3 +1,4 @@
+import GroupLinks from "@/components/GroupLinks";
 import Link from "next/link";
 import { requireModule } from "@/lib/session";
 import { PageH, Kpi, brl } from "@/components/ui";
@@ -55,6 +56,7 @@ export default async function CEO() {
       <PageH eyebrow="Conecta CEO · Como está o negócio?" title={`${greet}, ${profile.name.split(" ")[0]}`} sub="Números reais do banco da Conecta." />
       <div className="card"><div className="card-h"><h2>Precisa da sua atenção</h2></div>{shown.length ? <div className="alerts">{shown.map(([t, n, i, href, s, tone]) => (
         <Link key={t} href={href} className="li" style={{ textDecoration: "none", color: "inherit" }}><span className={`alert-ic ${tone}`}><Icon name={i} /></span><span className="grow"><b>{t}</b><span>{s}</span></span><span className="count">{n}</span></Link>))}</div> : <p className="muted">Tudo em dia por aqui. ✨</p>}</div>
+      <GroupLinks supabase={supabase} />
       <div className="section-t"><h2>Financeiro</h2></div>
       <div className="kpis"><Kpi k="Receita do mês" v={brl(recMonth)} hero /><Kpi k="Despesas do mês" v={brl(outMonth)} /><Kpi k="Resultado do mês" v={brl(recMonth - outMonth)} /><Kpi k="A receber" v={brl(aRec)} /><Kpi k="Vencido" v={brl(sum(vencido))} /><Kpi k="A pagar" v={brl(aPag)} /><Kpi k="Comissões a pagar" v={brl(commC)} /></div>
       <div className="section-t"><h2>Operação</h2></div>

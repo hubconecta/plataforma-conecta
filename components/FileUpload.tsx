@@ -4,14 +4,15 @@ import { createClient } from "@/lib/supabase/client";
 import { getUploadUrl } from "@/app/(app)/upload-actions";
 
 // Envia o arquivo direto para o armazenamento e guarda o caminho num campo escondido do formulário.
-export default function FileUpload({ name, bucket, folder, accept, current, label }: { name: string; bucket: "metodo" | "publico"; folder: string; accept?: string; current?: string | null; label: string }) {
+export default function FileUpload({ name, bucket, folder, accept, current, label }: { name: string; bucket: "metodo" | "publico" | "perfis" | "docs"; folder: string; accept?: string; current?: string | null; label: string }) {
   const [path, setPath] = useState(current || "");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
-    if (f.size > (bucket === "metodo" ? 50 : 10) * 1024 * 1024) { setMsg(`Arquivo grande demais (máximo ${bucket === "metodo" ? 50 : 10} MB). Para vídeos longos, use um link do Panda Video, YouTube (não listado) ou Vimeo.`); return; }
+    const max = bucket === "metodo" ? 50 : bucket === "docs" ? 25 : bucket === "perfis" ? 5 : 10;
+    if (f.size > max * 1024 * 1024) { setMsg(`Arquivo grande demais (máximo ${max} MB).${bucket === "metodo" ? " Para vídeos longos, use um link do Panda Video, YouTube (não listado) ou Vimeo." : ""}`); return; }
     setBusy(true); setMsg("Enviando…");
     const r: any = await getUploadUrl(bucket, folder, f.name);
     if (r.error) { setBusy(false); setMsg(r.error); return; }

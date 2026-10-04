@@ -11,7 +11,7 @@ export default async function Gamificacao({ searchParams }: { searchParams: Prom
   const [{ data: levels }, { data: rules }, { data: creators }, { data: log }] = await Promise.all([
     supabase.from("levels").select("*").order("position"),
     supabase.from("point_rules").select("*").order("position").order("label"),
-    supabase.from("creators").select("id,name,instagram,xp,kind").order("xp", { ascending: false }),
+    supabase.from("creators").select("id,name,instagram,xp,kind,avatar_path").order("xp", { ascending: false }),
     tab === "historico" ? supabase.from("points_log").select("*, creators(name)").order("created_at", { ascending: false }).limit(150) : Promise.resolve({ data: [] as any[] }),
   ]);
   const L = levels || [];
@@ -54,7 +54,7 @@ export default async function Gamificacao({ searchParams }: { searchParams: Prom
       </form> : null}
 
       {tab === "ranking" ? <div className="card">{creators?.length ? <div className="table-wrap"><table><thead><tr><th>#</th><th>Creator</th><th>Nível</th><th className="r">Pontos</th><th>Próximo nível</th><th></th></tr></thead><tbody>
-        {creators.map((c: any, i: number) => { const lv = levelOf(L, c.xp || 0); return <tr key={c.id}><td className="num">{i + 1}º</td><td><Person name={c.name} sub={c.instagram || c.kind || ""} /></td><td><LevelBadge level={lv.cur} small /></td><td className="r num"><b>{c.xp || 0}</b></td><td style={{ minWidth: 160 }}>{lv.next ? <><span className="small muted">faltam {lv.next.min_points - (c.xp || 0)} para {lv.next.name}</span><div className="bar"><i style={{ width: `${lv.pct}%` }} /></div></> : <span className="small">Nível máximo ✨</span>}</td><td><Link className="btn btn-ghost btn-sm" href={`/gamificacao?tab=dar&c=${c.id}`}>Dar pontos</Link></td></tr>; })}
+        {creators.map((c: any, i: number) => { const lv = levelOf(L, c.xp || 0); return <tr key={c.id}><td className="num">{i + 1}º</td><td><Link href={`/creators/${c.id}`} style={{ textDecoration: "none", color: "inherit" }}><Person name={c.name} sub={c.instagram || c.kind || ""} src={c.avatar_path} star={lv.cur?.color} starTitle={lv.cur?.name} /></Link></td><td><LevelBadge level={lv.cur} small /></td><td className="r num"><b>{c.xp || 0}</b></td><td style={{ minWidth: 160 }}>{lv.next ? <><span className="small muted">faltam {lv.next.min_points - (c.xp || 0)} para {lv.next.name}</span><div className="bar"><i style={{ width: `${lv.pct}%` }} /></div></> : <span className="small">Nível máximo ✨</span>}</td><td><Link className="btn btn-ghost btn-sm" href={`/gamificacao?tab=dar&c=${c.id}`}>Dar pontos</Link></td></tr>; })}
       </tbody></table></div> : <Empty icon="star" title="Nenhuma creator ainda" />}</div> : null}
 
       {tab === "historico" ? <div className="card">{log?.length ? <div className="list">{log.map((p: any) => <div className="li" key={p.id}><div className="grow"><b>{p.creators?.name}</b><span>{p.reason} · {p.given_by || "Automático"} · {fd(String(p.created_at).slice(0, 10))}</span></div><span className="count" style={{ color: p.points < 0 ? "var(--bad)" : "var(--ok)" }}>{p.points > 0 ? "+" : ""}{p.points}</span></div>)}</div> : <Empty icon="star" title="Nenhum ponto lançado ainda" />}</div> : null}

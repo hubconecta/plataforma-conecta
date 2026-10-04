@@ -185,6 +185,16 @@ export async function saveCampaign(fd: FormData) {
   let cid = id, prevStatus: string | null = null;
   if (id) { const { data: pv } = await supabase.from("campaigns").select("status").eq("id", id).single(); prevStatus = pv?.status || null; const { error } = await supabase.from("campaigns").update(row).eq("id", id); if (error) back("/campanhas", error.message, false); }
   else { const { data, error } = await supabase.from("campaigns").insert(row).select("id").single(); if (error) back("/campanhas", error.message, false); cid = data.id; }
+  const gurl = g(fd, "group_url");
+  if (gurl && /^https?:\/\//.test(gurl)) {
+    const { data: had } = await supabase.from("campaign_links").select("url").eq("campaign_id", cid).maybeSingle();
+    await supabase.from("campaign_links").upsert({ campaign_id: cid, url: gurl, updated_at: new Date().toISOString() });
+    if (had?.url !== gurl) {
+      const { data: ap } = await supabase.from("campaign_applications").select("creator_id").eq("campaign_id", cid).eq("status", "Aprovada");
+      await notifyCreators(supabase, `💬 O grupo da campanha ${row.name} está disponível no WhatsApp`, "/clube/minhas", (ap || []).map((a: any) => a.creator_id));
+      await notifyProfiles(supabase, { brand_id: row.brand_id }, `💬 Grupo da campanha ${row.name} disponível`, "/campanhas");
+    }
+  } else if (fd.has("group_url") && !gurl) await supabase.from("campaign_links").delete().eq("campaign_id", cid);
   await announceCampaign(supabase, { id: cid, name: row.name, brand_id: row.brand_id, status: row.status }, prevStatus, !id);
   await notifyCeo(supabase, profile, `📣 ${profile.name} ${id ? "editou" : "criou"} a campanha ${row.name}`, "/campanhas");
   await logAction(supabase, profile, `${id ? "editou" : "criou"} a campanha ${row.name}`, "Campanhas", cid);

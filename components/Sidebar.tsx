@@ -7,7 +7,7 @@ import Icon from "./Icon";
 type Item = { key: string; label: string; icon: string; href: string; soon?: boolean; sens?: boolean };
 type Group = [string, Item[]];
 
-export default function Sidebar({ groups, env, userName, userLabel, bottom }: { groups: Group[]; env: string; userName: string; userLabel: string; bottom: Item[] }) {
+export default function Sidebar({ groups, env, userName, userLabel, bottom, avatar, star, profileHref }: { groups: Group[]; env: string; userName: string; userLabel: string; bottom: Item[]; avatar?: string; star?: string; profileHref?: string }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [path]);
@@ -39,8 +39,10 @@ export default function Sidebar({ groups, env, userName, userLabel, bottom }: { 
           ))}
         </nav>
         <div className="side-user">
-          <span className="av dark" aria-hidden="true">{initials}</span>
-          <div className="who"><b>{userName}</b><span>{userLabel}</span></div>
+          <Link href={profileHref || "#"} style={{ display: "flex", gap: 10, alignItems: "center", flex: 1, minWidth: 0, textDecoration: "none", color: "inherit" }} title="Meu perfil">
+            <span className="av-wrap">{avatar ? <img className="av" src={avatar} alt="" style={{ width: 34, height: 34, objectFit: "cover" }} /> : <span className="av dark" aria-hidden="true">{initials}</span>}{star ? <span className="av-star" style={{ background: star, width: 15, height: 15, fontSize: 9, boxShadow: "0 0 0 2px #0B0B0C" }}>★</span> : null}</span>
+            <div className="who"><b>{userName}</b><span>{userLabel}</span></div>
+          </Link>
           <form action="/auth/signout" method="post"><button title="Sair" aria-label="Sair"><Icon name="logout" /></button></form>
         </div>
       </aside>

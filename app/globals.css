@@ -508,3 +508,12 @@ details.side-drawer > summary::-webkit-details-marker{display:none}
 .lv-step{border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:6px;background:var(--surface)}
 .lv-step.on{border-color:var(--lv);box-shadow:inset 0 0 0 2px var(--lv)}
 .lv-step.done{opacity:.75}
+
+/* foto de perfil com estrela do nível */
+.av-wrap{position:relative;display:inline-block;flex:none}
+img.av{display:block;border-radius:50%;background:var(--surface-2)}
+.av-star{position:absolute;right:-3px;bottom:-3px;border-radius:99px;display:grid;place-items:center;color:#fff;font-weight:900;box-shadow:0 0 0 2px var(--surface);line-height:1}
+.profile-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.profile-head h1{margin:0}
+.socials{display:flex;gap:8px;flex-wrap:wrap}
+.brand-logo{width:72px;height:72px;border-radius:16px;object-fit:contain;background:#fff;border:1px solid var(--line)}

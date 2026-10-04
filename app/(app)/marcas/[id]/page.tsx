@@ -5,6 +5,9 @@ import { PageH, Pill, Notice, fd, brl } from "@/components/ui";
 import BrandForm from "../BrandForm";
 import { createBrandAccess, resendAccess, setUserStatus, deleteUserAccess, deleteBrand } from "../../actions";
 import ConfirmDelete from "@/components/ConfirmDelete";
+import FileUpload from "@/components/FileUpload";
+import { photoUrl } from "@/lib/storage";
+import { saveBrandProfile } from "../../perfil/actions";
 
 const ACC: Record<string, string> = { convite_enviado: "Convite enviado", primeiro_acesso_pendente: "Primeiro acesso pendente", ativo: "Ativo", bloqueado: "Bloqueado", inativo: "Desativado" };
 
@@ -27,6 +30,12 @@ export default async function Marca({ params, searchParams }: { params: Promise<
     <>
       <PageH eyebrow={b.category || "Marca"} title={b.name} right={<div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}><Pill s={b.status} />{can(profile, "relatorios") ? <a className="btn btn-ghost btn-sm" href={`/relatorios?marca=${id}&tab=vivo`}>Relatório da marca</a> : null}{profile.role === "ceo" ? <ConfirmDelete action={deleteBrand} fields={{ id }} label="Excluir marca" warning={`Exclui ${b.name}, os dados de contrato e os acessos ao portal. Só é possível se a marca não tiver campanhas; se tiver, mude o status para Inativa.`} /> : null}</div>} />
       <Notice q={q} />
+      <div className="card profile-head">{b.logo_path ? <img className="brand-logo" src={photoUrl(b.logo_path)} alt={`Logo ${b.name}`} /> : <span className="brand-logo" style={{ display: "grid", placeItems: "center", fontWeight: 800 }}>{b.name.slice(0, 2).toUpperCase()}</span>}<div style={{ flex: 1, minWidth: 200 }}><h2>{b.name}</h2>{b.description ? <p className="small muted" style={{ whiteSpace: "pre-wrap" }}>{b.description}</p> : null}</div>
+        <details className="mod" style={{ width: "100%" }}><summary className="small">Logo e apresentação da marca</summary><form action={saveBrandProfile} className="form-grid" style={{ paddingBottom: 12 }}><input type="hidden" name="brand_id" value={id} />
+          <FileUpload name="logo_path" bucket="perfis" folder="marcas" accept="image/*" current={b.logo_path} label="Logo da marca" />
+          <div className="field full"><label>Sobre a marca</label><textarea className="input" name="description" defaultValue={b.description || ""} /></div>
+          {[["site", "Site"], ["instagram", "Instagram"], ["tiktok", "TikTok"], ["contact_name", "Responsável"], ["email", "E-mail"], ["whatsapp", "WhatsApp"]].map(([n, l]) => <div className="field" key={n}><label>{l}</label><input className="input" name={n} defaultValue={b[n] || ""} /></div>)}
+          <div><button className="btn btn-primary btn-sm">Salvar</button></div></form></details></div>
       <div className="card">
         <div className="card-h"><div><h2>Acesso ao Portal da Marca</h2><span className="muted">a marca não se cadastra sozinha: o acesso é criado pela Conecta</span></div><Pill s={accLabel} /></div>
         {u ? (<>

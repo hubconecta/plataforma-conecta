@@ -37,7 +37,7 @@ export default async function Colaboradoras({ searchParams }: { searchParams: Pr
       <Notice q={q} />
       <details className="mod" open={!team?.length}><summary>+ Nova colaboradora</summary><div style={{ paddingBottom: 16 }}><TeamForm /></div></details>
       {(team || []).map((u: any) => (
-        <details className="mod" key={u.id}><summary><Person name={u.name} sub={`${u.cargo || ""}${u.departamento ? " · " + u.departamento : ""} · ${u.email}`} /><span style={{ marginLeft: "auto" }}><Pill s={u.status} /></span></summary><div style={{ paddingBottom: 16 }}><p className="small muted">Entrada: {fd(u.entrada)} · {(u.perms || []).length} permissões</p><TeamForm u={u} />
+        <details className="mod" key={u.id}><summary><Person src={u.avatar_path} name={u.name} sub={`${u.cargo || ""}${u.departamento ? " · " + u.departamento : ""} · ${u.email}`} /><span style={{ marginLeft: "auto" }}><Pill s={u.status} /></span></summary><div style={{ paddingBottom: 16 }}><p className="small muted">Entrada: {fd(u.entrada)} · {(u.perms || []).length} permissões</p><TeamForm u={u} />
           <div className="actions" style={{ justifyContent: "flex-start", marginTop: 14, alignItems: "flex-start" }}>
             <form action={resendAccess}><input type="hidden" name="email" value={u.email} /><input type="hidden" name="back" value="/colaboradoras" /><button className="btn btn-ghost btn-sm">Gerar novo link de acesso</button></form>
             {isCeo ? <ConfirmDelete action={deleteUserAccess} fields={{ id: u.id, back: "/colaboradoras" }} label="Excluir colaboradora" warning={`O login de ${u.email} será apagado e ela perde o acesso na hora. O histórico de ações continua registrado. Se for só uma pausa, use Status: Inativa.`} /> : null}

@@ -29,6 +29,8 @@ export const MODS: Mod[] = [
   { key: "fin", label: "Financeiro", icon: "wallet", href: "/financeiro", roles: FR, grant: ["equipe"], sens: true },
   { key: "notificacoes", label: "Notificações", icon: "bell", href: "/notificacoes", roles: ["ceo", "equipe", "financeiro", "marca", "creator"] },
   { key: "config", label: "Configurações", icon: "cog", href: "/configuracoes", roles: ["ceo"] },
+  { key: "conta", label: "Meu perfil", icon: "user", href: "/perfil", roles: ["ceo", "equipe", "financeiro"] },
+  { key: "perfil_marca", label: "Perfil da marca", icon: "store", href: "/portal/perfil", roles: ["marca"] },
   { key: "auditoria", label: "Histórico de ações", icon: "shield", href: "/historico", roles: ["ceo"] },
   { key: "marca_home", label: "Dashboard", icon: "grid", href: "/portal", roles: ["marca"] },
   { key: "clube", label: "Início", icon: "home", href: "/clube", roles: ["creator"] },
@@ -45,10 +47,10 @@ export const MODS: Mod[] = [
 ];
 
 export const MENU: Record<string, [string, string[]][]> = {
-  ceo: [["Visão", ["ceo", "ops"]], ["Pessoas", ["cad_creators", "creators", "marcas", "colaboradoras"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "gamificacao", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["notificacoes", "auditoria", "config"]]],
-  equipe: [["Visão", ["ops"]], ["Pessoas", ["cad_creators", "creators", "marcas"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "gamificacao", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["notificacoes"]]],
-  financeiro: [["Financeiro", ["fin"]], ["Sistema", ["notificacoes"]]],
-  marca: [["Sua marca", ["marca_home", "campanhas", "desafios", "conteudos", "marca_envios", "relatorios"]], ["Acompanhamento", ["fin_marca"]], ["Ajuda", ["notificacoes"]]],
+  ceo: [["Visão", ["ceo", "ops"]], ["Pessoas", ["cad_creators", "creators", "marcas", "colaboradoras"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "gamificacao", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["conta", "notificacoes", "auditoria", "config"]]],
+  equipe: [["Visão", ["ops", "conta"]], ["Pessoas", ["cad_creators", "creators", "marcas"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "gamificacao", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["notificacoes"]]],
+  financeiro: [["Financeiro", ["fin"]], ["Sistema", ["conta", "notificacoes"]]],
+  marca: [["Sua marca", ["marca_home", "perfil_marca", "campanhas", "desafios", "conteudos", "marca_envios", "relatorios"]], ["Acompanhamento", ["fin_marca"]], ["Ajuda", ["notificacoes"]]],
   creator: [["Clube", ["clube", "oportunidades", "minhas", "meus_desafios", "cr_presskits"]], ["Evolução", ["jornada"]], ["Ganhos", ["comissoes"]], ["Educação", ["metodo"]], ["Você", ["perfil", "notificacoes"]]],
   pendente: [],
 };
@@ -56,7 +58,7 @@ export const MENU: Record<string, [string, string[]][]> = {
 export const HOME: Record<string, string> = { ceo: "/ceo", equipe: "/operacao", financeiro: "/financeiro", marca: "/portal", creator: "/clube", pendente: "/sem-acesso" };
 export const ENV: Record<string, string> = { ceo: "Conecta ADM", equipe: "Conecta ADM", financeiro: "Conecta Financeiro", marca: "Portal da Marca", creator: "Clube Conecta", pendente: "Conecta" };
 export const ROLE_LABEL: Record<string, string> = { ceo: "Super Admin · CEO", equipe: "Equipe Conecta", financeiro: "Financeiro", marca: "Marca", creator: "Creator", pendente: "Sem acesso" };
-const ALWAYS = ["ops", "notificacoes", "calendario"];
+const ALWAYS = ["ops", "notificacoes", "calendario", "conta"];
 
 export function grantable(): Mod[] {
   return MODS.filter((m) => !ALWAYS.includes(m.key) && (m.roles.includes("equipe") || (m.grant || []).includes("equipe")));

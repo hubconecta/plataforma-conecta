@@ -25,9 +25,19 @@ export function Kpi({ k, v, hero }: { k: string; v: React.ReactNode; hero?: bool
 export function Empty({ icon = "inbox", title, text, children }: { icon?: string; title: string; text?: string; children?: React.ReactNode }) {
   return <div className="empty"><span className="big"><Icon name={icon} /></span><h3>{title}</h3>{text ? <p>{text}</p> : null}{children}</div>;
 }
-export function Person({ name, sub }: { name: string; sub?: string }) {
+// Foto (ou iniciais) com estrela do nível da creator no cantinho
+export function Avatar({ name, src, star, size = 34, title }: { name: string; src?: string | null; star?: string | null; size?: number; title?: string }) {
   const ini = (name || "?").replace(/\(.*?\)/g, "").trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
-  return <div className="person"><span className="av" aria-hidden="true">{ini}</span><div><b>{name}</b>{sub ? <span>{sub}</span> : null}</div></div>;
+  const url = src ? (src.startsWith("http") ? src : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/perfis/${src}`) : "";
+  return (
+    <span className="av-wrap" style={{ width: size, height: size }} title={title}>
+      {url ? <img className="av" src={url} alt="" style={{ width: size, height: size, objectFit: "cover" }} /> : <span className="av" aria-hidden="true" style={{ width: size, height: size, fontSize: Math.max(11, size / 2.8) }}>{ini}</span>}
+      {star ? <span className="av-star" style={{ background: star, width: Math.max(14, size * 0.42), height: Math.max(14, size * 0.42), fontSize: Math.max(8, size * 0.26) }} aria-label={title || "nível"}>★</span> : null}
+    </span>
+  );
+}
+export function Person({ name, sub, src, star, starTitle }: { name: string; sub?: string; src?: string | null; star?: string | null; starTitle?: string }) {
+  return <div className="person"><Avatar name={name} src={src} star={star} title={starTitle} /><div><b>{name}</b>{sub ? <span>{sub}</span> : null}</div></div>;
 }
 export const fd = (s?: string | null) => (s ? new Date(s + (s.length === 10 ? "T12:00:00" : "")).toLocaleDateString("pt-BR") : "—");
 export const brl = (n?: number | null) => (n == null ? "—" : "R$ " + Math.round(Number(n)).toLocaleString("pt-BR"));

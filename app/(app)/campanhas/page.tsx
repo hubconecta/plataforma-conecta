@@ -12,6 +12,8 @@ export default async function Campanhas({ searchParams }: { searchParams: Promis
   const { supabase, profile } = await requireModule("campanhas");
   const isBrand = profile.role === "marca";
   const { data: camps } = await supabase.from("campaigns").select("*, brands(name)").order("created_at", { ascending: false });
+  const { data: glinks } = await supabase.from("campaign_links").select("campaign_id,url");
+  const GL = new Map((glinks || []).map((x: any) => [x.campaign_id, x.url]));
   const { data: brands } = isBrand ? { data: [] as any[] } : await supabase.from("brands").select("id,name").order("name");
   const all = camps || [];
   const f = q.s && STS.includes(q.s) ? q.s : "";
@@ -40,6 +42,7 @@ export default async function Campanhas({ searchParams }: { searchParams: Promis
       <Common c={c} />
       <div className="field"><label>Cachê por creator (R$)</label><input className="input" type="number" step="0.01" name="fee" defaultValue={c?.fee || ""} /></div>
       <div className="field"><label>Comissão (%)</label><input className="input" type="number" step="0.01" name="commission_pct" defaultValue={c?.commission_pct || ""} /></div>
+      <div className="field full"><label>Link do grupo da campanha no WhatsApp (só aprovadas e a marca veem)</label><input className="input" type="url" name="group_url" defaultValue={c ? GL.get(c.id) || "" : ""} placeholder="https://chat.whatsapp.com/…" /></div>
       <div><button className="btn btn-primary btn-sm">{c ? "Salvar campanha" : "Criar campanha"}</button></div>
     </form>
   );
@@ -69,6 +72,7 @@ export default async function Campanhas({ searchParams }: { searchParams: Promis
           <summary><span style={{ flex: 1, minWidth: 0 }}>{c.name}<br /><span className="small muted" style={{ fontWeight: 500 }}>{c.brands?.name} · {fd(c.start_date)} – {fd(c.end_date)}</span>{[...(c.campaign_types || []), ...(c.profiles_wanted || [])].length ? <span style={{ display: "block", marginTop: 4 }}>{[...(c.campaign_types || []), ...(c.profiles_wanted || [])].map((t: string) => <span key={t} className="tag">{t}</span>)}</span> : null}</span><Pill s={c.status} /></summary>
           <div style={{ paddingBottom: 16, display: "flex", flexDirection: "column", gap: 14 }}>
             {c.review_note && ["Ajuste solicitado", "Recusada"].includes(c.status) ? <div className="notice info">Retorno da Conecta: {c.review_note}</div> : null}
+            {GL.get(c.id) ? <a className="btn btn-ok btn-sm" style={{ alignSelf: "flex-start" }} href={GL.get(c.id)} target="_blank" rel="noopener noreferrer">💬 Grupo da campanha no WhatsApp</a> : null}
             {["Em aprovação", "Ajuste solicitado", "Recusada"].includes(c.status) ? <dl className="dl">{[["Produto", c.product], ["Objetivo", c.objective], ["Vagas", c.slots], ["Verba prevista", c.budget ? brl(c.budget) : null], ["Envio de produto", c.requires_shipping ? "Sim" : "Não"], ["Descrição", c.description], ["Briefing", c.briefing], ["Requisitos", c.requirements], ["Entregáveis", c.deliverables]].map(([k, v]) => v ? <div key={k as string}><dt>{k}</dt><dd style={{ whiteSpace: "pre-wrap" }}>{String(v)}</dd></div> : null)}</dl>
               : <div className="kpis">{RES.map(([k, l]) => <Kpi key={k} k={l} v={k === "gmv" ? brl(c.results?.[k] || 0) : (c.results?.[k] || 0).toLocaleString("pt-BR")} />)}</div>}
             {!isBrand && ["Em aprovação", "Ajuste solicitado"].includes(c.status) ? <Review c={c} /> : null}

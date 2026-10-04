@@ -267,5 +267,6 @@ drop trigger if exists creator_app_notify on public.creator_applications;
 create trigger creator_app_notify after insert on public.creator_applications for each row execute function public.notify_new_application();
 
 -- Nome e @ da marca visíveis para creators (sem contatos internos)
-create or replace view public.brand_public as select id, name, instagram, category from public.brands;
+drop view if exists public.brand_public;
+create view public.brand_public as select id, name, instagram, category from public.brands;
 grant select on public.brand_public to authenticated;

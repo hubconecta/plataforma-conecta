@@ -1,3 +1,4 @@
+import GroupLinks from "@/components/GroupLinks";
 import Link from "next/link";
 import { requireModule } from "@/lib/session";
 import { can } from "@/lib/perms";
@@ -17,6 +18,7 @@ export default async function Operacao() {
     <>
       <PageH eyebrow="O que está acontecendo na operação?" title={`Olá, ${profile.name.split(" ")[0]}`} sub="Tudo que precisa de ação hoje." />
       <div className="kpis">{k.map(([l, v, href], i) => <Link key={l} href={href} style={{ textDecoration: "none", color: "inherit" }}><Kpi k={l} v={v} hero={i === 0} /></Link>)}</div>
+      <GroupLinks supabase={supabase} />
       {can(profile, "demandas") ? <div className="card"><div className="card-h"><h2>Minhas tarefas</h2><Link className="btn btn-ghost btn-sm" href="/tarefas">Ver todas</Link></div>{tasks?.length ? <div className="list">{tasks.map((t: any) => <div className="li" key={t.id}><div className="grow"><b>{t.title}</b><span style={{ color: t.due && t.due < today ? "var(--bad)" : undefined }}>prazo {fd(t.due)}{t.due && t.due < today ? " · atrasada" : ""}</span></div><Pill s={t.prio} /><Pill s={t.status} /></div>)}</div> : <p className="muted">Nenhuma tarefa aberta para você.</p>}</div> : null}
     </>
   );
