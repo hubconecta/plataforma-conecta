@@ -5,6 +5,11 @@ import LeadPublicForm from "@/app/para-marcas/LeadPublicForm";
 
 type P = { tab: "marca" | "creator"; qs: any; levels: { name: string; min_points: number; color: string; perks?: string }[]; wa: string };
 
+const IG = "https://instagram.com/conectadigii";
+const Insta = () => (
+  <section className="site-sec"><a className="ig-band" href={IG} target="_blank" rel="noopener noreferrer"><span className="ig-dot" aria-hidden="true">IG</span><span style={{ flex: 1, minWidth: 200 }}><b>Siga a Conecta no Instagram</b><span>@conectadigii · bastidores, oportunidades e resultados da comunidade</span></span><span className="btn btn-primary btn-sm">Seguir @conectadigii</span></a></section>
+);
+
 const BRANDS = ["Anagrow", "Ella Intimy", "Ella Flow", "Popozão", "Cheiro de Rica", "Deluxe", "Alvya", "Nutravibe", "Liora", "Rosa Selvagem", "Belleton", "Renova Be", "Aurier", "Ella Wellness", "Gagi Vitaminas", "Emma Colchões", "Marias Babys by Virgínia Fonseca", "Lummy Fitwear", "Criamigos", "Cirúrgica Nova Era", "Casas Bahia", "Shein Kids", "Vhita"];
 // Faixa com as marcas que já trabalharam com a Conecta (nomes em texto, rolando devagar)
 const Brands = ({ title }: { title: string }) => (
@@ -28,7 +33,7 @@ export default function Landing({ tab, qs, levels, wa }: P) {
           <Link href="/?p=marca" className={tab === "marca" ? "on" : ""} aria-current={tab === "marca" ? "page" : undefined}>Sou marca</Link>
           <Link href="/?p=creator" className={tab === "creator" ? "on" : ""} aria-current={tab === "creator" ? "page" : undefined}>Sou creator</Link>
         </nav>
-        <Link className="btn btn-ghost btn-sm" style={{ background: "#111", color: "#fff", borderColor: "#333" }} href="/login">Entrar</Link>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}><a className="ig-link" href={IG} target="_blank" rel="noopener noreferrer" aria-label="Instagram da Conecta @conectadigii">@conectadigii</a><Link className="btn btn-ghost btn-sm" style={{ background: "#111", color: "#fff", borderColor: "#333" }} href="/login">Entrar</Link></div>
       </header>
 
       {tab === "marca" ? <>
@@ -80,8 +85,9 @@ export default function Landing({ tab, qs, levels, wa }: P) {
         <section className="site-sec"><span className="eyebrow">Dúvidas</span><h2>Perguntas frequentes</h2><Faq items={[["Preciso ter muitos seguidores?", "Não. A Conecta é focada em creators afiliadas: o que importa é postar com constância, criar conteúdo verdadeiro e ter vontade de vender. Também abrimos campanhas para influenciadoras e UGC."], ["Como ganho dinheiro sendo afiliada?", "Você recebe seu link ou cupom das marcas parceiras, posta conteúdo e ganha comissão por cada venda. Suas vendas e comissões aparecem no app."], ["Quanto custa para participar?", "O cadastro no Clube Conecta é gratuito. Cursos do Club Criadora são opcionais."], ["Como recebo as oportunidades?", "Pelo app: você recebe notificação quando abre uma campanha que combina com o seu perfil e se inscreve com um toque."], ["Como funcionam os press kits?", "Você cadastra seu endereço no perfil. Ele fica protegido e só é usado quando há um envio autorizado para você."]]} /></section>
       </>}
 
+      <Insta />
       <footer className="site-foot"><div className="logo-crop" style={{ ["--w" as any]: "120px" }}><img src="/logo-conecta.png" alt="Conecta" /></div>
-        <nav style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><Link className="link-btn" style={{ color: "#C9BFC6" }} href="/?p=marca">Sou marca</Link><Link className="link-btn" style={{ color: "#C9BFC6" }} href="/?p=creator">Sou creator</Link><Link className="link-btn" style={{ color: "#FF8CC4" }} href="/login">Entrar</Link></nav></footer>
+        <nav style={{ display: "flex", gap: 16, flexWrap: "wrap" }}><Link className="link-btn" style={{ color: "#C9BFC6" }} href="/?p=marca">Sou marca</Link><Link className="link-btn" style={{ color: "#C9BFC6" }} href="/?p=creator">Sou creator</Link><a className="link-btn" style={{ color: "#C9BFC6" }} href={IG} target="_blank" rel="noopener noreferrer">Instagram @conectadigii</a><Link className="link-btn" style={{ color: "#FF8CC4" }} href="/login">Entrar</Link></nav></footer>
       <WhatsAppFab />
     </div>
   );

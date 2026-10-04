@@ -543,3 +543,12 @@ img.av{display:block;border-radius:50%;background:var(--surface-2)}
 @keyframes marquee{to{transform:translateX(-50%)}}
 @media (prefers-reduced-motion:reduce){.marquee-track{animation:none;flex-wrap:wrap;justify-content:center;width:auto;padding:0 16px}.marquee{-webkit-mask-image:none;mask-image:none}.marquee-track>.brand-chip[aria-hidden]{display:none}}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+
+/* Instagram da Conecta */
+.ig-link{color:#FF8CC4;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap}
+.ig-band{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:18px;border-radius:18px;text-decoration:none;color:#fff;background:linear-gradient(120deg,#E6007E,#FF6B7A 55%,#F9A23B)}
+.ig-band b{display:block;font-size:17px}
+.ig-band span{display:block;font-size:13px;opacity:.92}
+.ig-band .btn{background:#fff;color:#E6007E;display:inline-flex}
+.ig-dot{width:46px;height:46px;border-radius:14px;border:2.5px solid #fff;display:grid!important;place-items:center;font-weight:900;font-size:14px!important;flex:none}
+@media (max-width:640px){.ig-link{display:none}}
