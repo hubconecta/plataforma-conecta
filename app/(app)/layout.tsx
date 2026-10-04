@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
+import AccessLinkBox from "@/components/AccessLinkBox";
 import { getSession } from "@/lib/session";
 import { MENU, MODS, can, ENV, ROLE_LABEL } from "@/lib/perms";
 
@@ -21,7 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <Sidebar groups={groups} env={ENV[profile.role]} userName={profile.name || profile.email} userLabel={profile.role === "equipe" && profile.cargo ? profile.cargo : ROLE_LABEL[profile.role]} bottom={bottom} />
       <div className="main">
         <TopBar env={ENV[profile.role]} items={items} unread={count || 0} />
-        <main className="content">{children}</main>
+        <main className="content"><AccessLinkBox />{children}</main>
       </div>
     </div>
   );

@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { requireModule, getSession, logAction } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { can } from "@/lib/perms";
+import { cookies } from "next/headers";
+import { accessLink, showLink } from "@/lib/access";
 
 const g = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const orNull = (v: string) => (v === "" ? null : v);
@@ -54,11 +56,14 @@ export async function createBrandAccess(fd: FormData) {
   if (!email || !name) back(`/marcas/${brandId}`, "Informe nome e e-mail do responsável.", false);
   let admin;
   try { admin = createAdminClient(); } catch (e: any) { back(`/marcas/${brandId}`, e.message, false); }
-  const { data, error } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo: `${site()}/auth/confirm?next=/nova-senha`, data: { name } });
-  if (error) back(`/marcas/${brandId}`, "Não foi possível criar o acesso: " + error.message, false);
-  await admin.from("profiles").update({ role: "marca", brand_id: brandId, name, cargo: orNull(g(fd, "cargo")), whatsapp: orNull(g(fd, "whatsapp")), access_status: "convite_enviado", status: "ativo" }).eq("id", data.user.id);
+  const r = await accessLink(admin, email, name);
+  if ("error" in r) back(`/marcas/${brandId}`, "Não foi possível criar o acesso: " + r.error, false);
+  const { data: existing } = await admin.from("profiles").select("role").eq("id", r.user.id).single();
+  if (existing && !["pendente", "marca"].includes(existing.role)) back(`/marcas/${brandId}`, "Este e-mail já é usado por outro tipo de acesso na plataforma.", false);
+  await admin.from("profiles").update({ role: "marca", brand_id: brandId, name, cargo: orNull(g(fd, "cargo")), whatsapp: orNull(g(fd, "whatsapp")), access_status: "convite_enviado", status: "ativo" }).eq("id", r.user.id);
   await logAction(supabase, profile, `criou o acesso do Portal da Marca para ${email}`, "Acesso da marca", brandId);
-  back(`/marcas/${brandId}`, `Acesso criado. ${email} recebeu o e-mail para criar a senha.`);
+  await showLink(email, name, r.link);
+  back(`/marcas/${brandId}`, `Acesso criado para ${email}. Envie o link de primeiro acesso que apareceu no topo da tela.`);
 }
 
 export async function resendAccess(fd: FormData) {
@@ -66,10 +71,13 @@ export async function resendAccess(fd: FormData) {
   const email = g(fd, "email"), path = g(fd, "back") || "/marcas";
   let admin;
   try { admin = createAdminClient(); } catch (e: any) { back(path, e.message, false); }
-  const { error } = await admin.auth.resetPasswordForEmail(email, { redirectTo: `${site()}/auth/confirm?next=/nova-senha` });
-  if (error) back(path, "Não foi possível reenviar: " + error.message, false);
-  await logAction(supabase, profile, `reenviou o acesso para ${email}`, "Acesso da marca");
-  back(path, `Enviamos para ${email} um link seguro para criar ou redefinir a senha.`);
+  const r = await accessLink(admin, email);
+  if ("error" in r) back(path, "Não foi possível gerar o novo link: " + r.error, false);
+  const { data: tp } = await admin.from("profiles").select("role,name").eq("id", r.user.id).single();
+  if (tp && tp.role !== "marca" && profile.role !== "ceo" && !can(profile, "colaboradoras")) back(path, "Sem permissão para este acesso.", false);
+  await logAction(supabase, profile, `gerou novo link de acesso para ${email}`, "Acessos");
+  await showLink(email, tp?.name || "", r.link);
+  back(path, `Novo link gerado para ${email}. Envie o link que apareceu no topo da tela.`);
 }
 
 export async function setUserStatus(fd: FormData) {
@@ -101,11 +109,15 @@ export async function saveTeamMember(fd: FormData) {
   }
   const email = g(fd, "email").toLowerCase();
   const admin = createAdminClient();
-  const { data: inv, error } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo: `${site()}/auth/confirm?next=/nova-senha`, data: { name: data.name } });
-  if (error) back("/colaboradoras", "Não foi possível convidar: " + error.message, false);
-  await admin.from("profiles").update({ ...data, role: "equipe", access_status: "convite_enviado" }).eq("id", inv.user.id);
-  await logAction(supabase, profile, `convidou a colaboradora ${data.name} (${email})`, "Colaboradoras", inv.user.id);
-  back("/colaboradoras", `Convite enviado para ${email}.`);
+  if (!email || !data.name) back("/colaboradoras", "Informe nome e e-mail.", false);
+  const r = await accessLink(admin, email, data.name);
+  if ("error" in r) back("/colaboradoras", "Não foi possível convidar: " + r.error, false);
+  const { data: existing } = await admin.from("profiles").select("role").eq("id", r.user.id).single();
+  if (existing && !["pendente", "equipe"].includes(existing.role)) back("/colaboradoras", "Este e-mail já é usado por outro tipo de acesso na plataforma.", false);
+  await admin.from("profiles").update({ ...data, role: "equipe", access_status: "convite_enviado" }).eq("id", r.user.id);
+  await logAction(supabase, profile, `convidou a colaboradora ${data.name} (${email})`, "Colaboradoras", r.user.id);
+  await showLink(email, data.name, r.link);
+  back("/colaboradoras", `Acesso criado para ${data.name}. Envie o link de primeiro acesso que apareceu no topo da tela.`);
 }
 
 /* ---------------- Cadastros de creators ---------------- */
@@ -122,13 +134,19 @@ export async function setApplicationStatus(fd: FormData) {
     if (fd.get("invite")) {
       try {
         const admin = createAdminClient();
-        const { data: inv, error: e2 } = await admin.auth.admin.inviteUserByEmail(app.email, { redirectTo: `${site()}/auth/confirm?next=/nova-senha`, data: { name: app.name } });
-        if (!e2) await admin.from("profiles").update({ role: "creator", creator_id: cr.id, name: app.name, access_status: "convite_enviado" }).eq("id", inv.user.id);
+        const r = await accessLink(admin, String(app.email).toLowerCase(), app.name);
+        if (!("error" in r)) {
+          const { data: existing } = await admin.from("profiles").select("role").eq("id", r.user.id).single();
+          if (!existing || ["pendente", "creator"].includes(existing.role)) {
+            await admin.from("profiles").update({ role: "creator", creator_id: cr.id, name: app.name, access_status: "convite_enviado", status: "ativo" }).eq("id", r.user.id);
+            await showLink(app.email, app.name, r.link);
+          }
+        }
       } catch {}
     }
     await logAction(supabase, profile, `aprovou o cadastro de ${app.name} e ativou como creator`, "Cadastros de creators", cr.id);
     revalidatePath("/creators");
-    back("/cadastros", `${app.name} agora é creator${fd.get("invite") ? " e recebeu o convite para o Clube Conecta" : ""}.`);
+    back("/cadastros", `${app.name} agora é creator${fd.get("invite") ? ". Envie o link do Clube Conecta que apareceu no topo da tela" : ""}.`);
   }
   await supabase.from("creator_applications").update({ status }).eq("id", id);
   await logAction(supabase, profile, `marcou o cadastro de ${app.name} como ${status}`, "Cadastros de creators", id);
@@ -194,4 +212,9 @@ export async function readAllNotifications() {
   await s.supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("user_id", s.user.id).is("read_at", null);
   revalidatePath("/", "layout");
   redirect("/notificacoes");
+}
+
+export async function dismissLink() {
+  (await cookies()).delete("cx_link");
+  revalidatePath("/", "layout");
 }
