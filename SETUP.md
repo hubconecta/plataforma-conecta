@@ -49,7 +49,7 @@ O Supabase gratuito envia poucos e-mails por hora. Para uso real, configure um e
 Supabase → **Authentication → Emails → SMTP Settings**, usando o Resend (resend.com). A gente faz isso junto na próxima etapa.
 
 ## 6. Módulos completos (Entregas 2 e 3)
-1. No **SQL Editor**, rode também, nesta ordem: `supabase/02_modulos.sql`, `supabase/03_arquivos_integracoes.sql`, `supabase/04_calendario.sql` e `supabase/05_club_criadora.sql`
+1. No **SQL Editor**, rode também, nesta ordem: `supabase/02_modulos.sql`, `supabase/03_arquivos_integracoes.sql`, `supabase/04_calendario.sql`, `supabase/05_club_criadora.sql` e `supabase/06_notificacoes.sql`
    (se o Supabase mostrar "Potential issues", clique em **Run and enable RLS**).
 2. **Lembretes automáticos de pagamento:** na Vercel, adicione a variável `CRON_SECRET` (Secret) com uma senha longa
    qualquer e faça Redeploy. A Vercel chama `/api/cron/lembretes` todo dia às 9h (horário de Brasília).

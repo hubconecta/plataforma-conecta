@@ -19,6 +19,7 @@ export async function approveContent(fd: FormData) {
   const { supabase, profile, c, id, path } = await staffLoad(fd);
   await supabase.from("contents").update({ status: "Aprovado", history: [...(c.history || []), H(`Aprovado por ${profile.name} (versão ${c.version})`)] }).eq("id", id);
   await notifyProfiles(supabase, { creator_id: c.creator_id }, `✅ Seu conteúdo para ${c.campaigns?.name || "a campanha"} foi aprovado`, "/clube/minhas");
+  if (c.campaigns?.brand_id) await notifyProfiles(supabase, { brand_id: c.campaigns.brand_id }, `✅ Conteúdo aprovado: ${c.creators?.name} em ${c.campaigns?.name || "campanha"}`, "/conteudos");
   await logAction(supabase, profile, `aprovou o conteúdo de ${c.creators?.name} (${c.campaigns?.name || ""})`, "Conteúdos", id);
   back(path, "Conteúdo aprovado.");
 }

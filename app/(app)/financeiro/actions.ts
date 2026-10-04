@@ -16,6 +16,7 @@ export async function saveEntry(fd: FormData) {
   if (!id) row.created_by = profile.id;
   const { error } = id ? await supabase.from("fin_entries").update(row).eq("id", id) : await supabase.from("fin_entries").insert(row);
   if (error) back(P(fd), "Não foi possível salvar: " + error.message, false);
+  if (!id && row.kind === "receber" && row.brand_id) await notifyProfiles(supabase, { brand_id: row.brand_id }, `💳 Nova cobrança: ${row.description} · ${brlFull(row.value)} · vence ${row.due.split("-").reverse().join("/")}`, "/portal/financeiro");
   await logAction(supabase, profile, `${id ? "editou" : "lançou"} conta a ${row.kind} "${row.description}" de ${brlFull(row.value)}`, "Financeiro", id || null, true);
   revalidatePath("/financeiro");
   back(P(fd), "Lançamento salvo.");
@@ -52,6 +53,7 @@ export async function generateMonthly(fd: FormData) {
   const has = new Set((ex || []).map((e: any) => e.brand_id));
   const rows = (brands || []).filter((b: any) => b.status === "Ativa" && !has.has(b.id)).map((b: any) => { const c = (cs || []).find((x: any) => x.brand_id === b.id); if (!c?.monthly_value) return null; const day = Math.min(28, Math.max(1, Number(c.due_day) || 10)); return { kind: "receber", description: `Gestão Conecta · ${b.name}`, ref: `Mensalidade ${month}`, party: b.name, brand_id: b.id, category: "Gestão", value: c.monthly_value, due: `${month}-${String(day).padStart(2, "0")}`, created_by: profile.id }; }).filter(Boolean);
   if (rows.length) await supabase.from("fin_entries").insert(rows);
+  for (const r of rows as any[]) await notifyProfiles(supabase, { brand_id: r.brand_id }, `💳 Nova cobrança: ${r.description} · ${brlFull(r.value)} · vence ${r.due.split("-").reverse().join("/")}`, "/portal/financeiro");
   await logAction(supabase, profile, `gerou ${rows.length} mensalidade(s) de ${month}`, "Financeiro", null, true);
   back(P(fd), rows.length ? `${rows.length} cobrança(s) de ${month} criadas a partir dos contratos.` : "Nenhuma cobrança nova: todas as marcas ativas com contrato já têm a mensalidade deste mês.");
 }

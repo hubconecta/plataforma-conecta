@@ -6,18 +6,36 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { can } from "@/lib/perms";
 import { cookies } from "next/headers";
 import { accessLink, showLink } from "@/lib/access";
+import { notifyCreators, notifyCeo } from "@/lib/act";
 
 const g = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const orNull = (v: string) => (v === "" ? null : v);
 const site = () => process.env.NEXT_PUBLIC_SITE_URL || "";
 const back = (path: string, msg: string, ok = true): never => redirect(`${path}?${ok ? "ok" : "erro"}=${encodeURIComponent(msg)}`);
 
-async function notifyProfiles(supabase: any, filter: { creator_id?: string; brand_id?: string }, text: string, link: string) {
-  let q = supabase.from("profiles").select("id");
+async function notifyProfiles(supabase: any, filter: { creator_id?: string; brand_id?: string; ids?: string[] }, text: string, link: string) {
+  if (filter.ids?.length) { await supabase.from("notifications").insert(filter.ids.map((id) => ({ user_id: id, text, link }))); return; }
+  let q = supabase.from("profiles").select("id").eq("status", "ativo");
   if (filter.creator_id) q = q.eq("creator_id", filter.creator_id);
   if (filter.brand_id) q = q.eq("brand_id", filter.brand_id).eq("role", "marca");
   const { data } = await q;
   if (data?.length) await supabase.from("notifications").insert(data.map((p: any) => ({ user_id: p.id, text, link })));
+}
+
+// Campanha abriu inscrições → todas as creators; começou → as aprovadas; nova campanha → a marca.
+async function announceCampaign(supabase: any, c: { id: string; name: string; brand_id: string; status: string }, prev: string | null, isNew: boolean) {
+  if (c.status === prev) return;
+  if (c.status === "Inscrições abertas") await notifyCreators(supabase, `📣 Nova campanha com inscrições abertas: ${c.name}`, "/clube/oportunidades");
+  if (c.status === "Ativa") {
+    const { data } = await supabase.from("campaign_applications").select("creator_id").eq("campaign_id", c.id).eq("status", "Aprovada");
+    await notifyCreators(supabase, `🚀 A campanha ${c.name} começou! Confira o briefing e envie seus conteúdos.`, "/clube/minhas", (data || []).map((a: any) => a.creator_id));
+  }
+  if (c.status === "Encerrada") {
+    const { data } = await supabase.from("campaign_applications").select("creator_id").eq("campaign_id", c.id).eq("status", "Aprovada");
+    await notifyCreators(supabase, `🏁 A campanha ${c.name} foi encerrada. Obrigada pela participação!`, "/clube/minhas", (data || []).map((a: any) => a.creator_id));
+  }
+  if (isNew && c.brand_id) await notifyProfiles(supabase, { brand_id: c.brand_id }, `📣 Nova campanha da sua marca: ${c.name} (${c.status})`, "/campanhas");
+  else if (c.brand_id && ["Inscrições abertas", "Ativa", "Encerrada"].includes(c.status)) await notifyProfiles(supabase, { brand_id: c.brand_id }, `Campanha ${c.name}: ${c.status}`, "/campanhas");
 }
 
 /* ---------------- Marcas ---------------- */
@@ -34,6 +52,8 @@ export async function saveBrand(fd: FormData) {
   };
   if (!row.name) back(id ? `/marcas/${id}` : "/marcas/nova", "Informe o nome da marca.", false);
   let brandId = id;
+  let prevOwner: string | null = null;
+  if (id) { const { data: pv } = await supabase.from("brands").select("owner_id").eq("id", id).single(); prevOwner = pv?.owner_id || null; }
   if (id) {
     const { error } = await supabase.from("brands").update(row).eq("id", id);
     if (error) back(`/marcas/${id}`, "Não foi possível salvar: " + error.message, false);
@@ -42,6 +62,7 @@ export async function saveBrand(fd: FormData) {
     if (error) back("/marcas/nova", "Não foi possível cadastrar: " + error.message, false);
     brandId = data.id;
   }
+  if (row.owner_id && row.owner_id !== profile.id && row.owner_id !== prevOwner) await notifyProfiles(supabase, { ids: [row.owner_id] }, `🏷️ Você é a responsável pela marca ${row.name}`, `/marcas/${brandId}`);
   if (can(profile, "fin") && fd.has("monthly_value")) {
     await supabase.from("brand_contracts").upsert({ brand_id: brandId, monthly_value: Number(g(fd, "monthly_value")) || null, commission_pct: Number(g(fd, "commission_pct")) || null, due_day: Number(g(fd, "due_day")) || null, updated_at: new Date().toISOString() });
   }
@@ -160,9 +181,11 @@ export async function saveCampaign(fd: FormData) {
   const id = g(fd, "id");
   const row = { brand_id: g(fd, "brand_id"), name: g(fd, "name"), product: orNull(g(fd, "product")), objective: orNull(g(fd, "objective")), description: orNull(g(fd, "description")), briefing: orNull(g(fd, "briefing")), status: g(fd, "status") || "Futura", start_date: orNull(g(fd, "start_date")), end_date: orNull(g(fd, "end_date")), slots: Number(g(fd, "slots")) || 10, fee: Number(g(fd, "fee")) || null, commission_pct: Number(g(fd, "commission_pct")) || null, niche: orNull(g(fd, "niche")), requirements: orNull(g(fd, "requirements")), deliverables: orNull(g(fd, "deliverables")), requires_shipping: !!fd.get("requires_shipping") };
   if (!row.brand_id || !row.name) back("/campanhas", "Escolha a marca e dê um nome à campanha.", false);
-  let cid = id;
-  if (id) { const { error } = await supabase.from("campaigns").update(row).eq("id", id); if (error) back("/campanhas", error.message, false); }
+  let cid = id, prevStatus: string | null = null;
+  if (id) { const { data: pv } = await supabase.from("campaigns").select("status").eq("id", id).single(); prevStatus = pv?.status || null; const { error } = await supabase.from("campaigns").update(row).eq("id", id); if (error) back("/campanhas", error.message, false); }
   else { const { data, error } = await supabase.from("campaigns").insert(row).select("id").single(); if (error) back("/campanhas", error.message, false); cid = data.id; }
+  await announceCampaign(supabase, { id: cid, name: row.name, brand_id: row.brand_id, status: row.status }, prevStatus, !id);
+  await notifyCeo(supabase, profile, `📣 ${profile.name} ${id ? "editou" : "criou"} a campanha ${row.name}`, "/campanhas");
   await logAction(supabase, profile, `${id ? "editou" : "criou"} a campanha ${row.name}`, "Campanhas", cid);
   revalidatePath("/campanhas");
   back("/campanhas", id ? "Campanha atualizada." : "Campanha criada.");
@@ -344,6 +367,7 @@ export async function reviewCampaign(fd: FormData) {
   const id = g(fd, "id"), status = g(fd, "status"), note = orNull(g(fd, "note"));
   const { data: c } = await supabase.from("campaigns").update({ status, review_note: ["Ajuste solicitado", "Recusada"].includes(status) ? note : null }).eq("id", id).select("name,brand_id").single();
   if (!c) back("/campanhas", "Campanha não encontrada.", false);
+  if (["Inscrições abertas", "Ativa"].includes(status)) await announceCampaign(supabase, { id, name: c.name, brand_id: c.brand_id, status }, "Em aprovação", false);
   const msg = status === "Ajuste solicitado" ? `✏️ A Conecta pediu ajustes na campanha ${c.name}${note ? ": " + note : ""}` : status === "Recusada" ? `A campanha ${c.name} não foi aprovada${note ? ": " + note : ""}` : `✅ Campanha aprovada pela Conecta: ${c.name} (${status})`;
   await notifyProfiles(supabase, { brand_id: c.brand_id }, msg, "/campanhas");
   await logAction(supabase, profile, `${status === "Ajuste solicitado" ? "pediu ajuste na" : status === "Recusada" ? "recusou a" : "aprovou a"} campanha ${c.name}`, "Campanhas", id);

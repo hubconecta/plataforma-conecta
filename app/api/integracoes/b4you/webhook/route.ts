@@ -56,6 +56,11 @@ export async function POST(req: NextRequest) {
   }
   if (!creator) return finish("Para revisar", `Nenhuma creator cadastrada com o e-mail ${email}.`);
 
+  const notifyTeam = async (text: string, link: string, mod: string) => {
+    const { data: st } = await admin.from("profiles").select("id,role,perms").eq("status", "ativo").in("role", ["ceo", "equipe"]);
+    const ids = (st || []).filter((p: any) => p.role === "ceo" || (p.perms || []).includes(mod)).map((p: any) => p.id);
+    if (ids.length) await admin.from("notifications").insert(ids.map((id: string) => ({ user_id: id, text, link })));
+  };
   const notify = async (text: string, link: string) => {
     const { data: ps } = await admin.from("profiles").select("id").eq("creator_id", creator!.id).eq("role", "creator");
     if (ps?.length) await admin.from("notifications").insert(ps.map((p: any) => ({ user_id: p.id, text, link })));
@@ -68,11 +73,14 @@ export async function POST(req: NextRequest) {
     await admin.from("pk_orders").update({ status: "Preparando", payment: "Pago", order_code: order || undefined }).eq("id", o[0].id);
     await admin.from("shipments").insert({ creator_id: creator.id, brand_id: kit.brand_id, pk_order_id: o[0].id, product: kit.name, qty: 1, reason: "Compra de press kit confirmada", status: "Preparando", approved_at: new Date().toISOString() });
     await notify(`✅ Compra confirmada! Seu press kit ${kit.name} está sendo preparado.`, "/clube/presskits");
+    await notifyTeam(`💰 Press kit vendido: ${creator.name || email} comprou ${kit.name}`, "/presskits?tab=pedidos", "presskits");
+    if (kit.brand_id) { const { data: bp } = await admin.from("profiles").select("id").eq("brand_id", kit.brand_id).eq("role", "marca").eq("status", "ativo"); if (bp?.length) await admin.from("notifications").insert(bp.map((p: any) => ({ user_id: p.id, text: `Nova compra de Press Kit: ${kit.name}. Pagamento confirmado; o envio está sendo preparado.`, link: "/portal/envios" }))); }
     return finish("Processado", `Press kit ${kit.name} pago.`, creator.id);
   }
 
   if (refunded) {
     await admin.from("method_purchases").update({ status: "Reembolsado" }).eq("creator_id", creator.id).eq("product_id", product!.id).eq("status", "Pago");
+    await notifyTeam(`↩️ Reembolso/cancelamento: ${creator.name || email} · ${product!.title}`, `/club/admin/${product!.id}?tab=alunas`, "metodo_adm");
     return finish("Processado", `Reembolso/cancelamento: acesso a ${product!.title} retirado.`, creator.id);
   }
   if (!approved) return finish("Ignorado", "Evento sem pagamento aprovado (ex.: boleto gerado, pix pendente).", creator.id);
@@ -84,5 +92,6 @@ export async function POST(req: NextRequest) {
   if (value) await admin.from("sales").insert({ creator_id: creator.id, product: product!.title, sold: value, creator_pct: 0, conecta_pct: 100, rule: "Produto", status: "Aprovada", source: "B4YOU", external_id: order ? `b4-${order}` : null }).then(() => null, () => null);
   await notify(`🎉 Pagamento confirmado! Seu acesso a ${product!.title} foi liberado.`, `/club/${product!.slug}`);
   await admin.from("b4_events").update({ product_id: product!.id }).eq("id", ev!.id);
+  await notifyTeam(`💰 Nova venda: ${creator.name || email} comprou ${product!.title}${value ? ` (R$ ${value.toLocaleString("pt-BR")})` : ""}`, `/club/admin/${product!.id}?tab=alunas`, "metodo_adm");
   return finish("Processado", `Acesso a ${product!.title} liberado.`, creator.id);
 }

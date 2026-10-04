@@ -1,7 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { requireModule, logAction } from "@/lib/session";
-import { g, orNull, back, notifyProfiles } from "@/lib/act";
+import { g, orNull, back, notifyProfiles, notifyCeo } from "@/lib/act";
 import { TASK_STATUS } from "@/lib/consts";
 
 export async function saveTask(fd: FormData) {
@@ -16,6 +16,7 @@ export async function saveTask(fd: FormData) {
   const { error } = id ? await supabase.from("tasks").update(row).eq("id", id) : await supabase.from("tasks").insert(row);
   if (error) back(path, "Não foi possível salvar: " + error.message, false);
   if (row.owner_id && row.owner_id !== profile.id && row.owner_id !== prevOwner) await notifyProfiles(supabase, { ids: [row.owner_id] }, `Nova tarefa para você: ${row.title}`, "/tarefas");
+  if (!id) await notifyCeo(supabase, profile, `📝 ${profile.name} criou a tarefa: ${row.title}`, "/tarefas");
   await logAction(supabase, profile, `${id ? "editou" : "criou"} a tarefa ${row.title}`, "Tarefas", id || null);
   revalidatePath("/tarefas");
   back(path, id ? "Tarefa atualizada." : "Tarefa criada.");
@@ -24,10 +25,15 @@ export async function saveTask(fd: FormData) {
 export async function moveTask(fd: FormData) {
   const { supabase, profile } = await requireModule("demandas");
   const id = g(fd, "id"), dir = Number(g(fd, "dir")) || 0;
-  const { data: t } = await supabase.from("tasks").select("title,status").eq("id", id).single();
+  const { data: t } = await supabase.from("tasks").select("title,status,created_by,owner_id").eq("id", id).single();
   if (!t) back("/tarefas", "Tarefa não encontrada.", false);
   const i = Math.min(2, Math.max(0, TASK_STATUS.indexOf(t.status) + dir));
   await supabase.from("tasks").update({ status: TASK_STATUS[i] }).eq("id", id);
+  if (TASK_STATUS[i] === "Concluído" && t.status !== "Concluído") {
+    const to = [t.created_by, t.owner_id].filter((x: any) => x && x !== profile.id);
+    if (to.length) await notifyProfiles(supabase, { ids: [...new Set(to)] as string[] }, `✅ ${profile.name} concluiu a tarefa: ${t.title}`, "/tarefas");
+    if (!to.length) await notifyCeo(supabase, profile, `✅ ${profile.name} concluiu a tarefa: ${t.title}`, "/tarefas");
+  }
   await logAction(supabase, profile, `moveu a tarefa ${t.title} para ${TASK_STATUS[i]}`, "Tarefas", id);
   revalidatePath("/tarefas");
   back(g(fd, "back") || "/tarefas", `Tarefa em: ${TASK_STATUS[i] === "Concluído" ? "Concluída" : TASK_STATUS[i]}.`);

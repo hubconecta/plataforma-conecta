@@ -22,7 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="shell">
       <Sidebar groups={groups} env={ENV[profile.role]} userName={profile.name || profile.email} userLabel={profile.role === "equipe" && profile.cargo ? profile.cargo : ROLE_LABEL[profile.role]} bottom={bottom} />
       <div className="main">
-        <TopBar env={ENV[profile.role]} items={items} unread={count || 0} />
+        <TopBar env={ENV[profile.role]} items={items} unread={count || 0} userId={user.id} />
         <main className="content"><AccessLinkBox />{children}</main>
         {["marca", "creator"].includes(profile.role) ? <WhatsAppFab /> : null}
       </div>

@@ -30,3 +30,20 @@ export async function notifyModule(supabase: any, mod: string, text: string, lin
   const ids = (data || []).filter((p: any) => p.id !== exceptId && (p.role === "ceo" || (p.perms || []).includes(mod))).map((p: any) => p.id);
   if (ids.length) await supabase.from("notifications").insert(ids.map((id: string) => ({ user_id: id, text, link })));
 }
+
+// Avisa a CEO (quando quem fez a ação foi outra pessoa da equipe).
+export async function notifyCeo(supabase: any, actor: { id: string; role: string }, text: string, link: string) {
+  if (actor.role === "ceo") return;
+  const { data } = await supabase.from("profiles").select("id").eq("role", "ceo").eq("status", "ativo");
+  const ids = (data || []).map((p: any) => p.id).filter((id: string) => id !== actor.id);
+  if (ids.length) await supabase.from("notifications").insert(ids.map((id: string) => ({ user_id: id, text, link })));
+}
+
+// Avisa todas as creators com acesso ao Clube (ou só as de uma lista).
+export async function notifyCreators(supabase: any, text: string, link: string, creatorIds?: string[]) {
+  let q = supabase.from("profiles").select("id").eq("role", "creator").eq("status", "ativo");
+  if (creatorIds) { if (!creatorIds.length) return; q = q.in("creator_id", creatorIds); }
+  const { data } = await q;
+  const ids = (data || []).map((p: any) => p.id);
+  for (let i = 0; i < ids.length; i += 500) await supabase.from("notifications").insert(ids.slice(i, i + 500).map((id: string) => ({ user_id: id, text, link })));
+}
