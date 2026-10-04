@@ -2,7 +2,8 @@ import Link from "next/link";
 import { requireModule } from "@/lib/session";
 import { PageH, Pill, Empty, Notice, fd, brl, Kpi } from "@/components/ui";
 import { RESULT_KEYS as RES } from "@/lib/consts";
-import { saveCampaign, saveResults, proposeCampaign, reviewCampaign } from "../actions";
+import { saveCampaign, saveResults, proposeCampaign, reviewCampaign, deleteCampaign } from "../actions";
+import ConfirmDelete from "@/components/ConfirmDelete";
 
 const STS = ["Em aprovação", "Ajuste solicitado", "Futura", "Inscrições abertas", "Ativa", "Encerrada", "Recusada"];
 
@@ -70,6 +71,7 @@ export default async function Campanhas({ searchParams }: { searchParams: Promis
             {isBrand ? (["Em aprovação", "Ajuste solicitado"].includes(c.status) ? <div><h3 style={{ marginBottom: 8 }}>Editar proposta</h3><BrandForm c={c} /></div> : <p className="muted">{c.description || ""}</p>) : <>
               {!["Em aprovação", "Ajuste solicitado", "Recusada"].includes(c.status) ? <div><h3 style={{ marginBottom: 8 }}>Registrar resultados (vai para o relatório da marca)</h3><form action={saveResults} className="form-grid"><input type="hidden" name="id" value={c.id} />{RES.map(([k, l]) => <div className="field" key={k}><label>{l}</label><input className="input" type="number" name={k} defaultValue={c.results?.[k] || 0} /></div>)}<div><button className="btn btn-dark btn-sm">Salvar resultados</button></div></form></div> : null}
               <div><h3 style={{ marginBottom: 8 }}>Editar campanha</h3><StaffForm c={c} /></div></>}
+            {!isBrand || ["Em aprovação", "Ajuste solicitado", "Recusada"].includes(c.status) ? <div><ConfirmDelete action={deleteCampaign} fields={{ id: c.id }} label={isBrand ? "Excluir proposta" : "Excluir campanha"} warning={isBrand ? "A proposta será apagada e sai da fila de aprovação da Conecta." : `Apaga a campanha ${c.name} com as inscrições, os conteúdos enviados e os números dela no relatório da marca. Desafios, envios e vendas ligados a ela continuam, sem a campanha. Não dá para desfazer. Se ela só terminou, prefira o status Encerrada.`} /></div> : null}
           </div>
         </details>
       )) : <Empty icon="megaphone" title="Nenhuma campanha aqui" text={isBrand ? "Clique em Propor nova campanha para enviar sua ideia para a Conecta." : "Crie a primeira campanha."} />}

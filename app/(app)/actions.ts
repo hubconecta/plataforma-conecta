@@ -374,3 +374,25 @@ export async function reviewCampaign(fd: FormData) {
   revalidatePath("/campanhas");
   back("/campanhas", `Campanha ${c.name}: ${status}.`);
 }
+
+/* ---------------- Excluir campanha ---------------- */
+export async function deleteCampaign(fd: FormData) {
+  const { supabase, profile } = await requireModule("campanhas");
+  const id = g(fd, "id");
+  const admin = createAdminClient();
+  const { data: c } = await admin.from("campaigns").select("id,name,status,brand_id").eq("id", id).single();
+  if (!c) back("/campanhas", "Campanha não encontrada.", false);
+  const isBrand = profile.role === "marca";
+  if (isBrand && (c.brand_id !== profile.brand_id || !["Em aprovação", "Ajuste solicitado", "Recusada"].includes(c.status))) back("/campanhas", "A marca só pode excluir propostas que ainda não foram aprovadas.", false);
+  const [{ count: apps }, { count: conts }] = await Promise.all([
+    admin.from("campaign_applications").select("id", { count: "exact", head: true }).eq("campaign_id", id),
+    admin.from("contents").select("id", { count: "exact", head: true }).eq("campaign_id", id),
+  ]);
+  await admin.from("report_entries").delete().eq("ref_id", id).eq("kind", "Campanha");
+  const { error } = await admin.from("campaigns").delete().eq("id", id);
+  if (error) back("/campanhas", "Não foi possível excluir: " + error.message, false);
+  await logAction(supabase, profile, `excluiu a campanha ${c.name}${apps || conts ? ` (com ${apps || 0} inscrições e ${conts || 0} conteúdos)` : ""}`, "Campanhas", null);
+  if (!isBrand) await notifyCeo(supabase, profile, `🗑️ ${profile.name} excluiu a campanha ${c.name}`, "/historico");
+  revalidatePath("/campanhas"); revalidatePath("/relatorios");
+  back("/campanhas", `Campanha ${c.name} excluída.`);
+}
