@@ -1,10 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Unbounded, Manrope, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const unbounded = Unbounded({ variable: "--font-unbounded", subsets: ["latin"], weight: ["500", "600"] });
-const manrope = Manrope({ variable: "--font-manrope", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
-const mono = JetBrains_Mono({ variable: "--font-jbmono", subsets: ["latin"], weight: ["500"] });
 
 export const metadata: Metadata = {
   title: "Conecta",
@@ -16,7 +12,12 @@ export const viewport: Viewport = { themeColor: "#000000", width: "device-width"
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR" className={`${unbounded.variable} ${manrope.variable} ${mono.variable}`}>
+    <html lang="pt-BR">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&family=Manrope:wght@400;500;600;700&family=Unbounded:wght@500;600&display=swap" />
+      </head>
       <body>{children}</body>
     </html>
   );

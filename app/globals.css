@@ -5,9 +5,9 @@
   --pink:#FF1F8E; --pink-2:#FF6B7A; --pink-strong:#C80F6D; --pink-ink:#BE0F68; --pink-soft:#FFE7F2;
   --side:#000000; --side-ink:#F3EDF1; --side-muted:#8C838E; --side-hover:#161016; --side-line:#1F181E;
   --ok:#14805A; --ok-soft:#E2F3EB; --warn:#9C6500; --warn-soft:#FBEFD6; --bad:#C2303A; --bad-soft:#FBE4E6; --info:#3552C2; --info-soft:#E6EBFA;
-  --display:var(--font-unbounded),"Unbounded",ui-sans-serif,system-ui,sans-serif;
-  --body:var(--font-manrope),"Manrope",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --mono:var(--font-jbmono),"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --display:"Unbounded",ui-sans-serif,system-ui,sans-serif;
+  --body:"Manrope",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --r:14px; --shadow:0 1px 2px rgba(30,10,25,.05),0 10px 30px -14px rgba(30,10,25,.18);
   --scrim:rgba(10,5,10,.5);
 }
