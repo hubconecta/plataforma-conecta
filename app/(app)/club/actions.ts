@@ -142,7 +142,11 @@ export async function confirmPurchase(fd: FormData) {
   const id = orNull(g(fd, "id")), creator = orNull(g(fd, "creator_id")), source = g(fd, "source") || "Confirmação manual";
   let cid = creator;
   if (id) { const { data: p } = await supabase.from("method_purchases").update({ status: "Pago", paid_at: new Date().toISOString(), confirmed_by: profile.id, source }).eq("id", id).select("creator_id").single(); cid = p?.creator_id || null; }
-  else if (creator) await supabase.from("method_purchases").insert({ creator_id: creator, product_id: pid, status: "Pago", source, paid_at: new Date().toISOString(), confirmed_by: profile.id, value: num(fd, "value") });
+  else if (creator) {
+    await supabase.from("method_purchases").insert({ creator_id: creator, product_id: pid, status: "Pago", source, paid_at: new Date().toISOString(), confirmed_by: profile.id, value: num(fd, "value") });
+    const v = num(fd, "value");
+    if (v) await createAdminClient().from("sales").insert({ creator_id: creator, product: prod.title, product_id: pid, kind: "Club Criadora", sold: v, creator_pct: 0, conecta_pct: 100, rule: "Produto", status: "Aprovada", source: source.includes("B4YOU") ? "B4YOU (manual)" : "Manual" });
+  }
   if (!cid) back(ADM(pid, "alunas"), "Escolha a creator.", false);
   await notifyProfiles(supabase, { creator_id: cid }, `🎉 Acesso liberado: ${prod.title}! Bons estudos.`, `/club/${prod.slug}`);
   const { data: c } = await supabase.from("creators").select("name").eq("id", cid).single();

@@ -50,33 +50,77 @@ export function matches(info: ReturnType<typeof readB4>, configured?: string | n
   return want.length >= 4 && info.prodVals.some((v) => v === want || v.includes(want) || (v.length >= 6 && want.includes(v)));
 }
 
+// Registra a venda no financeiro (uma vez por pedido)
+async function recordSale(admin: any, info: ReturnType<typeof readB4>, eventId: string, row: any) {
+  if (!info.value) return;
+  const external_id = info.order ? `b4-${info.order}` : `b4-ev-${eventId}`;
+  const { data: ex } = await admin.from("sales").select("id").eq("external_id", external_id).limit(1);
+  if (ex?.length) return;
+  await admin.from("sales").insert({ sold: info.value, status: "Aprovada", source: "B4YOU", external_id, buyer_email: info.email, order_code: info.order, b4_event_id: eventId, sale_date: new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10), rule: "Produto", ...row });
+}
+async function cancelSale(admin: any, info: ReturnType<typeof readB4>) {
+  if (info.order) await admin.from("sales").update({ status: "Cancelada" }).eq("external_id", `b4-${info.order}`);
+}
+
+// Afiliada/creator que vendeu (quando a B4YOU manda os dados da afiliação)
+function affiliateEmail(payload: any) {
+  const L = leaves(payload);
+  const a = L.find((l) => /(affiliat|afiliad|coproduc|coprodut|partner|parceir|seller|vendedor)/.test(l.path) && /e-?mail/.test(l.key) && String(l.value).includes("@"));
+  return a ? norm(a.value) : null;
+}
+
 export async function processB4Event(admin: any, eventId: string) {
   const { data: ev } = await admin.from("b4_events").select("*").eq("id", eventId).single();
   if (!ev) return "erro";
   const info = readB4(ev.payload);
   const finish = async (status: string, note: string, extra: any = {}) => { await admin.from("b4_events").update({ status, note, email: info.email, value: info.value, order_code: info.order, event: info.statuses.slice(0, 3).join(" · ") || null, product: info.productLabel, ...extra }).eq("id", eventId); return status; };
 
-  const [{ data: prods }, { data: kits }] = await Promise.all([
+  const [{ data: prods }, { data: kits }, { data: bprods }] = await Promise.all([
     admin.from("products").select("id,title,slug,b4you_product").not("b4you_product", "is", null),
     admin.from("press_kits").select("id,name,b4you_id,brand_id").not("b4you_id", "is", null),
+    admin.from("brand_products").select("id,name,brand_id,b4you_product,creator_pct,conecta_pct,brands(name)").not("b4you_product", "is", null),
   ]);
   const product = (prods || []).find((p: any) => matches(info, p.b4you_product));
   const kit = product ? null : (kits || []).find((k: any) => matches(info, k.b4you_id));
-  if (!product && !kit) return finish("Para revisar", `Produto não reconhecido. Valores de produto recebidos: ${[...new Set(info.prodVals)].slice(0, 8).join(", ") || "nenhum"}. Copie o ID certo para o campo “ID ou nome na B4YOU” do produto e clique em Reprocessar.`);
-  if (!info.email) return finish("Para revisar", "O aviso não trouxe e-mail do comprador.", { product_id: product?.id || null });
+  const bprod = product || kit ? null : (bprods || []).find((b: any) => matches(info, b.b4you_product));
 
+  const notifyTeam = async (text: string, link: string, mod: string) => {
+    const { data: st } = await admin.from("profiles").select("id,role,perms").eq("status", "ativo").in("role", ["ceo", "equipe", "financeiro"]);
+    const ids = (st || []).filter((p: any) => p.role === "ceo" || (p.role === "financeiro" && mod === "fin") || (p.perms || []).includes(mod)).map((p: any) => p.id);
+    if (ids.length) await admin.from("notifications").insert(ids.map((id: string) => ({ user_id: id, text, link })));
+  };
+  const money = info.value ? ` (R$ ${Number(info.value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })})` : "";
+
+  // Venda de produto de marca: comissão da Conecta (não libera acesso a nada)
+  if (bprod) {
+    if (info.refunded) { await cancelSale(admin, info); return finish("Processado", `Reembolso de ${bprod.name}: venda cancelada no financeiro.`); }
+    if (!info.approved) return finish("Ignorado", `Aviso sem pagamento aprovado (${info.statuses.join(", ") || "sem status"}).`);
+    const aff = affiliateEmail(ev.payload);
+    let creatorId: string | null = null;
+    if (aff) { const { data: c } = await admin.from("creators").select("id").ilike("email", aff).limit(1); creatorId = c?.[0]?.id || null; }
+    await recordSale(admin, info, eventId, { kind: "Comissão de marca", product: bprod.name, brand_id: bprod.brand_id, brand_product_id: bprod.id, creator_id: creatorId, creator_pct: bprod.creator_pct, conecta_pct: bprod.conecta_pct });
+    await notifyTeam(`💰 Venda de ${bprod.name} (${(bprod as any).brands?.name || "marca"})${money} · comissão Conecta ${Number(bprod.conecta_pct)}%`, "/financeiro?tab=vendas", "fin");
+    return finish("Processado", `Venda de produto da marca registrada no financeiro${creatorId ? " com a afiliada" : ""}.`);
+  }
+
+  if (!product && !kit) {
+    if (info.approved && info.value) { await recordSale(admin, info, eventId, { kind: "Outro", product: info.productLabel || "Venda B4YOU" }); }
+    return finish("Para revisar", `Produto não reconhecido${info.approved && info.value ? " (a venda já foi registrada no financeiro como “Outro”)" : ""}. Valores de produto recebidos: ${[...new Set(info.prodVals)].slice(0, 8).join(", ") || "nenhum"}. Copie o ID certo para o produto (Club Criadora, press kit ou produto de marca no Financeiro) e clique em Reprocessar.`);
+  }
+
+  // Produto da Leandra (Club Criadora) ou press kit: a venda entra no financeiro mesmo antes de achar a creator
+  if (info.refunded) await cancelSale(admin, info);
+  else if (info.approved) await recordSale(admin, info, eventId, product ? { kind: "Club Criadora", product: product.title, product_id: product.id, creator_pct: 0, conecta_pct: 100 } : { kind: "Press kit", product: kit.name, brand_id: kit.brand_id, creator_pct: 0, conecta_pct: 100 });
+
+  if (!info.email) return finish("Para revisar", "O aviso não trouxe e-mail do comprador (a venda foi registrada no financeiro).", { product_id: product?.id || null });
   let creator: any = null;
   const { data: crs } = await admin.from("creators").select("id,name").ilike("email", info.email).limit(1);
   creator = crs?.[0] || null;
   if (!creator) { const { data: pr } = await admin.from("profiles").select("creator_id,name").ilike("email", info.email).eq("role", "creator").limit(1); if (pr?.[0]?.creator_id) creator = { id: pr[0].creator_id, name: pr[0].name }; }
   if (!creator && product) { const { data: mp } = await admin.from("method_purchases").select("creator_id").eq("product_id", product.id).ilike("email", info.email).limit(1); if (mp?.[0]) creator = { id: mp[0].creator_id, name: "" }; }
-  if (!creator) return finish("Para revisar", `Nenhuma creator cadastrada com o e-mail ${info.email}. Escolha a creator abaixo para liberar.`, { product_id: product?.id || null });
+  if (!creator) return finish("Para revisar", `Nenhuma creator cadastrada com o e-mail ${info.email}. A venda já está no financeiro; escolha a creator abaixo para liberar o acesso.`, { product_id: product?.id || null });
+  if (info.approved) await admin.from("sales").update({ creator_id: creator.id }).eq("b4_event_id", eventId);
 
-  const notifyTeam = async (text: string, link: string, mod: string) => {
-    const { data: st } = await admin.from("profiles").select("id,role,perms").eq("status", "ativo").in("role", ["ceo", "equipe"]);
-    const ids = (st || []).filter((p: any) => p.role === "ceo" || (p.perms || []).includes(mod)).map((p: any) => p.id);
-    if (ids.length) await admin.from("notifications").insert(ids.map((id: string) => ({ user_id: id, text, link })));
-  };
   const notify = async (text: string, link: string) => {
     const { data: ps } = await admin.from("profiles").select("id").eq("creator_id", creator.id).eq("role", "creator");
     if (ps?.length) await admin.from("notifications").insert(ps.map((p: any) => ({ user_id: p.id, text, link })));
@@ -91,7 +135,7 @@ export async function processB4Event(admin: any, eventId: string) {
     else { const { data: no } = await admin.from("pk_orders").insert({ creator_id: creator.id, pk_id: kit.id, status: "Preparando", payment: "Pago", value: info.value, order_code: info.order }).select("id").single(); orderId = no?.id; }
     await admin.from("shipments").insert({ creator_id: creator.id, brand_id: kit.brand_id, pk_order_id: orderId, product: kit.name, qty: 1, reason: "Compra de press kit confirmada", status: "Preparando", approved_at: new Date().toISOString() });
     await notify(`✅ Compra confirmada! Seu press kit ${kit.name} está sendo preparado.`, "/clube/presskits");
-    await notifyTeam(`💰 Press kit vendido: ${who} comprou ${kit.name}`, "/presskits?tab=pedidos", "presskits");
+    await notifyTeam(`💰 Press kit vendido: ${who} comprou ${kit.name}${money}`, "/presskits?tab=pedidos", "presskits");
     if (kit.brand_id) { const { data: bp } = await admin.from("profiles").select("id").eq("brand_id", kit.brand_id).eq("role", "marca").eq("status", "ativo"); if (bp?.length) await admin.from("notifications").insert(bp.map((p: any) => ({ user_id: p.id, text: `Nova compra de Press Kit: ${kit.name}. Pagamento confirmado; o envio está sendo preparado.`, link: "/portal/envios" }))); }
     return finish("Processado", `Press kit ${kit.name} pago por ${who}.`, { creator_id: creator.id });
   }
@@ -99,7 +143,7 @@ export async function processB4Event(admin: any, eventId: string) {
   if (info.refunded) {
     await admin.from("method_purchases").update({ status: "Reembolsado" }).eq("creator_id", creator.id).eq("product_id", product.id).eq("status", "Pago");
     await notifyTeam(`↩️ Reembolso/cancelamento: ${who} · ${product.title}`, `/club/admin/${product.id}?tab=alunas`, "metodo_adm");
-    return finish("Processado", `Reembolso/cancelamento: acesso a ${product.title} retirado.`, { creator_id: creator.id, product_id: product.id });
+    return finish("Processado", `Reembolso/cancelamento: acesso a ${product.title} retirado e venda cancelada.`, { creator_id: creator.id, product_id: product.id });
   }
   if (!info.approved) return finish("Ignorado", `Aviso sem pagamento aprovado (${info.statuses.join(", ") || "sem status"}). O acesso é liberado no aviso de pagamento aprovado.`, { creator_id: creator.id, product_id: product.id });
 
@@ -109,8 +153,7 @@ export async function processB4Event(admin: any, eventId: string) {
   const row = { product_id: product.id, status: "Pago", source: "B4YOU (webhook)", order_code: info.order, value: info.value, email: info.email, paid_at: new Date().toISOString() };
   if (pend?.length) await admin.from("method_purchases").update(row).eq("id", pend[0].id);
   else await admin.from("method_purchases").insert({ creator_id: creator.id, ...row });
-  if (info.value) await admin.from("sales").insert({ creator_id: creator.id, product: product.title, sold: info.value, creator_pct: 0, conecta_pct: 100, rule: "Produto", status: "Aprovada", source: "B4YOU", external_id: info.order ? `b4-${info.order}` : null }).then(() => null, () => null);
   await notify(`🎉 Pagamento confirmado! Seu acesso a ${product.title} foi liberado.`, `/club/${product.slug}`);
-  await notifyTeam(`💰 Nova venda: ${who} comprou ${product.title}${info.value ? ` (R$ ${Number(info.value).toLocaleString("pt-BR")})` : ""}`, `/club/admin/${product.id}?tab=alunas`, "metodo_adm");
+  await notifyTeam(`💰 Nova venda: ${who} comprou ${product.title}${money}`, `/club/admin/${product.id}?tab=alunas`, "metodo_adm");
   return finish("Processado", `Acesso a ${product.title} liberado automaticamente para ${who}.`, { creator_id: creator.id, product_id: product.id });
 }

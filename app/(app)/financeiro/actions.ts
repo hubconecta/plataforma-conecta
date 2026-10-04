@@ -80,7 +80,7 @@ export async function saveRemSettings(fd: FormData) {
 
 export async function saveSale(fd: FormData) {
   const { supabase, profile } = await requireModule("fin");
-  const row: any = { creator_id: orNull(g(fd, "creator_id")), campaign_id: orNull(g(fd, "campaign_id")), brand_id: orNull(g(fd, "brand_id")), product: g(fd, "product"), sold: num(fd, "sold") || 0, creator_pct: num(fd, "creator_pct") || 0, conecta_pct: num(fd, "conecta_pct") || 0, rule: g(fd, "rule") || "Produto", status: g(fd, "status") || "Pendente", sale_date: orNull(g(fd, "sale_date")) || today(), source: "Manual" };
+  const row: any = { creator_id: orNull(g(fd, "creator_id")), campaign_id: orNull(g(fd, "campaign_id")), brand_id: orNull(g(fd, "brand_id")), product: g(fd, "product"), sold: num(fd, "sold") || 0, creator_pct: num(fd, "creator_pct") || 0, conecta_pct: num(fd, "conecta_pct") || 0, rule: g(fd, "rule") || "Produto", kind: g(fd, "kind") || "Outro", status: g(fd, "status") || "Pendente", sale_date: orNull(g(fd, "sale_date")) || today(), source: "Manual" };
   if (!row.product || !row.sold) back(P(fd), "Informe o produto e o valor vendido.", false);
   if (row.campaign_id && !row.brand_id) { const { data: c } = await supabase.from("campaigns").select("brand_id").eq("id", row.campaign_id).single(); row.brand_id = c?.brand_id || null; }
   const { error } = await supabase.from("sales").insert(row);
@@ -96,4 +96,14 @@ export async function setSaleStatus(fd: FormData) {
   for (const s of ss || []) if (s.creator_id && ["Liberada", "Paga"].includes(status)) await notifyProfiles(supabase, { creator_id: s.creator_id }, `${status === "Paga" ? "💰 Comissão paga" : "Comissão liberada"}: ${brlFull((s.sold * s.creator_pct) / 100)} · ${s.product}`, "/clube/comissoes");
   await logAction(supabase, profile, `marcou ${ids.length} venda(s) como ${status}`, "Vendas", null, true);
   back(P(fd), `${ids.length} venda(s): ${status}.`);
+}
+
+export async function saveBrandProduct(fd: FormData) {
+  const { supabase, profile } = await requireModule("fin");
+  const row = { brand_id: g(fd, "brand_id"), name: g(fd, "name"), b4you_product: orNull(g(fd, "b4you_product")), price: num(fd, "price"), creator_pct: num(fd, "creator_pct") || 0, conecta_pct: num(fd, "conecta_pct") || 0 };
+  if (!row.brand_id || !row.name) back(P(fd), "Escolha a marca e informe o produto.", false);
+  const { error } = await supabase.from("brand_products").insert(row);
+  if (error) back(P(fd), error.message, false);
+  await logAction(supabase, profile, `cadastrou o produto de marca ${row.name} (Conecta ${row.conecta_pct}%)`, "Vendas", null, true);
+  back(P(fd), "Produto da marca cadastrado. As vendas dele na B4YOU entram sozinhas no financeiro.");
 }

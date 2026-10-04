@@ -4,8 +4,9 @@ import { PageH, Pill, Empty, Notice, Kpi, Person, fd, brl } from "@/components/u
 import ConfirmDelete from "@/components/ConfirmDelete";
 import { FIN_CATS, SALE_STATUS } from "@/lib/consts";
 import { reminderText, kindFor, daysTo } from "@/lib/fin";
-import { saveEntry, payEntry, cancelEntry, generateMonthly, sendReminder, saveRemSettings, saveSale, setSaleStatus } from "./actions";
+import { saveEntry, payEntry, cancelEntry, generateMonthly, sendReminder, saveRemSettings, saveSale, setSaleStatus, saveBrandProduct } from "./actions";
 
+const KINDS = ["Club Criadora", "Comissão de marca", "Press kit", "Outro"];
 const TABS: [string, string][] = [["visao", "Visão geral"], ["receber", "Contas a receber"], ["pagar", "Contas a pagar"], ["marcas", "Por marca"], ["cobrancas", "Cobranças e lembretes"], ["vendas", "Vendas e comissões"]];
 
 export default async function Financeiro({ searchParams }: { searchParams: Promise<any> }) {
@@ -24,6 +25,7 @@ export default async function Financeiro({ searchParams }: { searchParams: Promi
     tab === "vendas" ? supabase.from("creators").select("id,name").order("name") : Promise.resolve({ data: [] as any[] }),
     tab === "vendas" ? supabase.from("campaigns").select("id,name").order("created_at", { ascending: false }) : Promise.resolve({ data: [] as any[] }),
   ]);
+  const { data: bprods } = tab === "vendas" ? await supabase.from("brand_products").select("*, brands(name)").order("created_at", { ascending: false }) : { data: [] as any[] };
   const all = (entries || []).filter((e: any) => e.status !== "Cancelado");
   const disp = (e: any) => e.status === "Pago" ? "Pago" : e.due < today ? "Vencido" : "Em aberto";
   const sum = (arr: any[]) => arr.reduce((s, e) => s + (Number(e.value) || 0), 0);
@@ -36,6 +38,22 @@ export default async function Financeiro({ searchParams }: { searchParams: Promi
   const maxF = Math.max(1, ...flow.flatMap((f) => [f.in, f.out]));
   const salesAll = (sales || []).filter((s: any) => s.status !== "Cancelada");
   const comm = (s: any) => (Number(s.sold) * Number(s.creator_pct)) / 100, ccomm = (s: any) => (Number(s.sold) * Number(s.conecta_pct)) / 100;
+  // Receita por origem (mês escolhido)
+  const mes = /^\d{4}-\d{2}$/.test(q.mes || "") ? q.mes : today.slice(0, 7);
+  const isFixo = (e: any) => e.kind === "receber" && (e.category === "Gestão" || String(e.ref || "").startsWith("Mensalidade"));
+  const streams = (m: string) => {
+    const sm = salesAll.filter((x: any) => String(x.sale_date || "").startsWith(m));
+    const fixoPago = sum(rec.filter((e: any) => isFixo(e) && e.status === "Pago" && String(e.paid_at || "").startsWith(m)));
+    const fixoPrev = sum(rec.filter((e: any) => isFixo(e) && String(e.due || "").startsWith(m)));
+    const club = sm.filter((x: any) => x.kind === "Club Criadora").reduce((t: number, x: any) => t + Number(x.sold), 0);
+    const marcaGmv = sm.filter((x: any) => x.kind === "Comissão de marca").reduce((t: number, x: any) => t + Number(x.sold), 0);
+    const marcaCom = sm.filter((x: any) => x.kind === "Comissão de marca").reduce((t: number, x: any) => t + ccomm(x), 0);
+    const pk = sm.filter((x: any) => x.kind === "Press kit").reduce((t: number, x: any) => t + Number(x.sold), 0);
+    const outros = sm.filter((x: any) => x.kind === "Outro" || !x.kind).reduce((t: number, x: any) => t + Number(x.sold), 0) + sum(rec.filter((e: any) => !isFixo(e) && e.status === "Pago" && String(e.paid_at || "").startsWith(m)));
+    return { fixoPago, fixoPrev, club, marcaGmv, marcaCom, pk, outros, total: fixoPago + club + marcaCom + pk + outros };
+  };
+  const S0 = streams(mes);
+  const monthsBack = Array.from({ length: 6 }).map((_, i) => { const d = new Date(mes + "-15T12:00:00"); d.setMonth(d.getMonth() - 5 + i); return d.toISOString().slice(0, 7); });
 
   const EntryForm = ({ e, kind }: { e?: any; kind: string }) => (
     <form action={saveEntry} className="form-grid">{e ? <input type="hidden" name="id" value={e.id} /> : null}<input type="hidden" name="kind" value={kind} /><input type="hidden" name="back" value={here} />
@@ -62,6 +80,10 @@ export default async function Financeiro({ searchParams }: { searchParams: Promi
       <div className="tabs">{TABS.map(([k, l]) => <Link key={k} className={`tab ${tab === k ? "on" : ""}`} href={`/financeiro?tab=${k}`}>{l}</Link>)}</div>
 
       {tab === "visao" ? <>
+        <div className="card"><div className="card-h" style={{ flexWrap: "wrap", gap: 8 }}><div><h2>De onde vem o dinheiro</h2><span className="small muted">vendas da B4YOU entram sozinhas · mês de referência</span></div><form method="get" className="inline-form"><input type="hidden" name="tab" value="visao" /><input className="input" type="month" name="mes" defaultValue={mes} style={{ maxWidth: 170 }} /><button className="btn btn-ghost btn-sm">Ver</button></form></div>
+          <div className="kpis"><Kpi k="Receita do mês" v={brl(S0.total)} hero /><Kpi k="Fixo mensal (recebido)" v={<>{brl(S0.fixoPago)}<span className="small muted" style={{ display: "block", fontSize: 12 }}>previsto {brl(S0.fixoPrev)}</span></>} /><Kpi k="Produtos da Leandra · Club Criadora" v={brl(S0.club)} /><Kpi k="Comissões das marcas" v={<>{brl(S0.marcaCom)}<span className="small muted" style={{ display: "block", fontSize: 12 }}>sobre {brl(S0.marcaGmv)} vendidos</span></>} /><Kpi k="Press kits" v={brl(S0.pk)} /><Kpi k="Outras receitas" v={brl(S0.outros)} /></div>
+          <div className="table-wrap" style={{ marginTop: 12 }}><table><thead><tr><th>Mês</th><th className="r">Fixo mensal</th><th className="r">Club Criadora</th><th className="r">Comissões de marcas</th><th className="r">Press kits</th><th className="r">Outras</th><th className="r">Total</th></tr></thead><tbody>{monthsBack.map((m) => { const x = streams(m); return <tr key={m}><td><b>{m.split("-").reverse().join("/")}</b></td><td className="r num">{brl(x.fixoPago)}</td><td className="r num">{brl(x.club)}</td><td className="r num">{brl(x.marcaCom)}</td><td className="r num">{brl(x.pk)}</td><td className="r num">{brl(x.outros)}</td><td className="r num"><b>{brl(x.total)}</b></td></tr>; })}</tbody></table></div>
+        </div>
         <div className="kpis"><Kpi k="A receber" v={brl(sum(openRec))} hero /><Kpi k="Inadimplência" v={brl(sum(openRec.filter((e: any) => e.due < today)))} /><Kpi k="A pagar" v={brl(sum(openPag))} /><Kpi k="Saldo projetado" v={brl(sum(openRec) - sum(openPag))} /><Kpi k="Recebido em 30 dias" v={brl(sum(rec.filter((e: any) => e.status === "Pago" && (e.paid_at || "") >= d30)))} /><Kpi k="Pago em 30 dias" v={brl(sum(pag.filter((e: any) => e.status === "Pago" && (e.paid_at || "") >= d30)))} /><Kpi k="Comissão Conecta (vendas)" v={brl(salesAll.reduce((s: number, x: any) => s + ccomm(x), 0))} /></div>
         <div className="grid g-main">
           <div className="card"><div className="card-h"><h2>Fluxo de caixa (6 meses)</h2><span className="small muted">entradas x saídas pagas</span></div><div className="hbars">{flow.map((f) => <div key={f.m} style={{ display: "flex", flexDirection: "column", gap: 4 }}><span className="small"><b>{f.m.split("-").reverse().join("/")}</b> · entrou {brl(f.in)} · saiu {brl(f.out)}</span><div className="bar"><i style={{ width: `${(f.in / maxF) * 100}%` }} /></div><div className="bar"><i style={{ width: `${(f.out / maxF) * 100}%`, background: "var(--ink)" }} /></div></div>)}</div></div>
@@ -104,17 +126,31 @@ export default async function Financeiro({ searchParams }: { searchParams: Promi
 
       {tab === "vendas" ? <>
         <div className="kpis"><Kpi k="GMV" v={brl(salesAll.reduce((s: number, x: any) => s + Number(x.sold), 0))} hero /><Kpi k="Vendas" v={salesAll.length} /><Kpi k="Ticket médio" v={brl(salesAll.length ? salesAll.reduce((s: number, x: any) => s + Number(x.sold), 0) / salesAll.length : 0)} /><Kpi k="Comissão creators" v={brl(salesAll.reduce((s: number, x: any) => s + comm(x), 0))} /><Kpi k="Comissão Conecta" v={brl(salesAll.reduce((s: number, x: any) => s + ccomm(x), 0))} /><Kpi k="A pagar às creators (liberadas)" v={brl(salesAll.filter((x: any) => x.status === "Liberada").reduce((s: number, x: any) => s + comm(x), 0))} /></div>
+        <div className="chips">{[["", "Todas"], ...KINDS.map((k) => [k, k])].map(([k, l]) => <Link key={l} className={`chip ${(q.k || "") === k ? "on" : ""}`} href={`/financeiro?tab=vendas${k ? `&k=${encodeURIComponent(k)}` : ""}`}>{l}<span className="c">{salesAll.filter((x: any) => !k || x.kind === k).length}</span></Link>)}</div>
+        <details className="mod"><summary>Produtos das marcas na B4YOU (para calcular a comissão da Conecta)</summary><div style={{ paddingBottom: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+          <p className="small muted">Cadastre aqui os produtos das marcas que são vendidos pela B4YOU com o ID do produto lá. Cada venda aprovada entra sozinha em “Comissão de marca”, com a comissão da Conecta e da creator afiliada.</p>
+          {bprods?.length ? <div className="table-wrap"><table><thead><tr><th>Produto</th><th>Marca</th><th>ID B4YOU</th><th className="r">Preço</th><th className="r">Creator</th><th className="r">Conecta</th><th>Status</th></tr></thead><tbody>{bprods.map((b: any) => <tr key={b.id}><td><b>{b.name}</b></td><td>{b.brands?.name}</td><td className="small">{b.b4you_product || "—"}</td><td className="r num">{b.price ? brl(b.price) : "—"}</td><td className="r num">{Number(b.creator_pct)}%</td><td className="r num">{Number(b.conecta_pct)}%</td><td><Pill s={b.status} /></td></tr>)}</tbody></table></div> : null}
+          <form action={saveBrandProduct} className="form-grid"><input type="hidden" name="back" value={here} />
+            <div className="field"><label>Marca</label><select className="input" name="brand_id" required><option value="">Escolha</option>{(brands || []).map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
+            <div className="field"><label>Produto</label><input className="input" name="name" required /></div>
+            <div className="field"><label>ID ou nome do produto na B4YOU</label><input className="input" name="b4you_product" required /></div>
+            <div className="field"><label>Preço (R$)</label><input className="input" type="number" step="0.01" name="price" /></div>
+            <div className="field"><label>Comissão da creator (%)</label><input className="input" type="number" step="0.01" name="creator_pct" /></div>
+            <div className="field"><label>Comissão da Conecta (%)</label><input className="input" type="number" step="0.01" name="conecta_pct" required /></div>
+            <div><button className="btn btn-primary btn-sm">Cadastrar produto da marca</button></div></form>
+        </div></details>
         <details className="mod"><summary>+ Registrar venda</summary><form action={saveSale} className="form-grid" style={{ paddingBottom: 14 }}><input type="hidden" name="back" value={here} />
           <div className="field"><label>Produto</label><input className="input" name="product" required /></div><div className="field"><label>Valor vendido (R$)</label><input className="input" type="number" step="0.01" name="sold" required /></div>
           <div className="field"><label>Creator</label><select className="input" name="creator_id"><option value="">—</option>{(creators || []).map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
           <div className="field"><label>Marca</label><select className="input" name="brand_id"><option value="">Conecta (produto próprio)</option>{(brands || []).map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
           <div className="field"><label>Campanha</label><select className="input" name="campaign_id"><option value="">—</option>{(camps || []).map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
           <div className="field"><label>Comissão da creator (%)</label><input className="input" type="number" step="0.01" name="creator_pct" /></div><div className="field"><label>Comissão da Conecta (%)</label><input className="input" type="number" step="0.01" name="conecta_pct" /></div>
+          <div className="field"><label>Origem</label><select className="input" name="kind">{KINDS.map((k) => <option key={k}>{k}</option>)}</select></div>
           <div className="field"><label>Regra</label><select className="input" name="rule">{["Contrato", "Campanha", "Produto", "Marca"].map((r) => <option key={r}>{r}</option>)}</select></div>
           <div className="field"><label>Status</label><select className="input" name="status">{SALE_STATUS.map((s) => <option key={s}>{s}</option>)}</select></div><div className="field"><label>Data</label><input className="input" type="date" name="sale_date" defaultValue={today} /></div>
           <div><button className="btn btn-primary btn-sm">Registrar</button></div></form></details>
-        <div className="card"><div className="card-h"><h2>Comissões por venda</h2><span className="small muted">precedência: contrato &gt; campanha &gt; produto &gt; marca</span></div>{salesAll.length ? <form action={setSaleStatus}><input type="hidden" name="back" value={here} /><div className="table-wrap"><table><thead><tr><th></th><th>Data</th><th>Produto</th><th>Creator</th><th>Marca</th><th className="r">Vendido</th><th className="r">Creator</th><th className="r">Conecta</th><th>Regra</th><th>Status</th></tr></thead><tbody>
-          {salesAll.map((s: any) => <tr key={s.id}><td><input type="checkbox" name="id" value={s.id} aria-label="Selecionar venda" /></td><td className="num small">{fd(s.sale_date)}</td><td><b>{s.product}</b>{s.campaigns?.name ? <div className="small muted">{s.campaigns.name}</div> : null}</td><td>{s.creators?.name || "—"}</td><td>{s.brands?.name || "Conecta"}</td><td className="r num">{brl(s.sold)}</td><td className="r num small">{brl(comm(s))}<div className="muted">{Number(s.creator_pct)}%</div></td><td className="r num small">{brl(ccomm(s))}<div className="muted">{Number(s.conecta_pct)}%</div></td><td className="small">{s.rule}</td><td><Pill s={s.status} /></td></tr>)}
+        <div className="card"><div className="card-h"><h2>Comissões por venda</h2><span className="small muted">precedência: contrato &gt; campanha &gt; produto &gt; marca</span></div>{salesAll.length ? <form action={setSaleStatus}><input type="hidden" name="back" value={here} /><div className="table-wrap"><table><thead><tr><th></th><th>Data</th><th>Origem</th><th>Produto</th><th>Creator</th><th>Marca</th><th className="r">Vendido</th><th className="r">Creator</th><th className="r">Conecta</th><th>Regra</th><th>Status</th></tr></thead><tbody>
+          {salesAll.filter((x: any) => !q.k || x.kind === q.k).map((s: any) => <tr key={s.id}><td><input type="checkbox" name="id" value={s.id} aria-label="Selecionar venda" /></td><td className="num small">{fd(s.sale_date)}</td><td className="small"><Pill s={s.kind || "Outro"} />{s.source === "B4YOU" ? <div className="muted">B4YOU{s.buyer_email ? ` · ${s.buyer_email}` : ""}</div> : <div className="muted">{s.source}</div>}</td><td><b>{s.product}</b>{s.campaigns?.name ? <div className="small muted">{s.campaigns.name}</div> : null}</td><td>{s.creators?.name || "—"}</td><td>{s.brands?.name || "Conecta"}</td><td className="r num">{brl(s.sold)}</td><td className="r num small">{brl(comm(s))}<div className="muted">{Number(s.creator_pct)}%</div></td><td className="r num small">{brl(ccomm(s))}<div className="muted">{Number(s.conecta_pct)}%</div></td><td className="small">{s.rule}</td><td><Pill s={s.status} /></td></tr>)}
         </tbody></table></div><div className="inline-form" style={{ marginTop: 10 }}><span className="small">Selecionadas:</span><select className="input" name="status" style={{ maxWidth: 180 }}>{SALE_STATUS.map((s) => <option key={s}>{s}</option>)}</select><button className="btn btn-dark btn-sm">Aplicar status</button></div></form> : <Empty icon="coins" title="Nenhuma venda registrada" text="Vendas da B4YOU entram sozinhas pelo webhook; você também pode registrar manualmente." />}</div>
       </> : null}
     </>
