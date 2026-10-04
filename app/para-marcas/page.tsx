@@ -2,6 +2,7 @@ import Link from "next/link";
 import Icon from "@/components/Icon";
 import { createClient } from "@/lib/supabase/server";
 import LeadPublicForm from "./LeadPublicForm";
+import WhatsAppFab from "@/components/WhatsAppFab";
 
 export const metadata = { title: "Para marcas · Conecta" };
 const SOLUTIONS: [string, string, string][] = [["users", "Gestão de influenciadores", "Seleção, contrato, briefing e acompanhamento das creators."], ["megaphone", "Campanhas com creators", "Campanhas de conteúdo e vendas com desafios e metas."], ["link", "Gestão de afiliados", "Programa de afiliadas com cupons, comissões e ranking."], ["film", "Campanhas de UGC", "Conteúdo autêntico para anúncios e redes da marca."], ["sparkle", "Gestão de comunidade", "Clube de creators engajadas com a sua marca."], ["target", "Estratégia de influência", "Planejamento, posicionamento e calendário."], ["chart", "Performance", "Acompanhamento de vendas, cliques e conversão."], ["play", "Campanhas de lançamento", "Lançamentos com prova social e escala."], ["user", "Gestão de creators", "Operação completa do relacionamento com creators."], ["box", "Ações com produtos", "Envio de produtos e logística acompanhada."], ["gift", "Press kits", "Press kits gratuitos ou vendidos para as creators."], ["plus", "Outras soluções", "Projetos sob medida para a sua marca."]];
@@ -19,6 +20,7 @@ export default async function ParaMarcas() {
       <section className="site-sec"><span className="eyebrow">Como funciona</span><h2>Do primeiro contato ao portal da sua marca</h2><div className="card"><ol className="steps">{STEPS.map((x) => <li key={x}>{x}</li>)}</ol></div></section>
       <section className="site-sec"><div className="card"><LeadPublicForm qs={qs} /></div><p className="small muted" style={{ marginTop: 10 }}>Nenhuma conta é criada agora: nosso time comercial entra em contato.</p></section>
       <footer className="site-foot"><div className="logo-crop" style={{ ["--w" as any]: "120px" }}><img src="/logo-conecta.png" alt="Conecta" /></div><Link className="link-btn" style={{ color: "#FF8CC4" }} href="/login">Já sou cliente · Entrar</Link></footer>
+      <WhatsAppFab />
     </div>
   );
 }

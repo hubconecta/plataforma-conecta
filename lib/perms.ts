@@ -24,8 +24,9 @@ export const MODS: Mod[] = [
   { key: "crm", label: "Leads de marcas", icon: "funnel", href: "/leads", roles: ST },
   { key: "relatorios", label: "Relatórios", icon: "chart", href: "/relatorios", roles: [...ST, "marca"] },
   { key: "metodo_adm", label: "Gerenciar Método", icon: "book", href: "/metodo/admin", roles: ST },
-  { key: "fin", label: "Financeiro", icon: "wallet", href: "/em-breve/financeiro", roles: FR, grant: ["equipe"], sens: true, soon: true },
+  { key: "fin", label: "Financeiro", icon: "wallet", href: "/financeiro", roles: FR, grant: ["equipe"], sens: true },
   { key: "notificacoes", label: "Notificações", icon: "bell", href: "/notificacoes", roles: ["ceo", "equipe", "financeiro", "marca", "creator"] },
+  { key: "config", label: "Configurações", icon: "cog", href: "/configuracoes", roles: ["ceo"] },
   { key: "auditoria", label: "Histórico de ações", icon: "shield", href: "/historico", roles: ["ceo"] },
   { key: "marca_home", label: "Dashboard", icon: "grid", href: "/portal", roles: ["marca"] },
   { key: "clube", label: "Início", icon: "home", href: "/clube", roles: ["creator"] },
@@ -35,19 +36,21 @@ export const MODS: Mod[] = [
   { key: "perfil", label: "Meu perfil e endereço", icon: "user", href: "/clube/perfil", roles: ["creator"]},
   { key: "marca_envios", label: "Press kits e envios", icon: "truck", href: "/portal/envios", roles: ["marca"]},
   { key: "metodo", label: "Método Criadora Expert", icon: "play", href: "/metodo", roles: ["creator"] },
+  { key: "comissoes", label: "Comissões e recompensas", icon: "coins", href: "/clube/comissoes", roles: ["creator"] },
+  { key: "fin_marca", label: "Financeiro", icon: "wallet", href: "/portal/financeiro", roles: ["marca"] },
   { key: "meus_desafios", label: "Desafios", icon: "trophy", href: "/clube/desafios", roles: ["creator"] },
 ];
 
 export const MENU: Record<string, [string, string[]][]> = {
-  ceo: [["Visão", ["ceo", "ops"]], ["Pessoas", ["cad_creators", "creators", "marcas", "colaboradoras"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["demandas", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["notificacoes", "auditoria"]]],
+  ceo: [["Visão", ["ceo", "ops"]], ["Pessoas", ["cad_creators", "creators", "marcas", "colaboradoras"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["demandas", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["notificacoes", "auditoria", "config"]]],
   equipe: [["Visão", ["ops"]], ["Pessoas", ["cad_creators", "creators", "marcas"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["demandas", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["notificacoes"]]],
   financeiro: [["Financeiro", ["fin"]], ["Sistema", ["notificacoes"]]],
-  marca: [["Sua marca", ["marca_home", "campanhas", "desafios", "conteudos", "marca_envios", "relatorios"]], ["Ajuda", ["notificacoes"]]],
-  creator: [["Clube", ["clube", "oportunidades", "minhas", "meus_desafios", "cr_presskits"]], ["Educação", ["metodo"]], ["Você", ["perfil", "notificacoes"]]],
+  marca: [["Sua marca", ["marca_home", "campanhas", "desafios", "conteudos", "marca_envios", "relatorios"]], ["Acompanhamento", ["fin_marca"]], ["Ajuda", ["notificacoes"]]],
+  creator: [["Clube", ["clube", "oportunidades", "minhas", "meus_desafios", "cr_presskits"]], ["Ganhos", ["comissoes"]], ["Educação", ["metodo"]], ["Você", ["perfil", "notificacoes"]]],
   pendente: [],
 };
 
-export const HOME: Record<string, string> = { ceo: "/ceo", equipe: "/operacao", financeiro: "/em-breve/financeiro", marca: "/portal", creator: "/clube", pendente: "/sem-acesso" };
+export const HOME: Record<string, string> = { ceo: "/ceo", equipe: "/operacao", financeiro: "/financeiro", marca: "/portal", creator: "/clube", pendente: "/sem-acesso" };
 export const ENV: Record<string, string> = { ceo: "Conecta ADM", equipe: "Conecta ADM", financeiro: "Conecta Financeiro", marca: "Portal da Marca", creator: "Clube Conecta", pendente: "Conecta" };
 export const ROLE_LABEL: Record<string, string> = { ceo: "Super Admin · CEO", equipe: "Equipe Conecta", financeiro: "Financeiro", marca: "Marca", creator: "Creator", pendente: "Sem acesso" };
 const ALWAYS = ["ops", "notificacoes"];

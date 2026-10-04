@@ -47,3 +47,15 @@ Tempo estimado: 30 minutos. Não mande senhas nem chaves por mensagem para ningu
 ## Observação sobre e-mails
 O Supabase gratuito envia poucos e-mails por hora. Para uso real, configure um envio próprio:
 Supabase → **Authentication → Emails → SMTP Settings**, usando o Resend (resend.com). A gente faz isso junto na próxima etapa.
+
+## 6. Módulos completos (Entregas 2 e 3)
+1. No **SQL Editor**, rode também, nesta ordem: `supabase/02_modulos.sql` e `supabase/03_arquivos_integracoes.sql`
+   (se o Supabase mostrar "Potential issues", clique em **Run and enable RLS**).
+2. **Lembretes automáticos de pagamento:** na Vercel, adicione a variável `CRON_SECRET` (Secret) com uma senha longa
+   qualquer e faça Redeploy. A Vercel chama `/api/cron/lembretes` todo dia às 9h (horário de Brasília).
+3. **Método + B4YOU:** em Gerenciar Método → Vendas e integração, cole o link do checkout, informe o ID/nome do
+   produto do Método na B4YOU e clique em Salvar. Copie o endereço do webhook e cadastre na B4YOU
+   (Apps → Webhooks), marcando compra aprovada e reembolso. Faça uma compra de teste e confira em
+   "Eventos recebidos da B4YOU".
+4. **WhatsApp flutuante:** Configurações → número com DDD.
+5. Vídeos longos do Método: use link do Panda Video, YouTube (não listado) ou Vimeo. Upload direto aceita até 50 MB.

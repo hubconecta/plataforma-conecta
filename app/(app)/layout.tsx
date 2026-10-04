@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import AccessLinkBox from "@/components/AccessLinkBox";
+import WhatsAppFab from "@/components/WhatsAppFab";
 import { getSession } from "@/lib/session";
 import { MENU, MODS, can, ENV, ROLE_LABEL } from "@/lib/perms";
 
@@ -23,6 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <div className="main">
         <TopBar env={ENV[profile.role]} items={items} unread={count || 0} />
         <main className="content"><AccessLinkBox />{children}</main>
+        {["marca", "creator"].includes(profile.role) ? <WhatsAppFab /> : null}
       </div>
     </div>
   );
