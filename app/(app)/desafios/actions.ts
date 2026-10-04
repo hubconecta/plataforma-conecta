@@ -185,13 +185,15 @@ export async function joinChallenge(fd: FormData) {
 export async function submitEvidence(fd: FormData) {
   const s = await getSession();
   if (!s.profile?.creator_id) redirect("/login");
-  const id = g(fd, "id"), evidence = g(fd, "evidence"), link = orNull(g(fd, "link"));
+  const id = g(fd, "id"), evidence = g(fd, "evidence");
+  const links = [...new Set(fd.getAll("links").map((x) => String(x).trim()).filter(Boolean))];
+  const link = links[0] || orNull(g(fd, "link"));
   if (!evidence && !link) back("/clube/desafios?tab=ativos", "Conte o que você fez ou cole o link do comprovante.", false);
   const { data: prev } = await s.supabase.from("challenge_submissions").select("id,status").eq("challenge_id", id).eq("creator_id", s.profile.creator_id).maybeSingle();
   if (prev && !["Ajuste necessário", "Reprovado"].includes(prev.status)) back("/clube/desafios?tab=ativos", "Seu comprovante já foi enviado e está com a equipe Conecta.", false);
   const { error } = prev
-    ? await s.supabase.from("challenge_submissions").update({ status: "Enviado", evidence, link, note: null, updated_at: new Date().toISOString() }).eq("id", prev.id)
-    : await s.supabase.from("challenge_submissions").insert({ challenge_id: id, creator_id: s.profile.creator_id, evidence, link });
+    ? await s.supabase.from("challenge_submissions").update({ status: "Enviado", evidence, link, links, note: null, updated_at: new Date().toISOString() }).eq("id", prev.id)
+    : await s.supabase.from("challenge_submissions").insert({ challenge_id: id, creator_id: s.profile.creator_id, evidence, link, links });
   if (error) back("/clube/desafios?tab=ativos", "Não foi possível enviar agora. O desafio pode ter sido encerrado.", false);
   await logAction(s.supabase, s.profile, "enviou comprovante de desafio", "Desafios", id);
   back("/clube/desafios?tab=ativos", "Comprovante enviado! A equipe Conecta vai analisar e você será avisada.");

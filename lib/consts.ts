@@ -27,3 +27,6 @@ export const SALE_STATUS = ["Pendente", "Aprovada", "Liberada", "Paga", "Cancela
 export const MOD_STATUS = ["Rascunho", "Publicado", "Oculto"];
 export const LESSON_STATUS = ["Rascunho", "Publicada", "Oculta"];
 export const LESSON_TYPES = ["Vídeo", "Material", "Exercício"];
+export const NICHES = ["Bem-estar", "Beleza", "Fitness", "Lifestyle", "Moda", "Maternidade", "Casa e decoração", "Gastronomia", "Finanças", "Saúde", "Viagem", "Pets", "Tecnologia", "Infantil", "Moda íntima", "Outro"];
+export const CREATOR_PROFILES = ["Influenciadora", "UGC Creator", "Creator afiliada"];
+export const CAMPAIGN_TYPES = ["Publi (conteúdo pago)", "UGC", "Afiliação / comissão por venda", "Permuta / recebidos", "Press kit", "Embaixadora", "Lançamento", "Desafio de vendas", "Evento presencial"];

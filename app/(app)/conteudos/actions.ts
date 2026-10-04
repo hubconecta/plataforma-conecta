@@ -58,7 +58,9 @@ export async function publishContent(fd: FormData) {
 export async function sendContent(fd: FormData) {
   const s = await getSession();
   if (!s.profile?.creator_id) redirect("/login");
-  const id = g(fd, "id"), link = g(fd, "link");
+  const id = g(fd, "id");
+  const links = [...new Set(fd.getAll("links").map((x) => String(x).trim()).filter(Boolean))];
+  const link = links[0] || g(fd, "link");
   if (!link) back("/clube/minhas", "Cole o link do conteúdo.", false);
   if (id) {
     const { data: c } = await s.supabase.from("contents").select("status,version,history").eq("id", id).single();
@@ -66,13 +68,30 @@ export async function sendContent(fd: FormData) {
     const v = (c.version || 1) + 1;
     const { error } = await s.supabase.from("contents").update({ status: "Enviado", link, version: v, history: [...(c.history || []), H(`Nova versão enviada pela creator (versão ${v})`)] }).eq("id", id);
     if (error) back("/clube/minhas", "Não foi possível enviar.", false);
+    const { data: c0 } = await s.supabase.from("contents").select("campaign_id,platform,type").eq("id", id).single();
+    for (const l of links.slice(1)) await s.supabase.from("contents").insert({ creator_id: s.profile.creator_id, campaign_id: c0?.campaign_id, platform: c0?.platform || "Instagram", type: c0?.type || "Reels", link: l, status: "Enviado", history: [H("Enviado pela creator (versão 1)")] });
   } else {
     const camp = g(fd, "campaign_id");
     const { data: cp } = await s.supabase.from("campaigns").select("status").eq("id", camp).single();
     if (cp?.status !== "Ativa") back("/clube/minhas", "Só dá para enviar conteúdo quando a campanha está ativa.", false);
-    const { error } = await s.supabase.from("contents").insert({ creator_id: s.profile.creator_id, campaign_id: camp, platform: g(fd, "platform") || "Instagram", type: g(fd, "type") || "Reels", link, status: "Enviado", history: [H("Enviado pela creator (versão 1)")] });
+    const { error } = await s.supabase.from("contents").insert((links.length ? links : [link]).map((l) => ({ creator_id: s.profile!.creator_id, campaign_id: camp, platform: g(fd, "platform") || "Instagram", type: g(fd, "type") || "Reels", link: l, status: "Enviado", history: [H("Enviado pela creator (versão 1)")] })));
     if (error) back("/clube/minhas", "Não foi possível enviar: você precisa estar aprovada nesta campanha.", false);
   }
   await logAction(s.supabase, s.profile, "enviou conteúdo de campanha", "Conteúdos", id || null);
-  back("/clube/minhas", "Conteúdo enviado! A equipe Conecta vai analisar.");
+  back("/clube/minhas", links.length > 1 ? `${links.length} conteúdos enviados! A equipe Conecta vai analisar.` : "Conteúdo enviado! A equipe Conecta vai analisar.");
+}
+
+// A equipe registra conteúdos que as creators gravaram (vários links de uma vez)
+export async function registerContents(fd: FormData) {
+  const { supabase, profile } = await requireModule("conteudos");
+  if (profile.role === "marca") back("/conteudos", "Sem permissão.", false);
+  const links = [...new Set(fd.getAll("links").map((x) => String(x).trim()).filter(Boolean))];
+  const creator = g(fd, "creator_id"), camp = orNull(g(fd, "campaign_id")), status = g(fd, "status") || "Aprovado";
+  if (!creator || !links.length) back("/conteudos", "Escolha a creator e cole pelo menos um link.", false);
+  const { error } = await supabase.from("contents").insert(links.map((l) => ({ creator_id: creator, campaign_id: camp, platform: g(fd, "platform") || "Instagram", type: g(fd, "type") || "Reels", link: l, status, published_at: status === "Publicado" ? today() : null, history: [H(`Registrado por ${profile.name} (${status})`)] })));
+  if (error) back("/conteudos", "Não foi possível registrar: " + error.message, false);
+  const { data: c } = await supabase.from("creators").select("name").eq("id", creator).single();
+  await logAction(supabase, profile, `registrou ${links.length} conteúdo(s) de ${c?.name || "creator"}`, "Conteúdos", null);
+  revalidatePath("/conteudos"); revalidatePath("/relatorios");
+  back("/conteudos?s=todos", `${links.length} conteúdo(s) registrados.`);
 }

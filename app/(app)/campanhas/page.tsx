@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireModule } from "@/lib/session";
 import { PageH, Pill, Empty, Notice, fd, brl, Kpi } from "@/components/ui";
-import { RESULT_KEYS as RES } from "@/lib/consts";
+import { RESULT_KEYS as RES, NICHES, CAMPAIGN_TYPES, CREATOR_PROFILES } from "@/lib/consts";
 import { saveCampaign, saveResults, proposeCampaign, reviewCampaign, deleteCampaign } from "../actions";
 import ConfirmDelete from "@/components/ConfirmDelete";
 
@@ -16,6 +16,7 @@ export default async function Campanhas({ searchParams }: { searchParams: Promis
   const all = camps || [];
   const f = q.s && STS.includes(q.s) ? q.s : "";
   const shown = f ? all.filter((c: any) => c.status === f) : all;
+  const Checks = ({ n, l, opts, sel }: { n: string; l: string; opts: string[]; sel?: string[] }) => <div className="field full"><label>{l}</label><div className="perm-grid">{opts.map((o) => <label key={o} className="perm"><input type="checkbox" name={n} value={o} defaultChecked={(sel || []).includes(o)} />{o}</label>)}</div></div>;
   const T = ({ n, l, c }: { n: string; l: string; c?: any }) => <div className="field full"><label>{l}</label><textarea className="input" name={n} defaultValue={c?.[n] || ""} /></div>;
   const Common = ({ c }: { c?: any }) => (<>
     <div className="field"><label>Nome</label><input className="input" name="name" required defaultValue={c?.name || ""} /></div>
@@ -23,7 +24,10 @@ export default async function Campanhas({ searchParams }: { searchParams: Promis
     <div className="field"><label>Início</label><input className="input" type="date" name="start_date" defaultValue={c?.start_date || ""} /></div>
     <div className="field"><label>Fim</label><input className="input" type="date" name="end_date" defaultValue={c?.end_date || ""} /></div>
     <div className="field"><label>Vagas (creators)</label><input className="input" type="number" name="slots" defaultValue={c?.slots || 10} /></div>
-    <div className="field"><label>Nicho</label><input className="input" name="niche" defaultValue={c?.niche || ""} /></div>
+    <div className="field"><label>Conteúdos por creator</label><input className="input" type="number" min={1} name="contents_per_creator" defaultValue={c?.contents_per_creator || ""} placeholder="Ex.: 3" /></div>
+    <Checks n="campaign_types" l="Tipo de campanha" opts={CAMPAIGN_TYPES} sel={c?.campaign_types} />
+    <Checks n="profiles_wanted" l="Perfil de creator procurado" opts={CREATOR_PROFILES} sel={c?.profiles_wanted} />
+    <Checks n="niches" l="Nichos" opts={NICHES} sel={c?.niches?.length ? c.niches : c?.niche ? String(c.niche).split(", ") : []} />
     <div className="field full"><label>Objetivo</label><input className="input" name="objective" defaultValue={c?.objective || ""} /></div>
     <T n="description" l="Descrição" c={c} /><T n="briefing" l="Briefing" c={c} /><T n="requirements" l="Requisitos das creators" c={c} /><T n="deliverables" l="Entregáveis" c={c} />
     <label className="check full"><input type="checkbox" name="requires_shipping" defaultChecked={!!c?.requires_shipping} /> Esta campanha envolve envio de produto</label>
@@ -62,7 +66,7 @@ export default async function Campanhas({ searchParams }: { searchParams: Promis
       {all.length ? <div className="chips"><Link className={`chip ${!f ? "on" : ""}`} href="/campanhas">Todas<span className="c">{all.length}</span></Link>{STS.filter((s) => all.some((c: any) => c.status === s)).map((s) => <Link key={s} className={`chip ${f === s ? "on" : ""}`} href={`/campanhas?s=${encodeURIComponent(s)}`}>{s}<span className="c">{all.filter((c: any) => c.status === s).length}</span></Link>)}</div> : null}
       {shown.length ? shown.map((c: any) => (
         <details className="mod" key={c.id} open={!isBrand && c.status === "Em aprovação" && pend === 1}>
-          <summary><span style={{ flex: 1, minWidth: 0 }}>{c.name}<br /><span className="small muted" style={{ fontWeight: 500 }}>{c.brands?.name} · {fd(c.start_date)} – {fd(c.end_date)}</span></span><Pill s={c.status} /></summary>
+          <summary><span style={{ flex: 1, minWidth: 0 }}>{c.name}<br /><span className="small muted" style={{ fontWeight: 500 }}>{c.brands?.name} · {fd(c.start_date)} – {fd(c.end_date)}</span>{[...(c.campaign_types || []), ...(c.profiles_wanted || [])].length ? <span style={{ display: "block", marginTop: 4 }}>{[...(c.campaign_types || []), ...(c.profiles_wanted || [])].map((t: string) => <span key={t} className="tag">{t}</span>)}</span> : null}</span><Pill s={c.status} /></summary>
           <div style={{ paddingBottom: 16, display: "flex", flexDirection: "column", gap: 14 }}>
             {c.review_note && ["Ajuste solicitado", "Recusada"].includes(c.status) ? <div className="notice info">Retorno da Conecta: {c.review_note}</div> : null}
             {["Em aprovação", "Ajuste solicitado", "Recusada"].includes(c.status) ? <dl className="dl">{[["Produto", c.product], ["Objetivo", c.objective], ["Vagas", c.slots], ["Verba prevista", c.budget ? brl(c.budget) : null], ["Envio de produto", c.requires_shipping ? "Sim" : "Não"], ["Descrição", c.description], ["Briefing", c.briefing], ["Requisitos", c.requirements], ["Entregáveis", c.deliverables]].map(([k, v]) => v ? <div key={k as string}><dt>{k}</dt><dd style={{ whiteSpace: "pre-wrap" }}>{String(v)}</dd></div> : null)}</dl>

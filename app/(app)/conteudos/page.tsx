@@ -2,7 +2,9 @@ import Link from "next/link";
 import { requireModule } from "@/lib/session";
 import { PageH, Pill, Empty, Notice, Person, fd } from "@/components/ui";
 import { CONTENT_STATUS } from "@/lib/consts";
-import { approveContent, reviewContent, adjustContent, publishContent } from "./actions";
+import { approveContent, reviewContent, adjustContent, publishContent, registerContents } from "./actions";
+import MultiLinks from "@/components/MultiLinks";
+import { PLATFORMS, CONTENT_TYPES } from "@/lib/consts";
 
 export default async function Conteudos({ searchParams }: { searchParams: Promise<any> }) {
   const q = await searchParams;
@@ -10,6 +12,7 @@ export default async function Conteudos({ searchParams }: { searchParams: Promis
   const isBrand = profile.role === "marca";
   const { data } = await supabase.from("contents").select("*, creators(name,instagram), campaigns(name, brands(name))").order("created_at", { ascending: false });
   const all = data || [];
+  const [{ data: crs }, { data: cps }] = isBrand ? [{ data: [] as any[] }, { data: [] as any[] }] : await Promise.all([supabase.from("creators").select("id,name").order("name"), supabase.from("campaigns").select("id,name").not("status", "in", "(Em aprovação,Ajuste solicitado,Recusada)").order("created_at", { ascending: false })]);
   const f = CONTENT_STATUS.includes(q.s) ? q.s : q.s === "todos" ? "todos" : isBrand ? "todos" : "abertos";
   const shown = all.filter((c: any) => f === "todos" ? true : f === "abertos" ? ["Enviado", "Em análise"].includes(c.status) : c.status === f);
   const here = `/conteudos?s=${encodeURIComponent(f)}`;
@@ -18,6 +21,13 @@ export default async function Conteudos({ searchParams }: { searchParams: Promis
     <>
       <PageH eyebrow={isBrand ? "Sua marca" : "Operação"} title={isBrand ? "Conteúdos" : "Central de conteúdos"} sub={isBrand ? "Conteúdos das creators nas campanhas da sua marca." : `${all.filter((c: any) => ["Enviado", "Em análise"].includes(c.status)).length} aguardando aprovação`} />
       <Notice q={q} />
+      {isBrand ? null : <details className="mod"><summary>+ Registrar conteúdos de uma creator (vários links)</summary><form action={registerContents} className="form-grid" style={{ paddingBottom: 14 }}>
+        <div className="field"><label>Creator</label><select className="input" name="creator_id" required><option value="">Escolha</option>{(crs || []).map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+        <div className="field"><label>Campanha</label><select className="input" name="campaign_id"><option value="">—</option>{(cps || []).map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+        <div className="field"><label>Plataforma</label><select className="input" name="platform">{PLATFORMS.map((p) => <option key={p}>{p}</option>)}</select></div>
+        <div className="field"><label>Formato</label><select className="input" name="type">{CONTENT_TYPES.map((p) => <option key={p}>{p}</option>)}</select></div>
+        <div className="field"><label>Status</label><select className="input" name="status">{["Aprovado", "Publicado", "Enviado"].map((p) => <option key={p}>{p}</option>)}</select></div>
+        <MultiLinks required /><div><button className="btn btn-primary btn-sm">Registrar conteúdos</button></div></form></details>}
       <div className="chips">{(isBrand ? [] : [["abertos", "Aguardando"]]).concat([["todos", "Todos"]], CONTENT_STATUS.filter((s) => all.some((c: any) => c.status === s)).map((s) => [s, s])).map(([k, l]) => <Link key={k} className={`chip ${f === k ? "on" : ""}`} href={`/conteudos?s=${encodeURIComponent(k)}`}>{l}</Link>)}</div>
       <div className="card">{shown.length ? <div className="table-wrap"><table><thead><tr><th>Creator</th><th>Campanha</th><th>Plataforma · tipo</th><th>Data</th><th>Status</th><th className="r">Métricas</th><th></th></tr></thead><tbody>
         {shown.map((c: any) => <tr key={c.id}>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireModule } from "@/lib/session";
 import { PageH, Pill, Empty, Notice, fd } from "@/components/ui";
 import { joinChallenge, submitEvidence } from "../../desafios/actions";
+import MultiLinks from "@/components/MultiLinks";
 
 export default async function MeusDesafios({ searchParams }: { searchParams: Promise<any> }) {
   const q = await searchParams;
@@ -10,7 +11,7 @@ export default async function MeusDesafios({ searchParams }: { searchParams: Pro
   const [{ data: chs }, { data: parts }, { data: subs }] = await Promise.all([
     supabase.from("challenges").select("*, brands(name), campaigns(name)").in("status", ["Ativo", "Encerrado"]).order("due_date", { ascending: true }),
     supabase.from("challenge_participants").select("challenge_id, progress").eq("creator_id", me),
-    supabase.from("challenge_submissions").select("challenge_id, status, note, evidence, link").eq("creator_id", me),
+    supabase.from("challenge_submissions").select("challenge_id, status, note, evidence, link, links").eq("creator_id", me),
   ]);
   const P = new Map((parts || []).map((p: any) => [p.challenge_id, p.progress]));
   const SB = new Map((subs || []).map((s: any) => [s.challenge_id, s]));
@@ -43,7 +44,7 @@ export default async function MeusDesafios({ searchParams }: { searchParams: Pro
             {prog === undefined && c.status === "Ativo" ? <form action={joinChallenge}><input type="hidden" name="id" value={c.id} /><button className="btn btn-primary btn-block">PARTICIPAR</button></form> : null}
             {canSend ? <details className="mod"><summary>{sub ? "Enviar comprovante de novo" : "ENVIAR COMPROVANTE"}</summary><form action={submitEvidence} style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 14 }}><input type="hidden" name="id" value={c.id} />
               <div className="field"><label>O que você fez?</label><textarea className="input" name="evidence" defaultValue={sub?.evidence || ""} /></div>
-              <div className="field"><label>Link do post, print ou vídeo (Drive, Instagram, TikTok…)</label><input className="input" name="link" type="url" defaultValue={sub?.link || ""} placeholder="https://" /></div>
+              <MultiLinks label="Links dos posts, prints ou vídeos (Drive, Instagram, TikTok…)" initial={sub?.links?.length ? sub.links : sub?.link ? [sub.link] : []} />
               <button className="btn btn-primary btn-sm">Enviar comprovante</button></form></details> : null}
           </div></div>);
       })}</div> : <Empty icon="trophy" title={tab[0] === "disponiveis" ? "Nenhum desafio disponível agora" : tab[0] === "ativos" ? "Você não está participando de nenhum desafio" : "Nenhum desafio concluído ainda"} text="Quando a Conecta lançar um desafio novo, você recebe uma notificação." />}

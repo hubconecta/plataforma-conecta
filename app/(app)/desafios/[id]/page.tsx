@@ -70,7 +70,7 @@ export default async function Desafio({ params, searchParams }: { params: Promis
         <div className="li" key={s.id} style={{ alignItems: "flex-start", flexWrap: "wrap" }}>
           <div className="grow"><Person name={s.creators?.name} sub={`${s.creators?.instagram || ""} · enviado ${fd(s.updated_at?.slice(0, 10))}`} />
             {s.evidence ? <p style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>{s.evidence}</p> : null}
-            {s.link ? <p className="small"><a href={s.link} target="_blank" rel="noopener noreferrer">Abrir comprovante ↗</a></p> : null}
+            {(s.links?.length ? s.links : s.link ? [s.link] : []).map((l: string, i: number) => <p key={i} className="small"><a href={l} target="_blank" rel="noopener noreferrer">Abrir comprovante {i + 1} ↗</a></p>)}
             {s.note ? <p className="small muted">Retorno: {s.note}</p> : null}</div>
           <Pill s={s.status} />
           {["Enviado", "Em análise"].includes(s.status) ? <div className="actions" style={{ width: "100%", justifyContent: "flex-start" }}>
