@@ -5,7 +5,6 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Conecta",
   description: "Plataforma Conecta: marcas, creators e campanhas.",
-  icons: { icon: "/simbolo-conecta.png", apple: "/simbolo-conecta.png" },
   manifest: "/manifest.webmanifest",
 };
 export const viewport: Viewport = { themeColor: "#000000", width: "device-width", initialScale: 1, viewportFit: "cover" };

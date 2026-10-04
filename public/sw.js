@@ -6,7 +6,7 @@ self.addEventListener("push", (event) => {
   try { d = event.data ? event.data.json() : {}; } catch (e) { d = { body: event.data && event.data.text() }; }
   event.waitUntil(self.registration.showNotification(d.title || "Conecta", {
     body: d.body || "Você tem uma novidade na plataforma.",
-    icon: "/simbolo-conecta.png", badge: "/simbolo-conecta.png",
+    icon: "/icon-192.png", badge: "/icon-192.png",
     data: { url: d.url || "/notificacoes" }, tag: d.tag || undefined,
   }));
 });
