@@ -5,7 +5,7 @@ import AccessLinkBox from "@/components/AccessLinkBox";
 import { getSession } from "@/lib/session";
 import { MENU, MODS, can, ENV, ROLE_LABEL } from "@/lib/perms";
 
-const BNAV: Record<string, string[]> = { ceo: ["ceo", "campanhas", "creators", "marcas"], equipe: ["ops", "campanhas", "creators", "candidaturas"], financeiro: ["fin", "notificacoes"], marca: ["marca_home", "campanhas", "notificacoes"], creator: ["clube", "oportunidades", "minhas"] };
+const BNAV: Record<string, string[]> = { ceo: ["ceo", "campanhas", "creators", "marcas"], equipe: ["ops", "campanhas", "creators", "candidaturas"], financeiro: ["fin", "notificacoes"], marca: ["marca_home", "campanhas", "desafios", "relatorios"], creator: ["clube", "oportunidades", "minhas", "meus_desafios"] };
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { supabase, user, profile } = await getSession();

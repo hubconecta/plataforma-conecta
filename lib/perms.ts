@@ -15,14 +15,14 @@ export const MODS: Mod[] = [
   { key: "colaboradoras", label: "Colaboradoras", icon: "key", href: "/colaboradoras", roles: ["ceo"] },
   { key: "campanhas", label: "Campanhas", icon: "megaphone", href: "/campanhas", roles: [...ST, "marca"] },
   { key: "candidaturas", label: "Inscrições em campanhas", icon: "inbox", href: "/inscricoes", roles: ST },
-  { key: "desafios", label: "Desafios", icon: "trophy", href: "/em-breve/desafios", roles: [...ST, "marca"], soon: true },
+  { key: "desafios", label: "Desafios", icon: "trophy", href: "/desafios", roles: [...ST, "marca"] },
   { key: "conteudos", label: "Conteúdos", icon: "film", href: "/em-breve/conteudos", roles: [...ST, "marca"], soon: true },
   { key: "presskits", label: "Press kits", icon: "gift", href: "/em-breve/presskits", roles: ST, soon: true },
   { key: "amostras", label: "Amostras e envios", icon: "truck", href: "/em-breve/amostras", roles: ST, soon: true },
   { key: "formularios", label: "Formulários", icon: "form", href: "/em-breve/formularios", roles: ST, soon: true },
-  { key: "demandas", label: "Tarefas", icon: "tasks", href: "/em-breve/tarefas", roles: ST, soon: true },
-  { key: "crm", label: "Leads de marcas", icon: "funnel", href: "/em-breve/leads", roles: ST, soon: true },
-  { key: "relatorios", label: "Relatórios", icon: "chart", href: "/em-breve/relatorios", roles: [...ST, "marca"], soon: true },
+  { key: "demandas", label: "Tarefas", icon: "tasks", href: "/tarefas", roles: ST },
+  { key: "crm", label: "Leads de marcas", icon: "funnel", href: "/leads", roles: ST },
+  { key: "relatorios", label: "Relatórios", icon: "chart", href: "/relatorios", roles: [...ST, "marca"] },
   { key: "metodo_adm", label: "Gerenciar Método", icon: "book", href: "/em-breve/metodo", roles: ST, soon: true },
   { key: "fin", label: "Financeiro", icon: "wallet", href: "/em-breve/financeiro", roles: FR, grant: ["equipe"], sens: true, soon: true },
   { key: "notificacoes", label: "Notificações", icon: "bell", href: "/notificacoes", roles: ["ceo", "equipe", "financeiro", "marca", "creator"] },
@@ -31,6 +31,7 @@ export const MODS: Mod[] = [
   { key: "clube", label: "Início", icon: "home", href: "/clube", roles: ["creator"] },
   { key: "oportunidades", label: "Oportunidades", icon: "compass", href: "/clube/oportunidades", roles: ["creator"] },
   { key: "minhas", label: "Minhas campanhas", icon: "megaphone", href: "/clube/minhas", roles: ["creator"] },
+  { key: "meus_desafios", label: "Desafios", icon: "trophy", href: "/clube/desafios", roles: ["creator"] },
 ];
 
 export const MENU: Record<string, [string, string[]][]> = {
@@ -38,7 +39,7 @@ export const MENU: Record<string, [string, string[]][]> = {
   equipe: [["Visão", ["ops"]], ["Pessoas", ["cad_creators", "creators", "marcas"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["demandas", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["notificacoes"]]],
   financeiro: [["Financeiro", ["fin"]], ["Sistema", ["notificacoes"]]],
   marca: [["Sua marca", ["marca_home", "campanhas", "desafios", "conteudos", "relatorios"]], ["Ajuda", ["notificacoes"]]],
-  creator: [["Clube", ["clube", "oportunidades", "minhas"]], ["Você", ["notificacoes"]]],
+  creator: [["Clube", ["clube", "oportunidades", "minhas", "meus_desafios"]], ["Você", ["notificacoes"]]],
   pendente: [],
 };
 

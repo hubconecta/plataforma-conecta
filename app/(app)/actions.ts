@@ -173,8 +173,13 @@ export async function saveResults(fd: FormData) {
   const id = g(fd, "id");
   const results: Record<string, number> = {};
   ["creators", "concluded", "views", "interactions", "clicks", "orders", "gmv"].forEach((k) => (results[k] = Number(g(fd, k)) || 0));
+  const { data: c0 } = await supabase.from("campaigns").select("commission_pct").eq("id", id).single();
+  (results as any).commissions = Math.round((results.gmv || 0) * (Number(c0?.commission_pct) || 0)) / 100;
   const { data: c } = await supabase.from("campaigns").update({ results }).eq("id", id).select("name,brand_id").single();
-  if (c) await notifyProfiles(supabase, { brand_id: c.brand_id }, `Relatório atualizado: ${c.name}`, "/portal");
+  if (c) {
+    await supabase.from("report_entries").insert({ brand_id: c.brand_id, kind: "Campanha", ref_id: id, title: `Resultados atualizados · ${c.name}`, summary: `${results.creators} creators, ${results.views.toLocaleString("pt-BR")} visualizações, ${results.clicks.toLocaleString("pt-BR")} cliques, ${results.orders} pedidos, R$ ${results.gmv.toLocaleString("pt-BR")} em vendas.`, by_name: profile.name });
+    await notifyProfiles(supabase, { brand_id: c.brand_id }, `Relatório atualizado: ${c.name}`, "/relatorios");
+  }
   await logAction(supabase, profile, `atualizou os resultados da campanha ${c?.name}`, "Campanhas", id);
   back("/campanhas", "Resultados salvos. O portal da marca já mostra os novos números.");
 }
@@ -309,4 +314,32 @@ export async function deleteApplication(fd: FormData) {
   if (error) back("/cadastros", "Não foi possível excluir: " + error.message, false);
   await logAction(supabase, profile, `excluiu o cadastro de ${a?.name || "creator"}`, "Cadastros de creators", null);
   back("/cadastros", "Cadastro excluído.");
+}
+
+/* ---------------- Campanha proposta pela marca ---------------- */
+export async function proposeCampaign(fd: FormData) {
+  const { supabase, profile } = await requireModule("campanhas");
+  if (profile.role !== "marca" || !profile.brand_id) back("/campanhas", "Sem permissão.", false);
+  const id = g(fd, "id");
+  const row: any = { brand_id: profile.brand_id, name: g(fd, "name"), product: orNull(g(fd, "product")), objective: orNull(g(fd, "objective")), description: orNull(g(fd, "description")), briefing: orNull(g(fd, "briefing")), start_date: orNull(g(fd, "start_date")), end_date: orNull(g(fd, "end_date")), slots: Number(g(fd, "slots")) || 10, niche: orNull(g(fd, "niche")), requirements: orNull(g(fd, "requirements")), deliverables: orNull(g(fd, "deliverables")), requires_shipping: !!fd.get("requires_shipping"), budget: Number(g(fd, "budget")) || null, status: "Em aprovação", proposed_by: profile.id };
+  if (!row.name) back("/campanhas", "Dê um nome à campanha.", false);
+  if (row.start_date && row.end_date && row.end_date < row.start_date) back("/campanhas", "A data final precisa ser depois do início.", false);
+  const { error } = id ? await supabase.from("campaigns").update(row).eq("id", id) : await supabase.from("campaigns").insert(row);
+  if (error) back("/campanhas", "Não foi possível enviar: " + error.message, false);
+  await logAction(supabase, profile, `enviou a campanha ${row.name} para aprovação`, "Campanhas", id || null);
+  revalidatePath("/campanhas");
+  back("/campanhas", "Campanha enviada para aprovação da Conecta. Você será avisada pela plataforma.");
+}
+
+export async function reviewCampaign(fd: FormData) {
+  const { supabase, profile } = await requireModule("campanhas");
+  if (profile.role === "marca") back("/campanhas", "Sem permissão.", false);
+  const id = g(fd, "id"), status = g(fd, "status"), note = orNull(g(fd, "note"));
+  const { data: c } = await supabase.from("campaigns").update({ status, review_note: ["Ajuste solicitado", "Recusada"].includes(status) ? note : null }).eq("id", id).select("name,brand_id").single();
+  if (!c) back("/campanhas", "Campanha não encontrada.", false);
+  const msg = status === "Ajuste solicitado" ? `✏️ A Conecta pediu ajustes na campanha ${c.name}${note ? ": " + note : ""}` : status === "Recusada" ? `A campanha ${c.name} não foi aprovada${note ? ": " + note : ""}` : `✅ Campanha aprovada pela Conecta: ${c.name} (${status})`;
+  await notifyProfiles(supabase, { brand_id: c.brand_id }, msg, "/campanhas");
+  await logAction(supabase, profile, `${status === "Ajuste solicitado" ? "pediu ajuste na" : status === "Recusada" ? "recusou a" : "aprovou a"} campanha ${c.name}`, "Campanhas", id);
+  revalidatePath("/campanhas");
+  back("/campanhas", `Campanha ${c.name}: ${status}.`);
 }

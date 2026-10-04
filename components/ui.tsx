@@ -1,6 +1,13 @@
 import Icon from "./Icon";
 
-const PILL: Record<string, string> = { Ativa: "ok", Ativo: "ok", ativo: "ok", Aprovada: "ok", Publicado: "ok", Entregue: "ok", Concluído: "ok", "Inscrições abertas": "pink", Nova: "pink", Enviada: "info", Proposta: "info", "Convite enviado": "info", convite_enviado: "info", "Em análise": "warn", Negociação: "warn", Pendente: "warn", Reprovada: "bad", Rejeitada: "bad", bloqueado: "bad", Bloqueado: "bad", inativo: "neutral", Pausada: "neutral", Encerrada: "neutral", Futura: "neutral", Lead: "neutral", "Lista de espera": "neutral" };
+const PILL: Record<string, string> = {
+  Ativa: "ok", Ativo: "ok", ativo: "ok", Aprovada: "ok", Aprovado: "ok", Publicado: "ok", Publicada: "ok", Entregue: "ok", Concluído: "ok", Pago: "ok", Paga: "ok", "Em dia": "ok", "Cliente convertido": "ok", Gratuito: "ok", Liberada: "ok",
+  "Inscrições abertas": "pink", Nova: "pink", "Novo Lead": "pink", "Em aprovação": "pink", Disponível: "pink",
+  Enviada: "info", Enviado: "info", Proposta: "info", "Convite enviado": "info", convite_enviado: "info", "Link enviado": "info", Agendado: "info", "Contato realizado": "info", "Reunião agendada": "info", "Proposta enviada": "info", "Em andamento": "info", "Em trânsito": "info", Preparando: "info", Comprado: "info",
+  "Em análise": "warn", Negociação: "warn", "Em negociação": "warn", Pendente: "warn", "Ajuste solicitado": "warn", "Ajuste necessário": "warn", "Aguardando envio": "warn", "Aguardando pagamento": "warn", Aguardando: "warn", "Em aberto": "warn", "Follow-up futuro": "warn", "A fazer": "warn", Média: "warn",
+  Reprovada: "bad", Reprovado: "bad", Rejeitada: "bad", Recusada: "bad", Recusado: "bad", bloqueado: "bad", Bloqueado: "bad", Atrasado: "bad", Vencido: "bad", Problema: "bad", Cancelado: "bad", Alta: "bad", "Não convertido": "bad",
+  inativo: "neutral", Pausada: "neutral", Pausado: "neutral", Encerrada: "neutral", Encerrado: "neutral", Futura: "neutral", Lead: "neutral", "Lista de espera": "neutral", Rascunho: "neutral", Oculto: "neutral", Oculta: "neutral", Baixa: "neutral", "Sem acesso": "neutral",
+};
 export function Pill({ s }: { s: string }) {
   return <span className={`pill ${PILL[s] || "neutral"}`}>{s}</span>;
 }
