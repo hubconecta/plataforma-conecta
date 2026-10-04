@@ -5,6 +5,16 @@ import LeadPublicForm from "@/app/para-marcas/LeadPublicForm";
 
 type P = { tab: "marca" | "creator"; qs: any; levels: { name: string; min_points: number; color: string; perks?: string }[]; wa: string };
 
+const BRANDS = ["Anagrow", "Ella Intimy", "Ella Flow", "Popozão", "Cheiro de Rica", "Deluxe", "Alvya", "Nutravibe", "Liora", "Rosa Selvagem", "Belleton", "Renova Be", "Aurier", "Ella Wellness", "Gagi Vitaminas", "Emma Colchões", "Marias Babys by Virgínia Fonseca", "Lummy Fitwear", "Criamigos", "Cirúrgica Nova Era", "Casas Bahia", "Shein Kids", "Vhita"];
+// Faixa com as marcas que já trabalharam com a Conecta (nomes em texto, rolando devagar)
+const Brands = ({ title }: { title: string }) => (
+  <section className="brands-band" aria-label={title}>
+    <span className="eyebrow">{title}</span>
+    <div className="marquee"><div className="marquee-track">{[...BRANDS, ...BRANDS].map((b, i) => <span key={i} className="brand-chip" aria-hidden={i >= BRANDS.length ? true : undefined}>{b}</span>)}</div></div>
+    <ul className="sr-only">{BRANDS.map((b) => <li key={b}>{b}</li>)}</ul>
+  </section>
+);
+
 const Faq = ({ items }: { items: [string, string][] }) => <div className="faq">{items.map(([q, a]) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}</div>;
 const Cards = ({ items }: { items: [string, string, string][] }) => <div className="grid g3">{items.map(([i, t, p]) => <div className="card" key={t}><span className="alert-ic pink"><Icon name={i} /></span><h3 style={{ margin: "12px 0 6px" }}>{t}</h3><p className="muted small">{p}</p></div>)}</div>;
 
@@ -28,6 +38,7 @@ export default function Landing({ tab, qs, levels, wa }: P) {
           <p>A Conecta cria e vive a comunidade entre a sua marca e as creators: uma base de creators afiliadas postando conteúdo e vendendo todos os dias, com desafios, press kits e acompanhamento de perto. E, quando a marca precisa, também abrimos campanhas com influenciadoras e UGC.</p>
           <div className="hero-ctas"><a className="btn btn-primary" href="#form">QUERO UMA COMUNIDADE PARA A MINHA MARCA</a><a className="btn btn-ghost" style={{ background: "#111", color: "#fff", borderColor: "#333" }} href="#form">QUERO FAZER UMA CAMPANHA</a>{waLink ? <a className="btn btn-ghost" style={{ background: "transparent", color: "#fff", borderColor: "#333" }} href={waLink} target="_blank" rel="noopener noreferrer">Falar no WhatsApp</a> : null}</div>
         </div></section>
+        <Brands title="Marcas que já trabalharam com a Conecta" />
 
         <section className="site-sec"><span className="eyebrow">Como a Conecta trabalha</span><h2>Comunidade primeiro. Campanhas quando a marca precisar.</h2>
           <div className="grid g2">
@@ -50,6 +61,7 @@ export default function Landing({ tab, qs, levels, wa }: P) {
           <p>A Conecta é uma comunidade de creators afiliadas que postam, vendem e crescem junto com as marcas. Aqui você ganha comissão nas suas vendas, recebe press kits, participa de desafios com prêmios e evolui com o apoio do time e das outras creators. E também abrimos campanhas para influenciadoras e UGC.</p>
           <div className="hero-ctas"><Link className="btn btn-primary" href="/cadastro">QUERO FAZER PARTE</Link><Link className="btn btn-ghost" style={{ background: "#111", color: "#fff", borderColor: "#333" }} href="/login">Já sou creator · Entrar</Link></div>
         </div></section>
+        <Brands title="Marcas que já passaram pela comunidade Conecta" />
 
         <section className="site-sec"><span className="eyebrow">O que é a Conecta</span><h2>Mais que campanhas: uma comunidade entre creators e marcas</h2>
           <p className="muted" style={{ maxWidth: "70ch" }}>Na Conecta você vive a marca de perto: usa os produtos, cria conteúdo de verdade, vende com o seu link ou cupom e ganha comissão. Tem grupo da comunidade, desafios, ranking e o time Conecta te acompanhando. Tudo fica no app: oportunidades, conteúdos, envios, pontos e ganhos.</p>
