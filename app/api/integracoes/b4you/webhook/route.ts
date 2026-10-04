@@ -2,9 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Recebe os avisos (webhooks) da B4YOU.
-// Configure na B4YOU (Apps > Webhooks) a URL mostrada em Gerenciar Método > Vendas e integração.
-// Todo evento é guardado. O acesso ao Método só é liberado quando o evento indica pagamento aprovado,
-// o produto é o do Método e o e-mail é de uma creator cadastrada; senão fica "Para revisar".
+// Configure na B4YOU (Apps > Webhooks) a URL mostrada em Club Criadora (admin).
+// Todo evento é guardado. O acesso a um produto do Club Criadora só é liberado quando o evento indica
+// pagamento aprovado, o produto bate com o cadastrado e o e-mail é de uma creator; senão fica "Para revisar".
 
 function walk(o: any, fn: (k: string, v: any) => void, depth = 0) {
   if (!o || typeof o !== "object" || depth > 6) return;
@@ -36,9 +36,9 @@ export async function POST(req: NextRequest) {
   const email = emails[0] || null;
   const value = values.length ? (values[0] > 10000 ? values[0] / 100 : values[0]) : null;
   const order = orders[0] || null;
-  const want = String(cfg.value.metodo_product || "").trim().toLowerCase();
-  const isMetodo = want ? products.some((p) => p.toLowerCase() === want || p.toLowerCase().includes(want)) : false;
-
+  const { data: prods } = await admin.from("products").select("id,title,slug,b4you_product").not("b4you_product", "is", null);
+  const norm = (x: string) => x.trim().toLowerCase();
+  const product = (prods || []).find((p: any) => products.some((v) => norm(v) === norm(p.b4you_product) || norm(v).includes(norm(p.b4you_product))));
   const { data: ev } = await admin.from("b4_events").insert({ event: statuses.slice(0, 3).join(" · ") || null, email, product: products[0] || null, value, order_code: order, payload, status: "Recebido" }).select("id").single();
   const finish = async (status: string, note: string, creator_id?: string | null) => { await admin.from("b4_events").update({ status, note, creator_id: creator_id || null }).eq("id", ev!.id); return NextResponse.json({ ok: true, status }); };
 
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
   const { data: kits } = await admin.from("press_kits").select("id,name,b4you_id,brand_id").not("b4you_id", "is", null);
   const kit = (kits || []).find((k: any) => products.some((p) => p === k.b4you_id));
 
-  if (!isMetodo && !kit) return finish("Para revisar", want ? "Produto não reconhecido (nem Método, nem press kit cadastrado)." : "Cadastre o ID/nome do produto do Método em Vendas e integração.");
+  if (!product && !kit) return finish("Para revisar", "Produto não reconhecido: confira o “ID ou nome na B4YOU” no produto do Club Criadora ou no press kit.");
   if (!email) return finish("Para revisar", "O evento não trouxe e-mail.");
   const { data: crs } = await admin.from("creators").select("id,name").ilike("email", email).limit(1);
   let creator = crs?.[0];
@@ -72,16 +72,17 @@ export async function POST(req: NextRequest) {
   }
 
   if (refunded) {
-    await admin.from("method_purchases").update({ status: "Reembolsado" }).eq("creator_id", creator.id).eq("status", "Pago");
-    return finish("Processado", "Reembolso/cancelamento: acesso ao Método retirado.", creator.id);
+    await admin.from("method_purchases").update({ status: "Reembolsado" }).eq("creator_id", creator.id).eq("product_id", product!.id).eq("status", "Pago");
+    return finish("Processado", `Reembolso/cancelamento: acesso a ${product!.title} retirado.`, creator.id);
   }
   if (!approved) return finish("Ignorado", "Evento sem pagamento aprovado (ex.: boleto gerado, pix pendente).", creator.id);
 
-  const { data: pend } = await admin.from("method_purchases").select("id").eq("creator_id", creator.id).neq("status", "Pago").order("created_at", { ascending: false }).limit(1);
-  const row = { status: "Pago", source: "B4YOU (webhook)", order_code: order, value, email, paid_at: new Date().toISOString() };
+  const { data: pend } = await admin.from("method_purchases").select("id").eq("creator_id", creator.id).eq("product_id", product!.id).neq("status", "Pago").order("created_at", { ascending: false }).limit(1);
+  const row = { product_id: product!.id, status: "Pago", source: "B4YOU (webhook)", order_code: order, value, email, paid_at: new Date().toISOString() };
   if (pend?.length) await admin.from("method_purchases").update(row).eq("id", pend[0].id);
   else await admin.from("method_purchases").insert({ creator_id: creator.id, ...row });
-  if (value) await admin.from("sales").insert({ creator_id: creator.id, product: "Método Criadora Expert", sold: value, creator_pct: 0, conecta_pct: 100, rule: "Produto", status: "Aprovada", source: "B4YOU", external_id: order ? `b4-${order}` : null }).then(() => null, () => null);
-  await notify("🎉 Pagamento confirmado! Seu acesso ao Método Criadora Expert foi liberado.", "/metodo");
-  return finish("Processado", "Acesso ao Método liberado.", creator.id);
+  if (value) await admin.from("sales").insert({ creator_id: creator.id, product: product!.title, sold: value, creator_pct: 0, conecta_pct: 100, rule: "Produto", status: "Aprovada", source: "B4YOU", external_id: order ? `b4-${order}` : null }).then(() => null, () => null);
+  await notify(`🎉 Pagamento confirmado! Seu acesso a ${product!.title} foi liberado.`, `/club/${product!.slug}`);
+  await admin.from("b4_events").update({ product_id: product!.id }).eq("id", ev!.id);
+  return finish("Processado", `Acesso a ${product!.title} liberado.`, creator.id);
 }

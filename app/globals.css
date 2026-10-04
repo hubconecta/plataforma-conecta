@@ -481,3 +481,17 @@ details.side-drawer > summary::-webkit-details-marker{display:none}
 .cal-i{font-size:11px;line-height:1.25;border-left:3px solid;padding-left:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cal-more{font-size:10.5px;color:var(--muted);font-weight:700}
 @media (max-width:700px){.cal-d{min-height:54px}.cal-i{display:none}.cal-d:has(.cal-i)::after{content:"";width:6px;height:6px;border-radius:99px;background:var(--pink-strong);margin:auto auto 2px}}
+
+/* Club Criadora · vitrine de produtos */
+.mx-shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}
+.mx-prod{display:flex;flex-direction:column;gap:10px;text-decoration:none;color:#F3EDF1}
+.mx-poster{position:relative;aspect-ratio:3/4;border-radius:16px;border:1px solid #2A2730;display:flex;align-items:flex-end;padding:14px;overflow:hidden;transition:transform .15s}
+.mx-poster b{font-family:var(--display);font-size:20px;line-height:1.05;color:#fff}
+.mx-prod:hover .mx-poster{transform:translateY(-3px);border-color:#FF5FA2}
+.mx-prod.locked .mx-poster{filter:grayscale(.55) brightness(.7)}
+.mx-prod.locked .mx-lock{position:absolute;top:12px;right:12px;font-size:20px;filter:none}
+.mx-prod-b{display:flex;flex-direction:column;gap:4px}
+.mx-prod-b b{font-size:15px}
+.mx-prod-b span{font-size:12.5px;color:#A79EA5}
+.mx-tag{align-self:flex-start;margin-top:4px;font-weight:800!important;font-size:12px!important;color:#FF8CC4!important;border:1px solid #3A2A35;border-radius:99px;padding:4px 10px}
+.mx-tag.ok{color:#7CF2B0!important;border-color:#1F4A35}

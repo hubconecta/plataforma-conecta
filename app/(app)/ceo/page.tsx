@@ -47,7 +47,7 @@ export default async function CEO() {
     ["Desafios terminando", chEnding, "clock", "/desafios?s=Ativo", "encerram em até 5 dias", "warn"],
     ["Envios em aberto", shipOpen, "truck", "/envios", "aguardando, preparando ou com problema", "info"],
     ["Pedidos de press kit", pkPend, "gift", "/presskits?tab=pedidos", "aguardando pagamento ou preparo", "info"],
-    ["Checkouts do Método", metPend, "book", "/metodo/admin?tab=alunas", "aguardando confirmação de pagamento", "warn"],
+    ["Checkouts do Club Criadora", metPend, "book", "/club/admin", "aguardando confirmação de pagamento", "warn"],
   ];
   const shown = alerts.filter((a) => a[1] > 0);
   return (
@@ -58,7 +58,7 @@ export default async function CEO() {
       <div className="section-t"><h2>Financeiro</h2></div>
       <div className="kpis"><Kpi k="Receita do mês" v={brl(recMonth)} hero /><Kpi k="Despesas do mês" v={brl(outMonth)} /><Kpi k="Resultado do mês" v={brl(recMonth - outMonth)} /><Kpi k="A receber" v={brl(aRec)} /><Kpi k="Vencido" v={brl(sum(vencido))} /><Kpi k="A pagar" v={brl(aPag)} /><Kpi k="Comissões a pagar" v={brl(commC)} /></div>
       <div className="section-t"><h2>Operação</h2></div>
-      <div className="kpis"><Kpi k="Marcas ativas" v={brandsAct} hero /><Kpi k="Creators" v={creatorsAct} /><Kpi k="Campanhas ativas" v={campAct} /><Kpi k="Inscrições abertas" v={campOpen} /><Kpi k="Desafios ativos" v={chActive} /><Kpi k="Conteúdos publicados" v={contPub} /><Kpi k="GMV registrado" v={brl(gmv)} /><Kpi k="Alunas do Método" v={students} /><Kpi k="Colaboradoras" v={team} /></div>
+      <div className="kpis"><Kpi k="Marcas ativas" v={brandsAct} hero /><Kpi k="Creators" v={creatorsAct} /><Kpi k="Campanhas ativas" v={campAct} /><Kpi k="Inscrições abertas" v={campOpen} /><Kpi k="Desafios ativos" v={chActive} /><Kpi k="Conteúdos publicados" v={contPub} /><Kpi k="GMV registrado" v={brl(gmv)} /><Kpi k="Acessos do Club Criadora" v={students} /><Kpi k="Colaboradoras" v={team} /></div>
     </>
   );
 }

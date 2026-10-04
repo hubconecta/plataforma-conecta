@@ -593,17 +593,7 @@ create policy cy_set_sel on public.settings for select using ((key in ('whatsapp
 create policy cy_set_ins on public.settings for insert with check (public.is_ceo());
 create policy cy_set_upd on public.settings for update using (public.is_ceo() or (key = 'rem' and public.can_mod('fin')));
 
--- Método
-create policy cy_mm_sel on public.method_modules for select using (public.can_mod('metodo_adm') or (public.my_creator() is not null and status = 'Publicado'));
-create policy cy_mm_all on public.method_modules for all using (public.can_mod('metodo_adm')) with check (public.can_mod('metodo_adm'));
-create policy cy_ml_sel on public.method_lessons for select using (public.can_mod('metodo_adm') or (public.has_method() and status = 'Publicada' and public.module_published(module_id)));
-create policy cy_ml_all on public.method_lessons for all using (public.can_mod('metodo_adm')) with check (public.can_mod('metodo_adm'));
-create policy cy_mp_sel on public.method_purchases for select using (public.can_mod('metodo_adm') or public.can_mod('fin') or creator_id = public.my_creator());
-create policy cy_mp_ins on public.method_purchases for insert with check (public.can_mod('metodo_adm') or (creator_id = public.my_creator() and status = 'Aguardando pagamento' and paid_at is null and confirmed_by is null));
-create policy cy_mp_upd on public.method_purchases for update using (public.can_mod('metodo_adm') or public.can_mod('fin'));
-create policy cy_mpr_sel on public.method_progress for select using (public.can_mod('metodo_adm') or creator_id = public.my_creator());
-create policy cy_mpr_ins on public.method_progress for insert with check (creator_id = public.my_creator() and public.has_method());
-create policy cy_mpr_del on public.method_progress for delete using (creator_id = public.my_creator());
+-- Método: regras de acesso ficam no 05_club_criadora.sql (por produto)
 
 -- Índices úteis
 create index if not exists ix_ch_brand on public.challenges(brand_id);

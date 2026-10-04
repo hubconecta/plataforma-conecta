@@ -23,7 +23,7 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
         <div><button className="btn btn-primary">Salvar configurações</button></div>
       </form>
       <div className="card"><div className="card-h"><h2>Outras configurações</h2></div><div className="list">
-        <div className="li"><div className="grow"><b>Checkout do Método e integração B4YOU</b><span>Link do botão QUERO ACESSAR e webhook</span></div><Link className="btn btn-ghost btn-sm" href="/metodo/admin?tab=vendas">Abrir</Link></div>
+        <div className="li"><div className="grow"><b>Club Criadora e integração B4YOU</b><span>Produtos, links de checkout e webhook</span></div><Link className="btn btn-ghost btn-sm" href="/club/admin">Abrir</Link></div>
         <div className="li"><div className="grow"><b>Lembretes automáticos de pagamento</b><span>Antes, no dia e depois do vencimento</span></div><Link className="btn btn-ghost btn-sm" href="/financeiro?tab=cobrancas">Abrir</Link></div>
       </div></div>
     </>
