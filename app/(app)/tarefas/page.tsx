@@ -26,7 +26,7 @@ export default async function Tarefas({ searchParams }: { searchParams: Promise<
       {t ? <input type="hidden" name="id" value={t.id} /> : null}<input type="hidden" name="back" value={here} />
       <div className="field full"><label>Título</label><input className="input" name="title" required defaultValue={t?.title || ""} /></div>
       <div className="field"><label>Responsável</label><select className="input" name="owner_id" defaultValue={t?.owner_id || profile.id}>{(team || []).map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
-      <div className="field"><label>Prazo</label><input className="input" type="date" name="due" required defaultValue={t?.due || new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10)} /></div>
+      <div className="field"><label>Prazo</label><input className="input" type="date" name="due" required defaultValue={t?.due || (/^\d{4}-\d{2}-\d{2}$/.test(q.due || "") ? q.due : new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10))} /></div>
       <div className="field"><label>Prioridade</label><select className="input" name="prio" defaultValue={t?.prio || "Média"}>{PRIOS.map((p) => <option key={p}>{p}</option>)}</select></div>
       {t ? <div className="field"><label>Status</label><select className="input" name="status" defaultValue={t.status}>{TASK_STATUS.map((s) => <option key={s} value={s}>{s === "Concluído" ? "Concluída" : s}</option>)}</select></div> : null}
       <div className="field"><label>Marca</label><select className="input" name="brand_id" defaultValue={t?.brand_id || ""}><option value="">—</option>{(brands || []).map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
