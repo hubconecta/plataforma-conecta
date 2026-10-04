@@ -23,7 +23,7 @@ export const MODS: Mod[] = [
   { key: "demandas", label: "Tarefas", icon: "tasks", href: "/tarefas", roles: ST },
   { key: "crm", label: "Leads de marcas", icon: "funnel", href: "/leads", roles: ST },
   { key: "relatorios", label: "Relatórios", icon: "chart", href: "/relatorios", roles: [...ST, "marca"] },
-  { key: "metodo_adm", label: "Gerenciar Método", icon: "book", href: "/em-breve/metodo", roles: ST, soon: true },
+  { key: "metodo_adm", label: "Gerenciar Método", icon: "book", href: "/metodo/admin", roles: ST },
   { key: "fin", label: "Financeiro", icon: "wallet", href: "/em-breve/financeiro", roles: FR, grant: ["equipe"], sens: true, soon: true },
   { key: "notificacoes", label: "Notificações", icon: "bell", href: "/notificacoes", roles: ["ceo", "equipe", "financeiro", "marca", "creator"] },
   { key: "auditoria", label: "Histórico de ações", icon: "shield", href: "/historico", roles: ["ceo"] },
@@ -34,6 +34,7 @@ export const MODS: Mod[] = [
   { key: "cr_presskits", label: "Press kits", icon: "gift", href: "/clube/presskits", roles: ["creator"]},
   { key: "perfil", label: "Meu perfil e endereço", icon: "user", href: "/clube/perfil", roles: ["creator"]},
   { key: "marca_envios", label: "Press kits e envios", icon: "truck", href: "/portal/envios", roles: ["marca"]},
+  { key: "metodo", label: "Método Criadora Expert", icon: "play", href: "/metodo", roles: ["creator"] },
   { key: "meus_desafios", label: "Desafios", icon: "trophy", href: "/clube/desafios", roles: ["creator"] },
 ];
 
@@ -42,7 +43,7 @@ export const MENU: Record<string, [string, string[]][]> = {
   equipe: [["Visão", ["ops"]], ["Pessoas", ["cad_creators", "creators", "marcas"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["demandas", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["notificacoes"]]],
   financeiro: [["Financeiro", ["fin"]], ["Sistema", ["notificacoes"]]],
   marca: [["Sua marca", ["marca_home", "campanhas", "desafios", "conteudos", "marca_envios", "relatorios"]], ["Ajuda", ["notificacoes"]]],
-  creator: [["Clube", ["clube", "oportunidades", "minhas", "meus_desafios", "cr_presskits"]], ["Você", ["perfil", "notificacoes"]]],
+  creator: [["Clube", ["clube", "oportunidades", "minhas", "meus_desafios", "cr_presskits"]], ["Educação", ["metodo"]], ["Você", ["perfil", "notificacoes"]]],
   pendente: [],
 };
 
