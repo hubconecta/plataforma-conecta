@@ -410,3 +410,9 @@ a.nav-i,a.btn,a.chip,a.link-btn{text-decoration:none}
 details.side-drawer > summary{list-style:none}
 details.side-drawer > summary::-webkit-details-marker{display:none}
 @media (max-width:760px){.side-wrap .side{display:none}.side-wrap details[open] .side{display:flex;transform:none}}
+
+/* exclusão com confirmação */
+.confirm-del{display:inline-block}
+.confirm-del>summary{list-style:none;cursor:pointer}
+.confirm-del>summary::-webkit-details-marker{display:none}
+.confirm-box{margin-top:8px;padding:12px;border:1px solid var(--bad);border-radius:12px;background:var(--bad-soft);display:flex;flex-direction:column;gap:8px;max-width:420px}

@@ -1,12 +1,14 @@
 import { requireModule } from "@/lib/session";
 import { PageH, Pill, Person, Empty, Notice, fd } from "@/components/ui";
-import { setApplicationStatus } from "../actions";
+import { setApplicationStatus, deleteApplication } from "../actions";
+import ConfirmDelete from "@/components/ConfirmDelete";
 
 const LABELS: Record<string, string> = { what: "O que faz", artist: "Nome artístico", birth: "Nascimento", cep: "CEP", niches2: "Nichos secundários", worksBrands: "Trabalha com marcas", brandTypes: "Tipos de marcas", since: "Há quanto tempo", campaigns: "Já fez campanhas", affiliates: "Já trabalhou com afiliados", soldLinks: "Já vendeu com links/cupons", yt: "YouTube", followers: "Seguidores (informado)", want: "Quer trabalhar com", avoid: "Não quer", acceptProducts: "Recebe produtos", acceptPaid: "Campanhas pagas", acceptComm: "Por comissão", acceptUgc: "UGC", events: "Eventos", eventCity: "Cidade para eventos" };
 
 export default async function Cadastros({ searchParams }: { searchParams: Promise<any> }) {
   const q = await searchParams;
-  const { supabase } = await requireModule("cad_creators");
+  const { supabase, profile } = await requireModule("cad_creators");
+  const isCeo = profile.role === "ceo";
   const { data } = await supabase.from("creator_applications").select("*").order("created_at", { ascending: false });
   const pend = (data || []).filter((a: any) => ["Nova", "Em análise"].includes(a.status));
   const done = (data || []).filter((a: any) => !["Nova", "Em análise"].includes(a.status));
@@ -22,6 +24,7 @@ export default async function Cadastros({ searchParams }: { searchParams: Promis
             {a.status === "Nova" ? <form action={setApplicationStatus}><input type="hidden" name="id" value={a.id} /><input type="hidden" name="status" value="Em análise" /><button className="btn btn-ghost btn-sm">Colocar em análise</button></form> : null}
             <form action={setApplicationStatus}><input type="hidden" name="id" value={a.id} /><input type="hidden" name="status" value="Rejeitada" /><button className="btn btn-bad btn-sm">Rejeitar</button></form>
           </div>) : null}
+        {isCeo ? <div><ConfirmDelete action={deleteApplication} fields={{ id: a.id }} label="Excluir cadastro" warning={`Apaga o formulário enviado por ${a.name}. Se ela já foi aprovada, continua na lista de Creators.`} /></div> : null}
       </div>
     </details>
   );

@@ -3,7 +3,8 @@ import { requireModule } from "@/lib/session";
 import { can } from "@/lib/perms";
 import { PageH, Pill, Notice, fd, brl } from "@/components/ui";
 import BrandForm from "../BrandForm";
-import { createBrandAccess, resendAccess, setUserStatus } from "../../actions";
+import { createBrandAccess, resendAccess, setUserStatus, deleteUserAccess, deleteBrand } from "../../actions";
+import ConfirmDelete from "@/components/ConfirmDelete";
 
 const ACC: Record<string, string> = { convite_enviado: "Convite enviado", primeiro_acesso_pendente: "Primeiro acesso pendente", ativo: "Ativo", bloqueado: "Bloqueado", inativo: "Desativado" };
 
@@ -24,7 +25,7 @@ export default async function Marca({ params, searchParams }: { params: Promise<
   const back = `/marcas/${id}`;
   return (
     <>
-      <PageH eyebrow={b.category || "Marca"} title={b.name} right={<Pill s={b.status} />} />
+      <PageH eyebrow={b.category || "Marca"} title={b.name} right={<div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}><Pill s={b.status} />{profile.role === "ceo" ? <ConfirmDelete action={deleteBrand} fields={{ id }} label="Excluir marca" warning={`Exclui ${b.name}, os dados de contrato e os acessos ao portal. Só é possível se a marca não tiver campanhas; se tiver, mude o status para Inativa.`} /> : null}</div>} />
       <Notice q={q} />
       <div className="card">
         <div className="card-h"><div><h2>Acesso ao Portal da Marca</h2><span className="muted">a marca não se cadastra sozinha: o acesso é criado pela Conecta</span></div><Pill s={accLabel} /></div>
@@ -36,6 +37,7 @@ export default async function Marca({ params, searchParams }: { params: Promise<
               <form action={setUserStatus}><input type="hidden" name="id" value={u.id} /><input type="hidden" name="status" value="bloqueado" /><input type="hidden" name="back" value={back} /><button className="btn btn-ghost btn-sm">Bloquear</button></form>
               <form action={setUserStatus}><input type="hidden" name="id" value={u.id} /><input type="hidden" name="status" value="inativo" /><input type="hidden" name="back" value={back} /><button className="btn btn-bad btn-sm">Desativar</button></form>
             </>) : <form action={setUserStatus}><input type="hidden" name="id" value={u.id} /><input type="hidden" name="status" value="ativo" /><input type="hidden" name="back" value={back} /><button className="btn btn-ok btn-sm">Reativar</button></form>}
+            {profile.role === "ceo" ? <ConfirmDelete action={deleteUserAccess} fields={{ id: u.id, back }} label="Excluir acesso" warning={`O login ${u.email} será apagado. A marca continua cadastrada e você pode criar um novo acesso com outro e-mail.`} /> : null}
           </div></>
         ) : (
           <form action={createBrandAccess} className="form-grid" style={{ marginTop: 6 }}>

@@ -67,16 +67,17 @@ export async function createBrandAccess(fd: FormData) {
 }
 
 export async function resendAccess(fd: FormData) {
-  const { supabase, profile } = await requireModule("marcas");
-  const email = g(fd, "email"), path = g(fd, "back") || "/marcas";
-  let admin;
-  try { admin = createAdminClient(); } catch (e: any) { back(path, e.message, false); }
+  const { supabase, user, profile } = await getSession();
+  const email = g(fd, "email").toLowerCase(), path = g(fd, "back") || "/";
+  if (!user || !profile || !["ceo", "equipe"].includes(profile.role)) back("/login", "Faça login de novo.", false);
+  const admin = createAdminClient();
+  const { data: tp } = await admin.from("profiles").select("id,role,name").eq("email", email).maybeSingle();
+  const need: Record<string, string> = { marca: "marcas", equipe: "colaboradoras", creator: "creators", financeiro: "colaboradoras" };
+  if (!tp || tp.role === "ceo" || !can(profile, need[tp.role] || "colaboradoras")) back(path, "Sem permissão para este acesso.", false);
   const r = await accessLink(admin, email);
   if ("error" in r) back(path, "Não foi possível gerar o novo link: " + r.error, false);
-  const { data: tp } = await admin.from("profiles").select("role,name").eq("id", r.user.id).single();
-  if (tp && tp.role !== "marca" && profile.role !== "ceo" && !can(profile, "colaboradoras")) back(path, "Sem permissão para este acesso.", false);
-  await logAction(supabase, profile, `gerou novo link de acesso para ${email}`, "Acessos");
-  await showLink(email, tp?.name || "", r.link);
+  await logAction(supabase, profile, `gerou novo link de acesso para ${email}`, "Acessos", tp.id);
+  await showLink(email, tp.name || "", r.link);
   back(path, `Novo link gerado para ${email}. Envie o link que apareceu no topo da tela.`);
 }
 
@@ -217,4 +218,95 @@ export async function readAllNotifications() {
 export async function dismissLink() {
   (await cookies()).delete("cx_link");
   revalidatePath("/", "layout");
+}
+
+/* ---------------- Acesso da creator ao Clube ---------------- */
+export async function creatorAccess(fd: FormData) {
+  const { supabase, profile } = await requireModule("creators");
+  const id = g(fd, "creator_id");
+  const { data: c } = await supabase.from("creators").select("id,name,email").eq("id", id).single();
+  if (!c?.email) back("/creators", "Esta creator não tem e-mail cadastrado.", false);
+  const admin = createAdminClient();
+  const r = await accessLink(admin, String(c.email).toLowerCase(), c.name);
+  if ("error" in r) back("/creators", "Não foi possível gerar o acesso: " + r.error, false);
+  const { data: existing } = await admin.from("profiles").select("role").eq("id", r.user.id).single();
+  if (existing && !["pendente", "creator"].includes(existing.role)) back("/creators", "Este e-mail já é usado por outro tipo de acesso na plataforma.", false);
+  await admin.from("profiles").update({ role: "creator", creator_id: c.id, name: c.name, access_status: "convite_enviado", status: "ativo" }).eq("id", r.user.id);
+  await logAction(supabase, profile, `gerou o acesso ao Clube Conecta para ${c.name}`, "Creators", c.id);
+  await showLink(c.email, c.name, r.link);
+  back("/creators", `Link do Clube Conecta gerado para ${c.name}. Envie o link que apareceu no topo da tela.`);
+}
+
+/* ---------------- Exclusões (só CEO) ---------------- */
+async function requireCeo(path: string) {
+  const s = await getSession();
+  if (!s.user || s.profile?.role !== "ceo") back(path, "Só a CEO pode excluir cadastros.", false);
+  return s as any;
+}
+
+// Apaga o login e solta as referências, mantendo o histórico (com o nome de quem fez).
+async function removeUser(admin: any, id: string) {
+  await admin.from("brands").update({ owner_id: null }).eq("owner_id", id);
+  await admin.from("campaign_applications").update({ reviewed_by: null }).eq("reviewed_by", id);
+  await admin.from("audit_logs").update({ user_id: null }).eq("user_id", id);
+  const { error } = await admin.auth.admin.deleteUser(id);
+  return error?.message;
+}
+
+export async function deleteUserAccess(fd: FormData) {
+  const path = g(fd, "back") || "/colaboradoras";
+  const { supabase, profile } = await requireCeo(path);
+  const id = g(fd, "id");
+  if (id === profile.id) back(path, "Você não pode excluir o seu próprio acesso.", false);
+  const admin = createAdminClient();
+  const { data: t } = await admin.from("profiles").select("role,name,email").eq("id", id).single();
+  if (!t || t.role === "ceo") back(path, "Este acesso não pode ser excluído.", false);
+  const err = await removeUser(admin, id);
+  if (err) back(path, "Não foi possível excluir: " + err, false);
+  await logAction(supabase, profile, `excluiu o acesso de ${t.name || ""} (${t.email})`, "Acessos", null);
+  back(path, `Acesso de ${t.email} excluído.`);
+}
+
+export async function deleteBrand(fd: FormData) {
+  const id = g(fd, "id");
+  const { supabase, profile } = await requireCeo(`/marcas/${id}`);
+  const admin = createAdminClient();
+  const { data: b } = await admin.from("brands").select("name").eq("id", id).single();
+  if (!b) back("/marcas", "Marca não encontrada.", false);
+  const { count } = await admin.from("campaigns").select("id", { count: "exact", head: true }).eq("brand_id", id);
+  if (count) back(`/marcas/${id}`, `${b.name} tem ${count} campanha(s). Para não perder o histórico, mude o status da marca para Inativa em vez de excluir.`, false);
+  const { data: us } = await admin.from("profiles").select("id").eq("brand_id", id).eq("role", "marca");
+  for (const u of us || []) await removeUser(admin, u.id);
+  const { error } = await admin.from("brands").delete().eq("id", id);
+  if (error) back(`/marcas/${id}`, "Não foi possível excluir: " + error.message, false);
+  await logAction(supabase, profile, `excluiu a marca ${b.name}`, "Marcas", null);
+  revalidatePath("/marcas");
+  back("/marcas", `Marca ${b.name} excluída.`);
+}
+
+export async function deleteCreator(fd: FormData) {
+  const { supabase, profile } = await requireCeo("/creators");
+  const id = g(fd, "id");
+  const admin = createAdminClient();
+  const { data: c } = await admin.from("creators").select("name").eq("id", id).single();
+  if (!c) back("/creators", "Creator não encontrada.", false);
+  const { data: us } = await admin.from("profiles").select("id").eq("creator_id", id).eq("role", "creator");
+  for (const u of us || []) await removeUser(admin, u.id);
+  await admin.from("creator_applications").update({ creator_id: null }).eq("creator_id", id);
+  const { error } = await admin.from("creators").delete().eq("id", id);
+  if (error) back("/creators", "Não foi possível excluir: " + error.message, false);
+  await logAction(supabase, profile, `excluiu a creator ${c.name}`, "Creators", null);
+  revalidatePath("/creators");
+  back("/creators", `${c.name} foi excluída.`);
+}
+
+export async function deleteApplication(fd: FormData) {
+  const { supabase, profile } = await requireCeo("/cadastros");
+  const id = g(fd, "id");
+  const admin = createAdminClient();
+  const { data: a } = await admin.from("creator_applications").select("name").eq("id", id).single();
+  const { error } = await admin.from("creator_applications").delete().eq("id", id);
+  if (error) back("/cadastros", "Não foi possível excluir: " + error.message, false);
+  await logAction(supabase, profile, `excluiu o cadastro de ${a?.name || "creator"}`, "Cadastros de creators", null);
+  back("/cadastros", "Cadastro excluído.");
 }

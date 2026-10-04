@@ -1,7 +1,8 @@
 import { requireModule } from "@/lib/session";
 import { grantable } from "@/lib/perms";
 import { PageH, Pill, Person, Notice, fd } from "@/components/ui";
-import { saveTeamMember } from "../actions";
+import { saveTeamMember, resendAccess, deleteUserAccess } from "../actions";
+import ConfirmDelete from "@/components/ConfirmDelete";
 
 function TeamForm({ u }: { u?: any }) {
   const p: string[] = u?.perms || grantable().filter((m) => !m.sens).map((m) => m.key);
@@ -27,7 +28,8 @@ function TeamForm({ u }: { u?: any }) {
 
 export default async function Colaboradoras({ searchParams }: { searchParams: Promise<any> }) {
   const q = await searchParams;
-  const { supabase } = await requireModule("colaboradoras");
+  const { supabase, profile } = await requireModule("colaboradoras");
+  const isCeo = profile.role === "ceo";
   const { data: team } = await supabase.from("profiles").select("*").eq("role", "equipe").order("name");
   return (
     <>
@@ -35,7 +37,11 @@ export default async function Colaboradoras({ searchParams }: { searchParams: Pr
       <Notice q={q} />
       <details className="mod" open={!team?.length}><summary>+ Nova colaboradora</summary><div style={{ paddingBottom: 16 }}><TeamForm /></div></details>
       {(team || []).map((u: any) => (
-        <details className="mod" key={u.id}><summary><Person name={u.name} sub={`${u.cargo || ""}${u.departamento ? " · " + u.departamento : ""} · ${u.email}`} /><span style={{ marginLeft: "auto" }}><Pill s={u.status} /></span></summary><div style={{ paddingBottom: 16 }}><p className="small muted">Entrada: {fd(u.entrada)} · {(u.perms || []).length} permissões</p><TeamForm u={u} /></div></details>
+        <details className="mod" key={u.id}><summary><Person name={u.name} sub={`${u.cargo || ""}${u.departamento ? " · " + u.departamento : ""} · ${u.email}`} /><span style={{ marginLeft: "auto" }}><Pill s={u.status} /></span></summary><div style={{ paddingBottom: 16 }}><p className="small muted">Entrada: {fd(u.entrada)} · {(u.perms || []).length} permissões</p><TeamForm u={u} />
+          <div className="actions" style={{ justifyContent: "flex-start", marginTop: 14, alignItems: "flex-start" }}>
+            <form action={resendAccess}><input type="hidden" name="email" value={u.email} /><input type="hidden" name="back" value="/colaboradoras" /><button className="btn btn-ghost btn-sm">Gerar novo link de acesso</button></form>
+            {isCeo ? <ConfirmDelete action={deleteUserAccess} fields={{ id: u.id, back: "/colaboradoras" }} label="Excluir colaboradora" warning={`O login de ${u.email} será apagado e ela perde o acesso na hora. O histórico de ações continua registrado. Se for só uma pausa, use Status: Inativa.`} /> : null}
+          </div></div></details>
       ))}
     </>
   );
