@@ -1,6 +1,6 @@
 export const CH_TYPES = ["Conteúdo", "Vendas", "Afiliados", "Engajamento", "Publicação", "UGC", "Conversão", "Presença", "Outro"];
 export const CH_STATUS = ["Em aprovação", "Ajuste solicitado", "Rascunho", "Agendado", "Ativo", "Pausado", "Encerrado", "Recusado"];
-export const CH_AUDIENCE = ["Todas as creators", "Participantes da campanha", "Grupo: creators fitness", "Grupo: top vendas", "Creator específica"];
+export const CH_AUDIENCE = ["Todas as creators", "Creators da base da marca", "Participantes da campanha", "Grupo: creators fitness", "Grupo: top vendas", "Creator específica"];
 export const REWARD_TYPES = ["Dinheiro", "Produto", "Voucher", "Comissão extra", "Press kit", "Experiência", "Acesso a curso", "Benefício exclusivo"];
 export const CH_METRICS: [string, string][] = [["participants", "Participantes"], ["contents", "Conteúdos"], ["views", "Visualizações"], ["interactions", "Interações"], ["clicks", "Cliques"], ["orders", "Pedidos"], ["sales", "Vendas (R$)"]];
 export const LEAD_STAGES = ["Novo Lead", "Contato realizado", "Reunião agendada", "Proposta enviada", "Em negociação", "Cliente convertido", "Não convertido", "Follow-up futuro"];

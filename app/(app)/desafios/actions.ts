@@ -27,6 +27,13 @@ async function announce(supabase: any, ch: any) {
   }
   let q = supabase.from("profiles").select("id,creator_id").eq("role", "creator").eq("status", "ativo");
   if (ch.campaign_id && ch.audience.startsWith("Participantes")) { if (!ids.length) return; q = q.in("creator_id", ids); }
+  if (ch.audience === "Creators da base da marca") {
+    if (!ch.brand_id) return;
+    let base: any[] = [];
+    try { base = (await createAdminClient().from("creator_brands").select("creator_id").eq("brand_id", ch.brand_id)).data || []; } catch {}
+    if (!base.length) return;
+    q = q.in("creator_id", base.map((b: any) => b.creator_id));
+  }
   const { data: ps } = await q;
   const hide = await hiddenForBrand(supabase, ch.brand_id);
   await notifyProfiles(supabase, { ids: (ps || []).filter((p: any) => !hide.has(p.creator_id)).map((p: any) => p.id) }, `🔥 Novo desafio disponível: ${ch.name}`, "/clube/desafios");
@@ -48,6 +55,7 @@ export async function saveChallenge(fd: FormData) {
     if (row.campaign_id && !row.brand_id) { const { data: c } = await supabase.from("campaigns").select("brand_id").eq("id", row.campaign_id).single(); row.brand_id = c?.brand_id || null; }
     if (!id) row.status = g(fd, "status") || "Rascunho";
   }
+  if (row.audience === "Creators da base da marca" && !row.brand_id) back(path, "Para o público “Creators da base da marca”, escolha a marca do desafio.", false);
   let cid = id;
   if (id) {
     const { error } = await supabase.from("challenges").update(row).eq("id", id);
