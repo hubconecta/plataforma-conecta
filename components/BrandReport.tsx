@@ -6,12 +6,13 @@ const ICON: Record<string, string> = { Campanha: "📣", Desafio: "🏆", Destaq
 
 // Relatório vivo da marca: se atualiza sozinho a cada resultado de campanha, desafio ou destaque.
 export default async function BrandReport({ supabase, brandId, staff, backPath }: { supabase: any; brandId: string; staff: boolean; backPath: string }) {
-  const [{ data: brand }, { data: camps }, { data: chs }, { data: entries }, { data: ships }] = await Promise.all([
+  const [{ data: brand }, { data: camps }, { data: chs }, { data: entries }, { data: ships }, { count: nBase }] = await Promise.all([
     supabase.from("brands").select("name").eq("id", brandId).single(),
     supabase.from("campaigns").select("id,name,status,results").eq("brand_id", brandId).not("status", "in", "(Em aprovação,Ajuste solicitado,Recusada)"),
     supabase.from("challenges").select("id,name,status,result,campaign_id,campaigns(name)").eq("brand_id", brandId).not("status", "in", "(Em aprovação,Ajuste solicitado,Recusado)"),
     supabase.from("report_entries").select("*").eq("brand_id", brandId).order("created_at", { ascending: false }).limit(60),
     supabase.from("shipments").select("status").eq("brand_id", brandId),
+    supabase.from("creator_brands").select("creator_id", { count: "exact", head: true }).eq("brand_id", brandId),
   ]);
   const cIds = (camps || []).map((c: any) => c.id);
   const { data: conts } = cIds.length ? await supabase.from("contents").select("id,platform,type,link,views,interactions,creators(name),campaigns(name)").in("campaign_id", cIds).order("views", { ascending: false }).limit(3) : { data: [] };
@@ -36,7 +37,7 @@ export default async function BrandReport({ supabase, brandId, staff, backPath }
       <div className="kpis">
         <Kpi k="GMV" v={brl(R("gmv"))} hero /><Kpi k="Campanhas" v={(camps || []).length} /><Kpi k="Creators" v={R("creators")} /><Kpi k="Conteúdos" v={nContents || 0} />
         <Kpi k="Visualizações" v={R("views").toLocaleString("pt-BR")} /><Kpi k="Interações" v={R("interactions").toLocaleString("pt-BR")} /><Kpi k="Cliques" v={R("clicks").toLocaleString("pt-BR")} /><Kpi k="Pedidos" v={R("orders").toLocaleString("pt-BR")} />
-        <Kpi k="Desafios concluídos" v={`${withRes.length}/${live.length}`} /><Kpi k="Produtos enviados" v={sent} />
+        <Kpi k="Creators na base da marca" v={nBase || 0} /><Kpi k="Desafios concluídos" v={`${withRes.length}/${live.length}`} /><Kpi k="Produtos enviados" v={sent} />
       </div>
 
       <div className="card"><div className="card-h"><h2>Desafios e ganhadoras</h2></div>

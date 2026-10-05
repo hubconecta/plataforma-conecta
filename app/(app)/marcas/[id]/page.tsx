@@ -4,7 +4,7 @@ import { loadLabels } from "@/lib/labels";
 import LabelPicker from "@/components/LabelPicker";
 import { requireModule } from "@/lib/session";
 import { can } from "@/lib/perms";
-import { PageH, Pill, Notice, fd, brl } from "@/components/ui";
+import { PageH, Pill, Notice, Person, fd, brl } from "@/components/ui";
 import BrandForm from "../BrandForm";
 import { createBrandAccess, resendAccess, setUserStatus, deleteUserAccess, deleteBrand } from "../../actions";
 import ConfirmDelete from "@/components/ConfirmDelete";
@@ -30,15 +30,17 @@ export default async function Marca({ params, searchParams }: { params: Promise<
   const accLabel = u ? (u.status !== "ativo" ? ACC[u.status] || u.status : u.last_login_at ? "Ativo" : ACC[u.access_status] || "Convite enviado") : "Acesso não criado";
   const back = `/marcas/${id}`;
   const LB = await loadLabels(supabase, "marca", [id]);
-  const { data: base } = await supabase.from("creator_brands").select("created_at, creators(id,name,instagram,brand_only)").eq("brand_id", id).order("created_at", { ascending: false });
+  const { data: base } = await supabase.from("creator_brands").select("created_at, source, creators(id,name,instagram,tiktok,whatsapp,city,state,brand_only,avatar_path)").eq("brand_id", id).order("created_at", { ascending: false });
   return (
     <>
       <PageH eyebrow={b.category || "Marca"} title={b.name} right={<div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}><Pill s={b.status} />{can(profile, "relatorios") ? <a className="btn btn-ghost btn-sm" href={`/relatorios?marca=${id}&tab=vivo`}>Relatório da marca</a> : null}{profile.role === "ceo" ? <ConfirmDelete action={deleteBrand} fields={{ id }} label="Excluir marca" warning={`Exclui ${b.name}, os dados de contrato e os acessos ao portal. Só é possível se a marca não tiver campanhas; se tiver, mude o status para Inativa.`} /> : null}</div>} />
       <Notice q={q} />
       <div className="lbl-detail"><span className="small muted">🏷 Etiquetas</span><LabelPicker all={LB.usable("marca")} on={LB.ids("marca", id)} entity="marca" id={id} /></div>
-      <details className="card"><summary><b>Base de creators da marca · {base?.length || 0}</b> <span className="small muted">entram pelo formulário exclusivo da marca (Formulários → escolher a marca)</span></summary>
-        {base?.length ? <div className="list" style={{ marginTop: 10 }}>{base.map((b: any, i: number) => b.creators ? <Link key={i} className="li" href={`/creators/${b.creators.id}`} style={{ textDecoration: "none", color: "inherit" }}><div className="grow"><b>{b.creators.name}</b><span>{b.creators.instagram || ""}{b.creators.brand_only ? " · só da marca" : " · base Conecta"}</span></div></Link> : null)}</div> : <p className="small muted" style={{ marginTop: 8 }}>Nenhuma creator ainda.</p>}
-      </details>
+      <div className="card" id="base"><div className="card-h"><div><h2>Creators da marca · {base?.length || 0}</h2><span className="small muted">Quem entrou pelo formulário exclusivo da marca. Clique no nome para ver o perfil.</span></div><Link className="btn btn-ghost btn-sm" href={`/creators?marca=${id}`}>Ver em Creators</Link></div>
+        {base?.length ? <div className="table-wrap"><table><thead><tr><th>Creator</th><th>Redes</th><th>WhatsApp</th><th>Cidade</th><th>Base</th><th>Entrou em</th></tr></thead><tbody>
+          {base.map((b: any, i: number) => b.creators ? <tr key={i}><td><Link href={`/creators/${b.creators.id}`} style={{ color: "inherit", textDecoration: "none" }}><Person name={b.creators.name} src={b.creators.avatar_path} /></Link></td><td className="small">{[b.creators.instagram, b.creators.tiktok].filter(Boolean).join(" · ") || "—"}</td><td className="small">{b.creators.whatsapp || "—"}</td><td className="small">{b.creators.city ? `${b.creators.city}/${b.creators.state || ""}` : "—"}</td><td><Pill s={b.creators.brand_only ? "Só da marca" : "Base Conecta"} /></td><td className="num small">{fd(String(b.created_at).slice(0, 10))}</td></tr> : null)}
+        </tbody></table></div> : <p className="muted small">Nenhuma creator ainda. Crie um formulário em Formulários escolhendo esta marca e mande o link no grupo dela.</p>}
+      </div>
       <div className="card profile-head">{b.logo_path ? <img className="brand-logo" src={photoUrl(b.logo_path)} alt={`Logo ${b.name}`} /> : <span className="brand-logo" style={{ display: "grid", placeItems: "center", fontWeight: 800 }}>{b.name.slice(0, 2).toUpperCase()}</span>}<div style={{ flex: 1, minWidth: 200 }}><h2>{b.name}</h2>{b.description ? <p className="small muted" style={{ whiteSpace: "pre-wrap" }}>{b.description}</p> : null}</div>
         <details className="mod" style={{ width: "100%" }}><summary className="small">Logo e apresentação da marca</summary><form action={saveBrandProfile} className="form-grid" style={{ paddingBottom: 12 }}><input type="hidden" name="brand_id" value={id} />
           <FileUpload name="logo_path" bucket="perfis" folder="marcas" accept="image/*" current={b.logo_path} label="Logo da marca" />
