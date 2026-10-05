@@ -582,3 +582,12 @@ img.av{display:block;border-radius:50%;background:var(--surface-2)}
 .join-box{align-items:flex-start;gap:10px;padding:14px;border:1.5px solid var(--pink, #E6007E);border-radius:12px;background:var(--surface)}
 .join-box input{margin-top:3px}
 .join-clube{border:1.5px solid #E6007E;background:linear-gradient(135deg,rgba(230,0,126,.07),transparent 60%)}
+.prizes{display:flex;flex-direction:column;gap:12px}
+.prize-row{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--surface)}
+.prize-h{display:flex;gap:8px;align-items:center}
+.prize-place{font-weight:800;max-width:260px}
+.prize-list{display:flex;flex-direction:column;gap:8px}
+.prize-item{display:flex;gap:10px;align-items:flex-start;font-size:13.5px}
+.prize-medal{font-size:20px;line-height:1}
+.prize-list.compact .prize-item{font-size:12.5px}
+.prize-list.compact .prize-medal{font-size:16px}

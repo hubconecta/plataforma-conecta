@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PrizeList, { prizeSummary, prizesOf } from "@/components/PrizeList";
 import { requireModule } from "@/lib/session";
 import { PageH, Pill, Empty, Notice, fd } from "@/components/ui";
 import { joinChallenge, submitEvidence } from "../../desafios/actions";
@@ -35,7 +36,8 @@ export default async function MeusDesafios({ searchParams }: { searchParams: Pro
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}><span className="eyebrow">{c.type} · {c.brands?.name || "Clube Conecta"}</span>{sub ? <Pill s={sub.status} /> : <Pill s={c.status} />}</div>
             <h3>{c.name}</h3>
             {c.description ? <p className="small">{c.description}</p> : null}
-            <div className="cmeta"><div>Prazo<b>{fd(c.due_date)}</b></div><div>Pontos<b>{c.points || 0}</b></div><div>Prêmio<b>{c.reward_label || c.reward_type}</b></div></div>
+            <div className="cmeta"><div>Prazo<b>{fd(c.due_date)}</b></div><div>Pontos<b>{c.points || 0}</b></div><div>Prêmio<b>{prizeSummary(c)}</b></div></div>
+            {prizesOf(c).length ? <PrizeList c={c} compact /> : null}
             {c.rules ? <p className="small muted"><b>Regras:</b> {c.rules}</p> : null}
             {c.evidence ? <p className="small muted"><b>Comprovante:</b> {c.evidence}</p> : null}
             {prog !== undefined ? <div><span className="small muted">Progresso {prog}/{c.target}</span><div className="bar"><i style={{ width: `${Math.min(100, (prog / c.target) * 100)}%` }} /></div></div> : null}

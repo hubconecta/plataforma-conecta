@@ -7,14 +7,31 @@ import { g, orNull, num, back, notifyProfiles, hiddenForBrand } from "@/lib/act"
 
 const PLACE = (n: number) => `${n}º lugar`;
 
+// Premiação: várias colocações, cada uma com requisito, tipo, prêmio e valor.
+function readPrizes(fd: FormData) {
+  let raw: any[] = [];
+  try { raw = JSON.parse(g(fd, "prizes") || "[]"); } catch {}
+  return (Array.isArray(raw) ? raw : []).slice(0, 20).map((p: any) => ({
+    place: String(p?.place || "").trim().slice(0, 60) || "Prêmio",
+    requirement: String(p?.requirement || "").trim().slice(0, 300),
+    reward_type: String(p?.reward_type || "Produto").slice(0, 40),
+    reward_label: String(p?.reward_label || "").trim().slice(0, 200),
+    reward_value: Number(String(p?.reward_value ?? "").replace(",", ".")) || null,
+  })).filter((p) => p.reward_label || p.requirement || p.reward_value);
+}
+
 function readChallenge(fd: FormData) {
+  const prizes = fd.has("prizes") ? readPrizes(fd) : null;
+  const first = prizes?.[0];
+  const placed = (prizes || []).filter((p) => /º lugar$/.test(p.place)).length;
   return {
+    ...(prizes ? { prizes, winners: placed, reward_type: first?.reward_type || "Produto", reward_label: first?.reward_label || null, reward_value: first?.reward_value || null } : {}),
     name: g(fd, "name"), description: orNull(g(fd, "description")), objective: orNull(g(fd, "objective")), rules: orNull(g(fd, "rules")),
     criteria: orNull(g(fd, "criteria")), evidence: orNull(g(fd, "evidence")), regulation: orNull(g(fd, "regulation")),
     type: g(fd, "type") || "Conteúdo", audience: g(fd, "audience") || "Todas as creators",
     campaign_id: orNull(g(fd, "campaign_id")), start_date: orNull(g(fd, "start_date")), due_date: orNull(g(fd, "due_date")),
-    target: Math.max(1, Number(g(fd, "target")) || 1), points: Number(g(fd, "points")) || 0, winners: Number(g(fd, "winners")) || 0,
-    reward_type: g(fd, "reward_type") || "Produto", reward_label: orNull(g(fd, "reward_label")), reward_value: num(fd, "reward_value"),
+    target: Math.max(1, Number(g(fd, "target")) || 1), points: Number(g(fd, "points")) || 0,
+    ...(fd.has("prizes") ? {} : { winners: Number(g(fd, "winners")) || 0, reward_type: g(fd, "reward_type") || "Produto", reward_label: orNull(g(fd, "reward_label")), reward_value: num(fd, "reward_value") }),
   };
 }
 
@@ -153,8 +170,9 @@ export async function saveChallengeResult(fd: FormData) {
     const { data: ex } = await supabase.from("rewards").select("creator_id,title").eq("challenge_id", id);
     const done = new Set((ex || []).filter((r: any) => String(r.title).startsWith("🏆")).map((r: any) => r.creator_id));
     const toAdd = winners.filter((w) => !done.has(w.creator_id)).map((w) => {
-      const v = Number(String(w.prize).replace(/[^\d,]/g, "").replace(",", ".")) || null;
-      return { creator_id: w.creator_id, title: `🏆 ${PLACE(w.place)} · ${ch.name}${w.prize ? " · " + w.prize : ""}`, type: v ? "Dinheiro" : ch.reward_type, campaign_id: ch.campaign_id, challenge_id: id, value: v, status: "Aprovada" };
+      const pz = Array.isArray(ch.prizes) ? ch.prizes.find((p: any) => p.place === PLACE(w.place)) : null;
+      const v = Number(pz?.reward_value) || Number(String(w.prize).replace(/[^\d,]/g, "").replace(",", ".")) || null;
+      return { creator_id: w.creator_id, title: `🏆 ${PLACE(w.place)} · ${ch.name}${w.prize ? " · " + w.prize : ""}`, type: pz?.reward_type || (v ? "Dinheiro" : ch.reward_type), campaign_id: ch.campaign_id, challenge_id: id, value: v, status: "Aprovada" };
     });
     if (toAdd.length) await supabase.from("rewards").insert(toAdd);
   }

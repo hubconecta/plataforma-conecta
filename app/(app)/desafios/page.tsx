@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { prizeSummary } from "@/components/PrizeList";
 import { requireModule } from "@/lib/session";
 import { PageH, Pill, Empty, Notice, fd } from "@/components/ui";
 import { CH_STATUS } from "@/lib/consts";
@@ -32,7 +33,7 @@ export default async function Desafios({ searchParams }: { searchParams: Promise
           <div className="cbody">
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}><span className="eyebrow">{c.type} · {c.campaigns?.name || c.brands?.name || "Clube Conecta"}</span><Pill s={c.status} /></div>
             <h3>{c.name}</h3>
-            <div className="cmeta"><div>Período<b>{fd(c.start_date)} – {fd(c.due_date)}</b></div><div>Pontos<b>{c.points || 0}</b></div><div>Recompensa<b>{c.reward_label || c.reward_type || "—"}</b></div></div>
+            <div className="cmeta"><div>Período<b>{fd(c.start_date)} – {fd(c.due_date)}</b></div><div>Pontos<b>{c.points || 0}</b></div><div>Premiação<b>{prizeSummary(c)}</b></div></div>
             <p className="small muted">Público: {c.audience} · {c.challenge_participants?.length || 0} participando{isBrand ? "" : ` · ${approved(c.id)} aprovadas`}{c.result ? ` · ${c.result.winners?.length || 0} vencedoras` : ""}</p>
             {open(c.id) ? <span className="pill warn">{open(c.id)} comprovante(s) aguardando</span> : null}
             {c.result ? <p className="small"><b>🏆 {c.result.winners?.map((w: any) => `${w.place}º ${w.name}`).join(" · ")}</b></p> : null}

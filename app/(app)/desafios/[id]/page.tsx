@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PrizeList, { prizeSummary, prizesOf } from "@/components/PrizeList";
 import { notFound } from "next/navigation";
 import { requireModule } from "@/lib/session";
 import { PageH, Pill, Empty, Notice, Kpi, Person, fd, brl } from "@/components/ui";
@@ -59,9 +60,10 @@ export default async function Desafio({ params, searchParams }: { params: Promis
       <div className="tabs">{tabs.map(([k, l]) => <Link key={k} className={`tab ${tab === k ? "on" : ""}`} href={`/desafios/${id}?tab=${k}`}>{l}</Link>)}</div>
 
       {tab === "detalhes" ? <>
-        <div className="kpis"><Kpi k="Participando" v={parts?.length || 0} hero /><Kpi k="Meta" v={c.target} /><Kpi k="Pontos" v={c.points || 0} /><Kpi k="Recompensa" v={c.reward_label || c.reward_type || "—"} />{c.reward_value ? <Kpi k="Valor" v={brl(c.reward_value)} /> : null}<Kpi k="Prazo" v={fd(c.due_date)} /></div>
+        <div className="kpis"><Kpi k="Participando" v={parts?.length || 0} hero /><Kpi k="Meta" v={c.target} /><Kpi k="Pontos" v={c.points || 0} /><Kpi k="Premiação" v={prizeSummary(c)} /><Kpi k="Prazo" v={fd(c.due_date)} /></div>
+        {prizesOf(c).length ? <div className="card"><div className="card-h"><h2>Premiação</h2></div><PrizeList c={c} /></div> : null}
         <div className="card"><dl className="dl">
-          {[["Público", c.audience], ["Período", `${fd(c.start_date)} – ${fd(c.due_date)}`], ["Vencedoras", c.winners ? c.winners : "Todas que cumprirem"], ["Descrição", c.description], ["Objetivo", c.objective], ["Regras", c.rules], ["Critérios", c.criteria], ["Comprovante exigido", c.evidence], ["Regulamento", c.regulation]].map(([k, v]) => v ? <div key={k as string}><dt>{k}</dt><dd style={{ whiteSpace: "pre-wrap" }}>{String(v)}</dd></div> : null)}
+          {[["Público", c.audience], ["Período", `${fd(c.start_date)} – ${fd(c.due_date)}`], ["Descrição", c.description], ["Objetivo", c.objective], ["Regras", c.rules], ["Critérios", c.criteria], ["Comprovante exigido", c.evidence], ["Regulamento", c.regulation]].map(([k, v]) => v ? <div key={k as string}><dt>{k}</dt><dd style={{ whiteSpace: "pre-wrap" }}>{String(v)}</dd></div> : null)}
         </dl></div>
         {parts?.length ? <div className="card"><div className="card-h"><h2>Participantes</h2></div><div className="list">{parts.map((p: any) => <div className="li" key={p.creator_id}><div className="grow"><Person name={p.creators?.name || "Creator"} sub={p.creators?.instagram || ""} /></div><span className="small muted">{p.progress}/{c.target}</span><div className="bar" style={{ width: 120 }}><i style={{ width: `${Math.min(100, (p.progress / c.target) * 100)}%` }} /></div></div>)}</div></div> : null}
       </> : null}
@@ -96,7 +98,7 @@ export default async function Desafio({ params, searchParams }: { params: Promis
             {Array.from({ length: nRows }).map((_, i) => { const w = r?.winners?.[i]; return (
               <div className="form-grid" key={i} style={{ borderBottom: "1px solid var(--line)", paddingBottom: 12 }}>
                 <div className="field"><label>{i + 1}º lugar · creator</label><select className="input" name={`w${i}_creator`} defaultValue={w?.creator_id || ""}><option value="">—</option>{poolList.map(([cid, n]) => <option key={cid} value={cid}>{n}</option>)}</select></div>
-                <div className="field"><label>Prêmio</label><input className="input" name={`w${i}_prize`} defaultValue={w?.prize || (i === 0 ? c.reward_label || "" : "")} /></div>
+                <div className="field"><label>Prêmio</label><input className="input" name={`w${i}_prize`} defaultValue={w?.prize || (() => { const pz = (Array.isArray(c.prizes) ? c.prizes : []).filter((p: any) => /º lugar$/.test(p.place))[i]; return pz ? [pz.reward_label, Number(pz.reward_value) ? `R$ ${pz.reward_value}` : ""].filter(Boolean).join(" · ") : i === 0 ? c.reward_label || "" : ""; })()} /></div>
                 <div className="field full"><label>Destaque (por que ganhou)</label><input className="input" name={`w${i}_highlight`} defaultValue={w?.highlight || ""} /></div>
               </div>); })}
             <div><Link className="btn btn-ghost btn-sm" href={`/desafios/${id}?tab=resultado&mais=${(Number(q.mais) || 0) + 1}`}>+ Adicionar colocação</Link></div>

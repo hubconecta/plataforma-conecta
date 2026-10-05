@@ -1,5 +1,6 @@
-import { CH_TYPES, CH_AUDIENCE, REWARD_TYPES } from "@/lib/consts";
+import { CH_TYPES, CH_AUDIENCE } from "@/lib/consts";
 import { saveChallenge } from "./actions";
+import PrizesEditor from "./PrizesEditor";
 
 // Mesmo formulário para a equipe (cria/edita) e para a marca (propõe para aprovação).
 export default function ChallengeForm({ c, brands, campaigns, isBrand }: { c?: any; brands: any[]; campaigns: any[]; isBrand: boolean }) {
@@ -18,9 +19,7 @@ export default function ChallengeForm({ c, brands, campaigns, isBrand }: { c?: a
       {!c && !isBrand ? <div className="field"><label htmlFor="ch_st">Status inicial</label><select className="input" id="ch_st" name="status" defaultValue="Rascunho">{["Rascunho", "Agendado", "Ativo"].map((t) => <option key={t}>{t}</option>)}</select></div> : null}
       <F n="start_date" l="Início" t="date" /><F n="due_date" l="Prazo final" t="date" />
       <F n="target" l="Meta (quantidade a cumprir)" t="number" /><F n="points" l="Pontos" t="number" />
-      <F n="winners" l="Vencedoras (0 = todas que cumprirem)" t="number" />
-      <div className="field"><label htmlFor="ch_rt">Tipo de recompensa</label><select className="input" id="ch_rt" name="reward_type" defaultValue={c?.reward_type || "Produto"}>{REWARD_TYPES.map((t) => <option key={t}>{t}</option>)}</select></div>
-      <F n="reward_label" l="Recompensa (descrição)" /><F n="reward_value" l="Valor da recompensa (R$, opcional)" t="number" />
+      <PrizesEditor initial={(Array.isArray(c?.prizes) && c.prizes.length ? c.prizes : c?.reward_label || c?.reward_value ? [{ place: "1º lugar", requirement: "", reward_type: c.reward_type || "Produto", reward_label: c.reward_label || "", reward_value: c.reward_value ? String(c.reward_value) : "" }] : undefined)} />
       <T n="description" l="Descrição" /><T n="objective" l="Objetivo" /><T n="rules" l="Regras" /><T n="criteria" l="Critérios de avaliação" />
       <T n="evidence" l="Comprovante exigido (o que a creator precisa enviar)" /><T n="regulation" l="Regulamento" />
       <div><button className="btn btn-primary btn-sm">{isBrand ? (c ? "Salvar e reenviar para aprovação" : "Enviar para aprovação da Conecta") : c ? "Salvar desafio" : "Criar desafio"}</button></div>
