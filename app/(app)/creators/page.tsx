@@ -3,6 +3,7 @@ import Social from "@/components/Social";
 import { requireModule } from "@/lib/session";
 import { PageH, Pill, Person, Empty, Notice, fd } from "@/components/ui";
 import { creatorAccess, deleteCreator } from "../actions";
+import { addCreatorBrand } from "./actions";
 import ConfirmDelete from "@/components/ConfirmDelete";
 import LevelBadge, { levelOf } from "@/components/LevelBadge";
 import { loadLabels } from "@/lib/labels";
@@ -36,6 +37,11 @@ export default async function Creators({ searchParams }: { searchParams: Promise
     <>
       <PageH eyebrow="CRM de creators" title="Creators" sub={`${all?.length || 0} creators na base${et || mk ? ` · ${data.length} no filtro` : ""}`} />
       <Notice q={q} />
+      <div className="card include-box"><div className="card-h"><div><h2>➕ Incluir creator numa marca</h2><span className="small muted">Para quem já está na Conecta: escolha a creator e a marca. Ela entra na base da marca, recebe o aviso e passa a ver a marca em “Minhas marcas”.</span></div></div>
+        <form action={addCreatorBrand} className="form-grid"><input type="hidden" name="back" value={mk ? `/creators?marca=${mk}` : "/creators"} />
+          <div className="field"><label htmlFor="inc_c">Creator</label><select className="input" id="inc_c" name="creator_id" required defaultValue=""><option value="" disabled>Escolha a creator</option>{(all || []).map((c: any) => <option key={c.id} value={c.id}>{c.name}{c.instagram ? ` · ${c.instagram}` : ""}</option>)}</select></div>
+          <div className="field"><label htmlFor="inc_b">Marca</label><select className="input" id="inc_b" name="brand_id" required defaultValue={mk || ""}><option value="" disabled>Escolha a marca</option>{(bl || []).map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
+          <div className="field" style={{ justifyContent: "flex-end" }}><button className="btn btn-primary">Incluir na marca</button></div></form></div>
       {withBase.length ? <div className="chips" aria-label="Filtrar por marca"><span className="small muted" style={{ alignSelf: "center" }}>Base da marca:</span><Link className={`chip ${!mk ? "on" : ""}`} href="/creators">Todas</Link>{withBase.map((b: any) => <Link key={b.id} className={`chip ${mk === b.id ? "on" : ""}`} href={`/creators?marca=${b.id}`}>{b.name} <span className="c">{(cbs || []).filter((x: any) => x.brand_id === b.id).length}</span></Link>)}</div> : null}
       <LabelFilter labels={CL} active={et} base={mk ? `/creators?marca=${mk}` : "/creators"} />
       <div className="card">{data?.length ? <div className="table-wrap"><table><thead><tr><th>Creator</th><th>Marcas</th><th>Etiquetas</th><th>Perfil</th><th>Nicho</th><th>Cidade</th><th className="r">Seguidores</th><th>Nível</th><th>Status</th><th>Clube</th><th></th></tr></thead><tbody>

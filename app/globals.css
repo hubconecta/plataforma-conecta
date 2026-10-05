@@ -598,3 +598,4 @@ img.av{display:block;border-radius:50%;background:var(--surface-2)}
 .social-links{display:inline-flex;flex-wrap:wrap;gap:4px 10px}
 .social-links a{color:var(--pink,#E6007E);font-weight:700;text-decoration:none;white-space:nowrap}
 .social-links a:hover{text-decoration:underline}
+.include-box{border:1.5px dashed #E6007E}
