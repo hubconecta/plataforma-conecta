@@ -591,3 +591,7 @@ img.av{display:block;border-radius:50%;background:var(--surface-2)}
 .prize-medal{font-size:20px;line-height:1}
 .prize-list.compact .prize-item{font-size:12.5px}
 .prize-list.compact .prize-medal{font-size:16px}
+.aff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.aff-card{display:flex;flex-direction:column;gap:12px}
+.aff-head{display:flex;gap:12px;align-items:center}
+.aff-head img,.aff-ph{width:60px;height:60px;border-radius:14px;object-fit:contain;background:#fff;border:1px solid var(--line);flex:none;display:grid;place-items:center;font-weight:800}

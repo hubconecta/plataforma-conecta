@@ -37,6 +37,7 @@ export const MODS: Mod[] = [
   { key: "clube", label: "Início", icon: "home", href: "/clube", roles: ["creator"] },
   { key: "oportunidades", label: "Oportunidades", icon: "compass", href: "/clube/oportunidades", roles: ["creator"] },
   { key: "minhas", label: "Minhas campanhas", icon: "megaphone", href: "/clube/minhas", roles: ["creator"] },
+  { key: "minhas_marcas", label: "Minhas afiliações", icon: "store", href: "/clube/marcas", roles: ["creator"] },
   { key: "cr_presskits", label: "Press kits", icon: "gift", href: "/clube/presskits", roles: ["creator"]},
   { key: "perfil", label: "Meu perfil e endereço", icon: "user", href: "/clube/perfil", roles: ["creator"]},
   { key: "marca_envios", label: "Press kits e envios", icon: "truck", href: "/portal/envios", roles: ["marca"]},
@@ -53,7 +54,7 @@ export const MENU: Record<string, [string, string[]][]> = {
   equipe: [["Visão", ["ops", "conta"]], ["Pessoas", ["cad_creators", "creators", "marcas"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "etiquetas", "gamificacao", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["notificacoes"]]],
   financeiro: [["Financeiro", ["fin"]], ["Gestão", ["calendario", "demandas"]], ["Sistema", ["conta", "notificacoes"]]],
   marca: [["Sua marca", ["marca_home", "perfil_marca", "campanhas", "desafios", "conteudos", "marca_forms", "marca_envios", "relatorios"]], ["Acompanhamento", ["fin_marca"]], ["Ajuda", ["notificacoes"]]],
-  creator: [["Clube", ["clube", "oportunidades", "minhas", "meus_desafios", "cr_presskits"]], ["Evolução", ["jornada"]], ["Ganhos", ["comissoes"]], ["Educação", ["metodo"]], ["Você", ["perfil", "notificacoes"]]],
+  creator: [["Clube", ["clube", "minhas_marcas", "oportunidades", "minhas", "meus_desafios", "cr_presskits"]], ["Evolução", ["jornada"]], ["Ganhos", ["comissoes"]], ["Educação", ["metodo"]], ["Você", ["perfil", "notificacoes"]]],
   pendente: [],
 };
 
@@ -67,7 +68,7 @@ export function grantable(): Mod[] {
 }
 
 // Creator "só da marca" (veio pelo formulário de uma marca e não entrou na base da Conecta)
-export const LIMITED_KEYS = ["clube", "oportunidades", "meus_desafios", "minhas", "perfil", "notificacoes"];
+export const LIMITED_KEYS = ["clube", "minhas_marcas", "oportunidades", "meus_desafios", "minhas", "perfil", "notificacoes"];
 
 export function can(profile: { role: string; perms?: string[] | null; status?: string; limited?: boolean } | null, key: string): boolean {
   if (!profile || profile.status === "inativo" || profile.status === "bloqueado") return false;
