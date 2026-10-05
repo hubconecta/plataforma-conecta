@@ -292,18 +292,18 @@ export async function dismissLink() {
 /* ---------------- Acesso da creator ao Clube ---------------- */
 export async function creatorAccess(fd: FormData) {
   const { supabase, profile } = await requireModule("creators");
-  const id = g(fd, "creator_id");
+  const id = g(fd, "creator_id"), path = g(fd, "back") || "/creators";
   const { data: c } = await supabase.from("creators").select("id,name,email").eq("id", id).single();
-  if (!c?.email) back("/creators", "Esta creator não tem e-mail cadastrado.", false);
+  if (!c?.email) back(path, "Esta creator não tem e-mail cadastrado.", false);
   const admin = createAdminClient();
   const r = await accessLink(admin, String(c.email).toLowerCase(), c.name);
-  if ("error" in r) back("/creators", "Não foi possível gerar o acesso: " + r.error, false);
+  if ("error" in r) back(path, "Não foi possível gerar o acesso: " + r.error, false);
   const { data: existing } = await admin.from("profiles").select("role").eq("id", r.user.id).single();
-  if (existing && !["pendente", "creator"].includes(existing.role)) back("/creators", "Este e-mail já é usado por outro tipo de acesso na plataforma.", false);
+  if (existing && !["pendente", "creator"].includes(existing.role)) back(path, "Este e-mail já é usado por outro tipo de acesso na plataforma.", false);
   await admin.from("profiles").update({ role: "creator", creator_id: c.id, name: c.name, access_status: "convite_enviado", status: "ativo" }).eq("id", r.user.id);
   await logAction(supabase, profile, `gerou o acesso ao Clube Conecta para ${c.name}`, "Creators", c.id);
   await showLink(c.email, c.name, r.link);
-  back("/creators", `Link do Clube Conecta gerado para ${c.name}. Envie o link que apareceu no topo da tela.`);
+  back(path, `Link do Clube Conecta gerado para ${c.name}. Envie o link que apareceu no topo da tela.`);
 }
 
 /* ---------------- Exclusões (só CEO) ---------------- */

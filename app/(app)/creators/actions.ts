@@ -68,3 +68,15 @@ export async function deleteBrandLink(fd: FormData) {
   revalidatePath("/marcas", "layout");
   back(path, "Grupo removido da plataforma.");
 }
+
+// Equipe atualiza os seguidores (Instagram e TikTok) da creator
+export async function saveFollowers(fd: FormData) {
+  const { supabase, profile } = await requireModule("creators");
+  const id = g(fd, "creator_id"), path = `/creators/${id}`;
+  const fi = parseInt(g(fd, "followers").replace(/\D/g, "")), ft = parseInt(g(fd, "tiktok_followers").replace(/\D/g, ""));
+  const { error } = await supabase.from("creators").update({ followers: isNaN(fi) ? 0 : fi, tiktok_followers: isNaN(ft) ? null : ft, followers_updated_at: new Date().toISOString() }).eq("id", id);
+  if (error) back(path, "Não foi possível salvar: " + error.message, false);
+  await logAction(supabase, profile, `atualizou os seguidores da creator`, "Creators", id);
+  revalidatePath("/creators", "layout");
+  back(path, "Seguidores atualizados.");
+}

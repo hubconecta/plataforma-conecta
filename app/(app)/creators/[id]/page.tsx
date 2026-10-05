@@ -2,8 +2,8 @@ import Link from "next/link";
 import { igUrl, ttUrl } from "@/components/Social";
 import { loadLabels } from "@/lib/labels";
 import LabelPicker from "@/components/LabelPicker";
-import { setCreatorBase, addCreatorBrand, removeCreatorBrand } from "../actions";
-import { addCreatorToCampaign } from "../../actions";
+import { setCreatorBase, addCreatorBrand, removeCreatorBrand, saveFollowers } from "../actions";
+import { addCreatorToCampaign, creatorAccess } from "../../actions";
 import { can } from "@/lib/perms";
 import { notFound } from "next/navigation";
 import { requireModule } from "@/lib/session";
@@ -31,6 +31,7 @@ export default async function CreatorPerfil({ params, searchParams }: { params: 
   const here = `/creators/${id}`;
   const ig = igUrl(c.instagram), tt = ttUrl(c.tiktok);
   const LB = await loadLabels(supabase, "creator", [id]);
+  const { data: login } = await supabase.from("profiles").select("status,access_status,last_login_at,email").eq("creator_id", id).eq("role", "creator").maybeSingle();
   const { data: cbs } = await supabase.from("creator_brands").select("brand_id, source, created_at").eq("creator_id", id);
   const [{ data: allBrands }, { data: openCamps }] = await Promise.all([
     supabase.from("brands").select("id,name").order("name"),
@@ -43,6 +44,14 @@ export default async function CreatorPerfil({ params, searchParams }: { params: 
     <>
       <PageH eyebrow="Perfil da creator" title={c.artist_name || c.name} right={<Link className="btn btn-ghost btn-sm" href="/creators">Voltar</Link>} />
       <Notice q={q} />
+      <div className="card"><div className="card-h"><div><h2>Acesso ao Clube</h2><span className="small muted">{!login ? "Ainda não tem login na plataforma." : login.status !== "ativo" ? "Acesso bloqueado." : login.last_login_at ? `Último acesso em ${fd(String(login.last_login_at).slice(0, 10))} · ${login.email}` : `Link enviado, ainda não entrou · ${login.email}`}</span></div>
+        <form action={creatorAccess}><input type="hidden" name="creator_id" value={id} /><input type="hidden" name="back" value={here} /><button className="btn btn-primary btn-sm">{login ? "Reenviar link de acesso" : "Liberar acesso ao Clube"}</button></form></div>
+        <p className="small muted">O link aparece no topo da tela para você copiar e mandar no WhatsApp dela. Ele também serve para ela criar uma senha nova, se esqueceu.{c.email ? "" : " Cadastre o e-mail dela antes."}</p></div>
+      <div className="card"><div className="card-h"><div><h2>Seguidores</h2><span className="small muted">{c.followers_updated_at ? `Atualizado em ${fd(String(c.followers_updated_at).slice(0, 10))}` : "Informado no cadastro"} · a creator também pode atualizar no perfil dela</span></div></div>
+        <form action={saveFollowers} className="form-grid"><input type="hidden" name="creator_id" value={id} />
+          <div className="field"><label>Instagram</label><input className="input" type="number" name="followers" defaultValue={c.followers || ""} /></div>
+          <div className="field"><label>TikTok</label><input className="input" type="number" name="tiktok_followers" defaultValue={c.tiktok_followers || ""} /></div>
+          <div className="field" style={{ justifyContent: "flex-end" }}><button className="btn btn-dark btn-sm">Salvar seguidores</button></div></form></div>
       <div className="card"><div className="card-h"><div><h2>{c.brand_only ? "Creator só da marca" : "Base completa da Conecta"}</h2><span className="small muted">{c.brand_only ? "Vê só os desafios das marcas abaixo (sem oportunidades, comunidade e Club Criadora)." : "Tem o Clube Conecta completo."}</span></div>
         <form action={setCreatorBase}><input type="hidden" name="creator_id" value={id} /><input type="hidden" name="full" value={c.brand_only ? "1" : "0"} /><button className={`btn btn-sm ${c.brand_only ? "btn-primary" : "btn-ghost"}`}>{c.brand_only ? "Colocar na base da Conecta" : "Deixar só com as marcas dela"}</button></form></div>
         <div className="chips">{bnames.length ? bnames.map((b: any) => <span key={b.id} className="chip" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Link href={`/marcas/${b.id}#base`} style={{ color: "inherit", textDecoration: "none" }}>🏷️ {b.name}</Link><form action={removeCreatorBrand} style={{ display: "inline" }}><input type="hidden" name="creator_id" value={id} /><input type="hidden" name="brand_id" value={b.id} /><input type="hidden" name="back" value={here} /><button className="link-btn" aria-label={`Tirar da base da ${b.name}`} title="Tirar da base desta marca" style={{ border: 0, background: "none", cursor: "pointer", fontWeight: 800 }}>×</button></form></span>) : <span className="small muted">Ainda não está na base de nenhuma marca.</span>}</div>
@@ -59,7 +68,7 @@ export default async function CreatorPerfil({ params, searchParams }: { params: 
         </div>
       </div>
       {c.bio ? <div className="card"><p style={{ whiteSpace: "pre-wrap" }}>{c.bio}</p></div> : null}
-      <div className="kpis"><Kpi k="Seguidores" v={(c.followers || 0).toLocaleString("pt-BR")} hero /><Kpi k="Campanhas aprovadas" v={(apps || []).filter((a: any) => a.status === "Aprovada").length} /><Kpi k="Conteúdos" v={conts?.length || 0} /><Kpi k="Visualizações" v={(conts || []).reduce((s: number, x: any) => s + (x.views || 0), 0).toLocaleString("pt-BR")} /><Kpi k="Pontos" v={c.xp || 0} /></div>
+      <div className="kpis"><Kpi k="Seguidores Instagram" v={(c.followers || 0).toLocaleString("pt-BR")} hero />{c.tiktok_followers ? <Kpi k="Seguidores TikTok" v={Number(c.tiktok_followers).toLocaleString("pt-BR")} /> : null}<Kpi k="Campanhas aprovadas" v={(apps || []).filter((a: any) => a.status === "Aprovada").length} /><Kpi k="Conteúdos" v={conts?.length || 0} /><Kpi k="Visualizações" v={(conts || []).reduce((s: number, x: any) => s + (x.views || 0), 0).toLocaleString("pt-BR")} /><Kpi k="Pontos" v={c.xp || 0} /></div>
       <div className="grid g2">
         <div className="card"><div className="card-h"><h2>Media kit e relatórios</h2></div>
           {files?.length ? <div className="list">{files.map((f: any, i: number) => <div className="li" key={f.id}><div className="grow"><b>{f.title}</b><span>{f.kind} · {fd(String(f.created_at).slice(0, 10))}</span></div><a className="btn btn-ghost btn-sm" href={links[i]} target="_blank" rel="noopener noreferrer">Abrir</a><ConfirmDelete action={deleteCreatorFile} fields={{ id: f.id, back: here }} label="Remover" warning="O arquivo sai do perfil da creator." /></div>)}</div> : <p className="muted small">Ela ainda não enviou arquivos.</p>}

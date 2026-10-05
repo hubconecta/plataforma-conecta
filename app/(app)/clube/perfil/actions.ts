@@ -14,6 +14,9 @@ export async function saveMyProfile(fd: FormData) {
     const { error } = await s.supabase.from("creator_addresses").upsert(addr);
     if (error) back("/clube/perfil", "Não foi possível salvar o endereço.", false);
   }
+  // Seguidores informados por ela (o Instagram não libera esse número para outros sites sem login dela)
+  const fi = parseInt(g(fd, "followers").replace(/\D/g, "")), ft = parseInt(g(fd, "tiktok_followers").replace(/\D/g, ""));
+  if (fd.has("followers") && (!isNaN(fi) || !isNaN(ft))) await s.supabase.from("creators").update({ ...(isNaN(fi) ? {} : { followers: fi }), ...(isNaN(ft) ? {} : { tiktok_followers: ft }), followers_updated_at: new Date().toISOString() }).eq("id", me);
   await logAction(s.supabase, s.profile, "atualizou o próprio perfil e endereço", "Perfil", me);
   back("/clube/perfil", "Perfil salvo! Seu endereço só é mostrado para quem for enviar um produto autorizado para você.");
 }
