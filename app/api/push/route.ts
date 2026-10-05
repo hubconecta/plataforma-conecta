@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   if (!n) return NextResponse.json({ ok: true, sent: 0 });
   const { data: subs } = await admin.from("push_subscriptions").select("*").eq("user_id", n.user_id);
   if (!subs?.length) return NextResponse.json({ ok: true, sent: 0 });
-  webpush.setVapidDetails("mailto:contato@conectadigii.com.br", pub!.value.key, cfg.value.private);
+  webpush.setVapidDetails("mailto:contato@conectainfluencia.com.br", pub!.value.key, cfg.value.private);
   const payload = JSON.stringify({ title: "Conecta", body: n.text, url: `/n/${n.id}`, tag: n.id });
   let sent = 0;
   for (const s of subs) {
