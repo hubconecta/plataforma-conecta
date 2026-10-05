@@ -1,7 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { requireModule, logAction } from "@/lib/session";
-import { g, orNull, back, notifyProfiles, notifyCeo } from "@/lib/act";
+import { g, orNull, back } from "@/lib/act";
 import { applyLabels } from "@/lib/labels";
 
 export async function saveEvent(fd: FormData) {
@@ -13,9 +13,6 @@ export async function saveEvent(fd: FormData) {
   const { data: saved, error } = id ? await supabase.from("calendar_events").update(row).eq("id", id).select("id").single() : await supabase.from("calendar_events").insert(row).select("id").single();
   if (error) back(path, "Não foi possível salvar: " + error.message, false);
   if (!id && saved?.id) await applyLabels(supabase, "event", saved.id, fd);
-  if (row.owner_id !== profile.id && !id) await notifyProfiles(supabase, { ids: [row.owner_id] }, `📅 Novo compromisso na sua agenda: ${row.title} em ${row.day.split("-").reverse().join("/")}${row.start_time ? ` às ${row.start_time.slice(0, 5)}` : ""}`, `/calendario?m=${row.day.slice(0, 7)}`);
-  const when = `${row.day.split("-").reverse().join("/")}${row.start_time ? ` às ${row.start_time.slice(0, 5)}` : ""}`;
-  await notifyCeo(supabase, profile, `📅 ${profile.name} ${id ? "alterou" : "agendou"}: ${row.title} em ${when}`, `/calendario?m=${row.day.slice(0, 7)}&dia=${row.day}&who=todos`);
   await logAction(supabase, profile, `${id ? "editou" : "agendou"} o compromisso ${row.title}`, "Calendário", id || null);
   revalidatePath("/calendario");
   back(path, id ? "Compromisso atualizado." : "Compromisso agendado.");

@@ -6,7 +6,7 @@ import { setLabel, createLabel } from "@/app/(app)/etiquetas/actions";
 import { ENT, LABEL_COLORS, textOn, fitsScope, type Entity, type Label } from "@/lib/label-ui";
 
 export function LabelChip({ l, small }: { l: Label; small?: boolean }) {
-  return <span className={`lbl ${small ? "sm" : ""}`} style={{ background: l.color, color: textOn(l.color) }} title={l.name}>{l.name}</span>;
+  return <span className={`etq ${small ? "sm" : ""}`} style={{ background: l.color, color: textOn(l.color) }} title={l.name}>{l.name}</span>;
 }
 
 export default function LabelPicker({ all, on, entity, id, compact }: { all: Label[]; on: string[]; entity: Entity; id: string; compact?: boolean }) {

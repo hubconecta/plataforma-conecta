@@ -45,7 +45,7 @@ export default async function Etiquetas({ searchParams }: { searchParams: Promis
       <div className="card"><div className="card-h"><h2>{labels?.length || 0} etiquetas</h2><span className="small muted">dica: dentro de cada tarefa, marca ou creator, toque em “＋ Etiqueta” para colocar ou criar na hora</span></div>
         {labels?.length ? <div className="list">{labels.map((l: any) => (
           <div className="li" key={l.id} style={{ flexWrap: "wrap", alignItems: "flex-start" }}>
-            <span className="lbl" style={{ background: l.color, color: textOn(l.color), minWidth: 110, justifyContent: "center", padding: "7px 12px" }}>{l.name}</span>
+            <span className="etq" style={{ background: l.color, color: textOn(l.color), minWidth: 110, justifyContent: "center", padding: "7px 12px" }}>{l.name}</span>
             <div className="grow"><span>{l.scope === "Todas" ? "Em tudo" : `Só em ${l.scope}`} · {uses(l.id)}</span></div>
             <details className="mod" style={{ width: "100%", padding: "0 10px" }}><summary className="small">Editar</summary>
               <form action={saveLabelForm} className="form-grid" style={{ paddingBottom: 12 }}><input type="hidden" name="id" value={l.id} /><Fields l={l} /><div><button className="btn btn-primary btn-sm">Salvar</button></div></form>

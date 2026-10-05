@@ -19,7 +19,7 @@ function TeamForm({ u }: { u?: any }) {
         <div className="field"><label>Status</label><select className="input" name="status" defaultValue={u?.status || "ativo"}><option value="ativo">Ativa</option><option value="inativo">Inativa</option></select></div>
         <div className="field full"><label>Responsabilidades</label><textarea className="input" name="responsabilidades" defaultValue={u?.responsabilidades || ""} /></div>
       </div>
-      <div><span className="lbl">Permissões</span><div className="perm-grid" style={{ marginTop: 6 }}>{grantable().map((m) => <label key={m.key} className={`perm ${m.sens ? "sens" : ""}`}><input type="checkbox" name="perm" value={m.key} defaultChecked={p.includes(m.key)} />{m.label}</label>)}</div>
+      <div><span className="lbl">Permissões · ela vê e recebe as notificações de tudo o que estiver marcado (Calendário e Etiquetas já vêm liberados)</span><div className="perm-grid" style={{ marginTop: 6 }}>{grantable().map((m) => <label key={m.key} className={`perm ${m.sens ? "sens" : ""}`}><input type="checkbox" name="perm" value={m.key} defaultChecked={p.includes(m.key)} />{m.label}</label>)}</div>
         <p className="small muted" style={{ marginTop: 6 }}>Itens em destaque mostram dados financeiros sensíveis.</p></div>
       <div><button className="btn btn-primary btn-sm">{u ? "Salvar" : "Convidar colaboradora"}</button></div>
     </form>

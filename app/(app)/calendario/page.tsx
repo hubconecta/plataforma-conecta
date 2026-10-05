@@ -23,7 +23,7 @@ export default async function Calendario({ searchParams }: { searchParams: Promi
   const prev = new Date(Date.UTC(Y, M - 2, 1)).toISOString().slice(0, 7), next = new Date(Date.UTC(Y, M, 1)).toISOString().slice(0, 7);
   const who = q.who === "todos" ? "" : q.who || profile.id;
   const [{ data: team }, { data: evs }, { data: tasks }, { data: camps }, { data: chs }, { data: leads }, { data: fin }, { data: brands }] = await Promise.all([
-    supabase.from("profiles").select("id,name").in("role", ["ceo", "equipe"]).eq("status", "ativo").order("name"),
+    supabase.from("profiles").select("id,name").in("role", ["ceo", "equipe", "financeiro"]).eq("status", "ativo").order("name"),
     supabase.from("calendar_events").select("*, brands(name)").gte("day", start).lte("day", end).order("start_time"),
     can(profile, "demandas") ? supabase.from("tasks").select("id,title,due,owner_id,status").gte("due", start).lte("due", end) : Promise.resolve({ data: [] as any[] }),
     can(profile, "campanhas") ? supabase.from("campaigns").select("id,name,start_date,end_date,status").or(`and(start_date.gte.${start},start_date.lte.${end}),and(end_date.gte.${start},end_date.lte.${end})`) : Promise.resolve({ data: [] as any[] }),

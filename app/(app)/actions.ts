@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { can } from "@/lib/perms";
 import { cookies } from "next/headers";
 import { accessLink, showLink } from "@/lib/access";
-import { notifyCreators, notifyCeo } from "@/lib/act";
+import { notifyCreators, notifyModule } from "@/lib/act";
 
 const g = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const orNull = (v: string) => (v === "" ? null : v);
@@ -196,7 +196,6 @@ export async function saveCampaign(fd: FormData) {
     }
   } else if (fd.has("group_url") && !gurl) await supabase.from("campaign_links").delete().eq("campaign_id", cid);
   await announceCampaign(supabase, { id: cid, name: row.name, brand_id: row.brand_id, status: row.status }, prevStatus, !id);
-  await notifyCeo(supabase, profile, `📣 ${profile.name} ${id ? "editou" : "criou"} a campanha ${row.name}`, "/campanhas");
   await logAction(supabase, profile, `${id ? "editou" : "criou"} a campanha ${row.name}`, "Campanhas", cid);
   revalidatePath("/campanhas");
   back("/campanhas", id ? "Campanha atualizada." : "Campanha criada.");
@@ -403,7 +402,7 @@ export async function deleteCampaign(fd: FormData) {
   const { error } = await admin.from("campaigns").delete().eq("id", id);
   if (error) back("/campanhas", "Não foi possível excluir: " + error.message, false);
   await logAction(supabase, profile, `excluiu a campanha ${c.name}${apps || conts ? ` (com ${apps || 0} inscrições e ${conts || 0} conteúdos)` : ""}`, "Campanhas", null);
-  if (!isBrand) await notifyCeo(supabase, profile, `🗑️ ${profile.name} excluiu a campanha ${c.name}`, "/historico");
+  if (isBrand) await notifyModule(admin, "campanhas", `🗑️ A marca excluiu a campanha ${c.name}`, "/campanhas");
   revalidatePath("/campanhas"); revalidatePath("/relatorios");
   back("/campanhas", `Campanha ${c.name} excluída.`);
 }

@@ -7,7 +7,7 @@ import { ENT, SCOPES, safeColor, type Entity, type Label } from "@/lib/label-ui"
 
 async function team() {
   const s = await getSession();
-  if (!s.profile || !["ceo", "equipe"].includes(s.profile.role) || s.profile.status !== "ativo") return null;
+  if (!s.profile || !["ceo", "equipe", "financeiro"].includes(s.profile.role) || s.profile.status !== "ativo") return null;
   return s as { supabase: any; profile: NonNullable<typeof s.profile> };
 }
 const refresh = (e?: Entity) => { (e ? ENT[e].paths : ["/marcas", "/creators", "/formularios", "/tarefas", "/calendario"]).forEach((p) => revalidatePath(p, "layout")); revalidatePath("/etiquetas"); };

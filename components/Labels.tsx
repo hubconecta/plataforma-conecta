@@ -5,7 +5,7 @@ import { textOn, type Label } from "@/lib/label-ui";
 
 export function LabelChips({ labels, small }: { labels: Label[]; small?: boolean }) {
   if (!labels.length) return null;
-  return <span className={`lbl-row ${small ? "compact" : ""}`}>{labels.map((l) => <span key={l.id} className={`lbl ${small ? "sm" : ""}`} style={{ background: l.color, color: textOn(l.color) }} title={l.name}>{l.name}</span>)}</span>;
+  return <span className={`lbl-row ${small ? "compact" : ""}`}>{labels.map((l) => <span key={l.id} className={`etq ${small ? "sm" : ""}`} style={{ background: l.color, color: textOn(l.color) }} title={l.name}>{l.name}</span>)}</span>;
 }
 
 // Faixa "Filtrar por etiqueta". base = endereço atual sem o ?et=
@@ -27,7 +27,7 @@ export function LabelChecks({ labels, on = [] }: { labels: Label[]; on?: string[
   if (!labels.length) return null;
   return (
     <div className="field full"><label>Etiquetas</label>
-      <div className="lbl-checks">{labels.map((l) => <label key={l.id} className="lbl-ck"><input type="checkbox" name="label_ids" value={l.id} defaultChecked={on.includes(l.id)} /><span className="lbl" style={{ background: l.color, color: textOn(l.color) }}>{l.name}</span></label>)}</div>
+      <div className="lbl-checks">{labels.map((l) => <label key={l.id} className="lbl-ck"><input type="checkbox" name="label_ids" value={l.id} defaultChecked={on.includes(l.id)} /><span className="etq" style={{ background: l.color, color: textOn(l.color) }}>{l.name}</span></label>)}</div>
     </div>
   );
 }

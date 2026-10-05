@@ -13,7 +13,7 @@ export default async function Tarefas({ searchParams }: { searchParams: Promise<
   const { supabase, profile } = await requireModule("demandas");
   const [{ data: tasks }, { data: team }, { data: brands }, { data: camps }, { data: creators }] = await Promise.all([
     supabase.from("tasks").select("*, brands(name), campaigns(name), creators(name)").order("due", { ascending: true, nullsFirst: false }),
-    supabase.from("profiles").select("id,name").in("role", ["ceo", "equipe"]).eq("status", "ativo").order("name"),
+    supabase.from("profiles").select("id,name").in("role", ["ceo", "equipe", "financeiro"]).eq("status", "ativo").order("name"),
     supabase.from("brands").select("id,name").order("name"),
     supabase.from("campaigns").select("id,name").order("created_at", { ascending: false }),
     supabase.from("creators").select("id,name").order("name"),

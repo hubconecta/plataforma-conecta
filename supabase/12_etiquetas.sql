@@ -30,9 +30,9 @@ create or replace function public.label_mod(e text) returns text language sql im
   select case e when 'marca' then 'marcas' when 'creator' then 'creators' when 'form' then 'formularios' when 'task' then 'demandas' when 'event' then 'calendario' end;
 $$;
 
--- Equipe (CEO e colaboradoras) — o financeiro e os portais não usam etiquetas
+-- Equipe interna (CEO, colaboradoras e financeiro) — marcas e creators nunca veem
 create or replace function public.is_team() returns boolean language sql stable security definer set search_path = public as $$
-  select exists(select 1 from profiles where id = auth.uid() and status = 'ativo' and role in ('ceo','equipe'));
+  select exists(select 1 from profiles where id = auth.uid() and status = 'ativo' and role in ('ceo','equipe','financeiro'));
 $$;
 
 alter table public.labels enable row level security;
