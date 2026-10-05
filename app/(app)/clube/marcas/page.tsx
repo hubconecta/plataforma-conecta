@@ -4,7 +4,7 @@ import { PageH, Pill, Empty, Notice, fd } from "@/components/ui";
 import { photoUrl } from "@/lib/storage";
 import { prizeSummary } from "@/components/PrizeList";
 
-// "Minhas afiliações": as marcas das quais a creator faz parte (base da marca e campanhas aprovadas).
+// "Minhas marcas": as marcas das quais a creator faz parte (base da marca e campanhas aprovadas).
 export default async function MinhasAfiliacoes({ searchParams }: { searchParams: Promise<any> }) {
   const q = await searchParams;
   const { supabase, profile } = await requireModule("minhas_marcas");
@@ -28,7 +28,7 @@ export default async function MinhasAfiliacoes({ searchParams }: { searchParams:
   const ig = (h?: string) => (h ? `https://instagram.com/${String(h).replace(/^@/, "")}` : "");
   return (
     <>
-      <PageH eyebrow="Clube Conecta · Afiliada" title="Minhas afiliações" sub="As marcas das quais você é creator afiliada: desafios, campanhas e grupos de cada uma." />
+      <PageH eyebrow="Clube Conecta · Afiliada" title="Minhas marcas" sub="As marcas das quais você é creator afiliada: desafios, campanhas e grupos de cada uma." />
       <Notice q={q} />
       {list.length ? <div className="aff-grid">{list.map((b: any) => {
         const bc = (chs || []).filter((x: any) => x.brand_id === b.id), bo = (open || []).filter((x: any) => x.brand_id === b.id);

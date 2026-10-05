@@ -37,7 +37,7 @@ export const MODS: Mod[] = [
   { key: "clube", label: "Início", icon: "home", href: "/clube", roles: ["creator"] },
   { key: "oportunidades", label: "Oportunidades", icon: "compass", href: "/clube/oportunidades", roles: ["creator"] },
   { key: "minhas", label: "Minhas campanhas", icon: "megaphone", href: "/clube/minhas", roles: ["creator"] },
-  { key: "minhas_marcas", label: "Minhas afiliações", icon: "store", href: "/clube/marcas", roles: ["creator"] },
+  { key: "minhas_marcas", label: "Minhas marcas", icon: "store", href: "/clube/marcas", roles: ["creator"] },
   { key: "cr_presskits", label: "Press kits", icon: "gift", href: "/clube/presskits", roles: ["creator"]},
   { key: "perfil", label: "Meu perfil e endereço", icon: "user", href: "/clube/perfil", roles: ["creator"]},
   { key: "marca_envios", label: "Press kits e envios", icon: "truck", href: "/portal/envios", roles: ["marca"]},
