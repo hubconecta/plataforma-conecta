@@ -220,6 +220,29 @@ export async function saveResults(fd: FormData) {
 export async function setCampaignAppStatus(fd: FormData) {
   const { supabase, profile } = await requireModule("candidaturas");
   const id = g(fd, "id"), status = g(fd, "status");
+  await applyAppStatus(supabase, profile, id, status);
+  back("/inscricoes", `Inscrição atualizada: ${status}.`);
+}
+
+// Equipe coloca uma creator direto numa campanha (já aprovada).
+export async function addCreatorToCampaign(fd: FormData) {
+  const { supabase, profile } = await requireModule("candidaturas");
+  const creator = g(fd, "creator_id"), camp = g(fd, "campaign_id"), path = g(fd, "back") || `/creators/${creator}`;
+  if (!creator || !camp) back(path, "Escolha a campanha.", false);
+  const admin = createAdminClient();
+  const { data: ex } = await admin.from("campaign_applications").select("id,status").eq("campaign_id", camp).eq("creator_id", creator).maybeSingle();
+  let appId = ex?.id;
+  if (!appId) {
+    const { data: ins, error } = await admin.from("campaign_applications").insert({ campaign_id: camp, creator_id: creator, status: "Em análise", answers: { origem: `Incluída pela equipe (${profile.name})` } }).select("id").single();
+    if (error || !ins) back(path, "Não foi possível incluir: " + (error?.message || ""), false);
+    appId = ins!.id;
+  } else if (ex?.status === "Aprovada") back(path, "Ela já está aprovada nesta campanha.", false);
+  await applyAppStatus(supabase, profile, appId!, "Aprovada");
+  revalidatePath("/inscricoes"); revalidatePath("/campanhas");
+  back(path, "Creator incluída e aprovada na campanha.");
+}
+
+async function applyAppStatus(supabase: any, profile: any, id: string, status: string) {
   const { data: a } = await supabase.from("campaign_applications").update({ status, reviewed_by: profile.id }).eq("id", id).select("creator_id, campaign_id, campaigns(name, brand_id), creators(name)").single();
   if (a) {
     const cname = (a as any).campaigns?.name, crname = (a as any).creators?.name;
@@ -237,7 +260,6 @@ export async function setCampaignAppStatus(fd: FormData) {
     else if (status === "Lista de espera") await notifyProfiles(supabase, { creator_id: a.creator_id }, `Você está na lista de espera de ${cname}`, "/clube/minhas");
     await logAction(supabase, profile, `marcou a inscrição de ${crname} em ${cname} como ${status}`, "Inscrições", id);
   }
-  back("/inscricoes", `Inscrição atualizada: ${status}.`);
 }
 
 /* ---------------- Creator ---------------- */

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { addCreatorBrand, removeCreatorBrand } from "../../creators/actions";
 import { notFound } from "next/navigation";
 import { loadLabels } from "@/lib/labels";
 import LabelPicker from "@/components/LabelPicker";
@@ -30,6 +31,7 @@ export default async function Marca({ params, searchParams }: { params: Promise<
   const accLabel = u ? (u.status !== "ativo" ? ACC[u.status] || u.status : u.last_login_at ? "Ativo" : ACC[u.access_status] || "Convite enviado") : "Acesso não criado";
   const back = `/marcas/${id}`;
   const LB = await loadLabels(supabase, "marca", [id]);
+  const { data: allCreators } = await supabase.from("creators").select("id,name,instagram").order("name");
   const { data: base } = await supabase.from("creator_brands").select("created_at, source, creators(id,name,instagram,tiktok,whatsapp,city,state,brand_only,avatar_path)").eq("brand_id", id).order("created_at", { ascending: false });
   return (
     <>
@@ -37,9 +39,10 @@ export default async function Marca({ params, searchParams }: { params: Promise<
       <Notice q={q} />
       <div className="lbl-detail"><span className="small muted">🏷 Etiquetas</span><LabelPicker all={LB.usable("marca")} on={LB.ids("marca", id)} entity="marca" id={id} /></div>
       <div className="card" id="base"><div className="card-h"><div><h2>Creators da marca · {base?.length || 0}</h2><span className="small muted">Quem entrou pelo formulário exclusivo da marca. Clique no nome para ver o perfil.</span></div><Link className="btn btn-ghost btn-sm" href={`/creators?marca=${id}`}>Ver em Creators</Link></div>
-        {base?.length ? <div className="table-wrap"><table><thead><tr><th>Creator</th><th>Redes</th><th>WhatsApp</th><th>Cidade</th><th>Base</th><th>Entrou em</th></tr></thead><tbody>
-          {base.map((b: any, i: number) => b.creators ? <tr key={i}><td><Link href={`/creators/${b.creators.id}`} style={{ color: "inherit", textDecoration: "none" }}><Person name={b.creators.name} src={b.creators.avatar_path} /></Link></td><td className="small">{[b.creators.instagram, b.creators.tiktok].filter(Boolean).join(" · ") || "—"}</td><td className="small">{b.creators.whatsapp || "—"}</td><td className="small">{b.creators.city ? `${b.creators.city}/${b.creators.state || ""}` : "—"}</td><td><Pill s={b.creators.brand_only ? "Só da marca" : "Base Conecta"} /></td><td className="num small">{fd(String(b.created_at).slice(0, 10))}</td></tr> : null)}
+        {base?.length ? <div className="table-wrap"><table><thead><tr><th>Creator</th><th>Redes</th><th>WhatsApp</th><th>Cidade</th><th>Base</th><th>Entrou em</th><th></th></tr></thead><tbody>
+          {base.map((b: any, i: number) => b.creators ? <tr key={i}><td><Link href={`/creators/${b.creators.id}`} style={{ color: "inherit", textDecoration: "none" }}><Person name={b.creators.name} src={b.creators.avatar_path} /></Link></td><td className="small">{[b.creators.instagram, b.creators.tiktok].filter(Boolean).join(" · ") || "—"}</td><td className="small">{b.creators.whatsapp || "—"}</td><td className="small">{b.creators.city ? `${b.creators.city}/${b.creators.state || ""}` : "—"}</td><td><Pill s={b.creators.brand_only ? "Só da marca" : "Base Conecta"} /></td><td className="num small">{fd(String(b.created_at).slice(0, 10))}</td><td><form action={removeCreatorBrand}><input type="hidden" name="creator_id" value={b.creators.id} /><input type="hidden" name="brand_id" value={id} /><input type="hidden" name="back" value={`/marcas/${id}`} /><button className="btn btn-ghost btn-sm" title="Tirar da base desta marca">Tirar</button></form></td></tr> : null)}
         </tbody></table></div> : <p className="muted small">Nenhuma creator ainda. Crie um formulário em Formulários escolhendo esta marca e mande o link no grupo dela.</p>}
+        {allCreators?.length ? <form action={addCreatorBrand} className="field" style={{ marginTop: 12, gap: 6 }}><input type="hidden" name="brand_id" value={id} /><input type="hidden" name="back" value={`/marcas/${id}`} /><label>Colocar creator que já está na Conecta nesta marca</label><div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}><select className="input" name="creator_id" required defaultValue="" style={{ flex: 1, minWidth: 200 }}><option value="" disabled>Escolha a creator</option>{allCreators.filter((c: any) => !(base || []).some((b: any) => b.creators?.id === c.id)).map((c: any) => <option key={c.id} value={c.id}>{c.name}{c.instagram ? ` · ${c.instagram}` : ""}</option>)}</select><button className="btn btn-dark btn-sm">Adicionar à base</button></div></form> : null}
       </div>
       <div className="card profile-head">{b.logo_path ? <img className="brand-logo" src={photoUrl(b.logo_path)} alt={`Logo ${b.name}`} /> : <span className="brand-logo" style={{ display: "grid", placeItems: "center", fontWeight: 800 }}>{b.name.slice(0, 2).toUpperCase()}</span>}<div style={{ flex: 1, minWidth: 200 }}><h2>{b.name}</h2>{b.description ? <p className="small muted" style={{ whiteSpace: "pre-wrap" }}>{b.description}</p> : null}</div>
         <details className="mod" style={{ width: "100%" }}><summary className="small">Logo e apresentação da marca</summary><form action={saveBrandProfile} className="form-grid" style={{ paddingBottom: 12 }}><input type="hidden" name="brand_id" value={id} />
