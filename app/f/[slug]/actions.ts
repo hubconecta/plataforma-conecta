@@ -54,7 +54,12 @@ export async function submitForm(formId: string, raw: Record<string, any>, opts:
     if (!creatorId && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: "Informe um e-mail válido." };
     let isNew = false;
     if (!creatorId) {
-      const { data: found } = await admin.from("creators").select("id").ilike("email", email).limit(1);
+      // A mesma creator respondendo formulários de marcas diferentes fica num cadastro só:
+      // procura pelo e-mail; se não achar, pelo Instagram e depois pelo WhatsApp.
+      const esc = (v: string) => v.replace(/[\\%_]/g, (m) => "\\" + m);
+      let found: any[] | null = (await admin.from("creators").select("id").ilike("email", esc(email)).limit(1)).data;
+      if (!found?.length && ig.length > 2) found = (await admin.from("creators").select("id").ilike("instagram", esc(ig)).limit(1)).data;
+      if (!found?.length && phone.length >= 10) found = (await admin.from("creators").select("id").eq("whatsapp", phone).limit(1)).data;
       if (found?.length) creatorId = found[0].id;
       else {
         if (!name) return { ok: false, error: "Informe seu nome." };

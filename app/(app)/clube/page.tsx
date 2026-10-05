@@ -1,11 +1,14 @@
 import GroupLinks from "@/components/GroupLinks";
 import Link from "next/link";
 import { requireModule } from "@/lib/session";
-import { Kpi, Pill, fd } from "@/components/ui";
+import { Kpi, Pill, Notice, fd } from "@/components/ui";
 import LevelBadge, { levelOf } from "@/components/LevelBadge";
 import { photoUrl } from "@/lib/storage";
+import { joinClube } from "./actions";
+import { NICHES, CREATOR_PROFILES } from "@/lib/consts";
 
-export default async function Clube() {
+export default async function Clube({ searchParams }: { searchParams: Promise<any> }) {
+  const q = await searchParams;
   const { supabase, profile } = await requireModule("clube");
   const me = profile.creator_id;
   const [{ data: c }, { data: open }, { data: mine }, { data: chs }, { data: parts }, { data: buys }, { data: addr }, { data: pts }] = await Promise.all([
@@ -40,6 +43,17 @@ export default async function Clube() {
             <div className="grow"><b>{b.name}</b><span>{nc} desafio{nc === 1 ? "" : "s"} ativo{nc === 1 ? "" : "s"} · {np} oportunidade{np === 1 ? "" : "s"} aberta{np === 1 ? "" : "s"}{b.instagram ? ` · ${b.instagram}` : ""}</span></div>
             <Link className="btn btn-ghost btn-sm" href="/clube/desafios">Desafios</Link><Link className="btn btn-ghost btn-sm" href="/clube/oportunidades">Oportunidades</Link></div>); })}</div>
         {!(brandChs || []).length && !(brandCamps || []).length ? <p className="small muted" style={{ marginTop: 8 }}>Assim que a marca abrir um desafio ou uma campanha, você recebe uma notificação e eles aparecem aqui.</p> : null}</div> : null}
+      <Notice q={q} />
+      {lim ? <div className="card join-clube"><span className="eyebrow">Clube Conecta</span><h2 style={{ margin: "4px 0 6px" }}>Quero fazer parte do Clube Conecta 💖</h2>
+        <p className="small" style={{ color: "var(--muted)" }}>Hoje você vê só a sua marca. No Clube Conecta você recebe oportunidades de outras marcas parceiras, desafios com prêmios, a comunidade no WhatsApp e o Club Criadora.</p>
+        <details className="mod" style={{ marginTop: 10 }}><summary className="btn btn-primary">Quero participar</summary>
+          <form action={joinClube} className="form-grid" style={{ paddingTop: 12 }}>
+            <div className="field"><label htmlFor="jc_k">Como você cria conteúdo?</label><select className="input" id="jc_k" name="kind" defaultValue=""><option value="">Escolha</option>{CREATOR_PROFILES.map((x) => <option key={x}>{x}</option>)}</select></div>
+            <div className="field"><label htmlFor="jc_n">Seu nicho principal</label><select className="input" id="jc_n" name="niche" defaultValue=""><option value="">Escolha</option>{NICHES.map((x) => <option key={x}>{x}</option>)}</select></div>
+            <div className="field full"><label htmlFor="jc_w">Por que você quer fazer parte? (opcional)</label><textarea className="input" id="jc_w" name="why" maxLength={500} /></div>
+            <label className="perm full"><input type="checkbox" name="aceite" required />Quero fazer parte da comunidade de creators da Conecta e receber oportunidades das marcas parceiras.</label>
+            <div><button className="btn btn-primary">Entrar no Clube Conecta</button></div>
+          </form></details></div> : null}
       <GroupLinks supabase={supabase} />
       {!addr ? <div className="notice info">Complete seu endereço em <Link href="/clube/perfil">Meu perfil e endereço</Link> para receber produtos e press kits.</div> : null}
       {lim ? <div className="kpis"><Kpi k="Pontos" v={xp} hero /><Kpi k="Desafios participando" v={joined.size} /></div> : <div className="kpis"><Kpi k="Pontos" v={xp} hero /><Kpi k="Inscrições enviadas" v={mine?.length || 0} /><Kpi k="Aprovadas" v={(mine || []).filter((a: any) => a.status === "Aprovada").length} /><Kpi k="Desafios participando" v={joined.size} /></div>}

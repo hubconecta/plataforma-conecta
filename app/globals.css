@@ -581,3 +581,4 @@ img.av{display:block;border-radius:50%;background:var(--surface-2)}
 .brand-form-head img{max-width:200px;max-height:96px;width:auto;height:auto;border-radius:14px;object-fit:contain;background:#fff;padding:8px;border:1px solid var(--line)}
 .join-box{align-items:flex-start;gap:10px;padding:14px;border:1.5px solid var(--pink, #E6007E);border-radius:12px;background:var(--surface)}
 .join-box input{margin-top:3px}
+.join-clube{border:1.5px solid #E6007E;background:linear-gradient(135deg,rgba(230,0,126,.07),transparent 60%)}
