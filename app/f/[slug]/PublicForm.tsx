@@ -6,7 +6,7 @@ import { submitForm } from "./actions";
 
 const TYPE: Record<string, string> = { nome: "text", texto: "text", numero: "number", email: "email", telefone: "tel", cpf: "text", data: "date", upload: "url", instagram: "text", tiktok: "text" };
 
-export default function PublicForm({ form, brand, loggedIn }: { form: any; brand: { name: string; logo: string | null } | null; loggedIn: boolean }) {
+export default function PublicForm({ form, brand, logo, loggedIn }: { form: any; brand: { name: string; logo: string | null } | null; logo?: string | null; loggedIn: boolean }) {
   const [done, setDone] = useState(false);
   const [account, setAccount] = useState<string>("none");
   const [email, setEmail] = useState("");
@@ -44,7 +44,7 @@ export default function PublicForm({ form, brand, loggedIn }: { form: any; brand
   const askPw = form.brand_id && form.create_access && !loggedIn;
   return (
     <form key={k} className="signup" onSubmit={onSubmit}>
-      {brand ? <div className="brand-form-head">{brand.logo ? <img src={brand.logo} alt={`Logo ${brand.name}`} /> : null}<span className="eyebrow">Formulário exclusivo · {brand.name}</span></div> : null}
+      {logo || brand ? <div className="brand-form-head">{logo ? <img src={logo} alt={brand ? `Logo ${brand.name}` : "Logo"} /> : null}{brand ? <span className="eyebrow">Formulário exclusivo · {brand.name}</span> : null}</div> : null}
       <div>{!brand ? <span className="eyebrow">Conecta</span> : null}<h1 style={{ marginTop: 6 }}>{form.title}</h1>{form.description ? <p className="muted" style={{ marginTop: 6, whiteSpace: "pre-wrap" }}>{form.description}</p> : null}</div>
       <div className="fs">
         {form.fields.map((f: any) => {

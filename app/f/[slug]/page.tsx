@@ -17,5 +17,6 @@ export default async function FormPublico({ params }: { params: Promise<{ slug: 
   const top = <div className="signup-top"><div><div className="logo-crop" style={{ ["--w" as any]: "150px" }}><img src="/logo-conecta.png" alt="Conecta" /></div></div></div>;
   if (!form) return <>{top}<div className="signup"><div className="empty"><h3>Formulário indisponível</h3><p>Este formulário foi encerrado ou ainda não foi publicado.</p></div></div></>;
   const safe = { id: form.id, title: form.title, description: form.description, fields: form.fields || [], brand_id: form.brand_id || null, create_access: !!form.create_access, ask_join: !!form.ask_join };
-  return <>{top}<PublicForm form={safe} brand={brand} loggedIn={loggedIn} /></>;
+  const logo = form.logo_path ? photoUrl(form.logo_path) : brand?.logo || null;
+  return <>{top}<PublicForm form={safe} brand={brand} logo={logo} loggedIn={loggedIn} /></>;
 }

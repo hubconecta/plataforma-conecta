@@ -15,7 +15,7 @@ export async function saveForm(fd: FormData) {
   if (!fields.length) back(path, "Adicione pelo menos uma pergunta.", false);
   const slug = g(fd, "slug").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");
   const brand_id = orNull(g(fd, "brand_id"));
-  const row: any = { title: g(fd, "title"), slug, use: g(fd, "use") || "Pesquisa", campaign_id: orNull(g(fd, "campaign_id")), status: g(fd, "status") || "Rascunho", description: orNull(g(fd, "description")), fields, brand_id, create_access: !!brand_id && !!fd.get("create_access"), ask_join: !!brand_id && !!fd.get("ask_join") };
+  const row: any = { title: g(fd, "title"), slug, use: g(fd, "use") || "Pesquisa", campaign_id: orNull(g(fd, "campaign_id")), status: g(fd, "status") || "Rascunho", description: orNull(g(fd, "description")), fields, logo_path: orNull(g(fd, "logo_path")), brand_id, create_access: !!brand_id && !!fd.get("create_access"), ask_join: !!brand_id && !!fd.get("ask_join") };
   if (brand_id && row.status === "Publicado" && (!fields.some((x) => x.type === "email") || !fields.some((x) => x.type === "nome" || (x.type === "texto" && /nome/i.test(x.label))))) back(path, "Formulário de marca precisa das perguntas “Nome completo” e “E-mail”.", false);
   if (!row.title || !slug) back(path, "Informe o título e o endereço do link.", false);
   const { data, error } = id ? await supabase.from("forms").update(row).eq("id", id).select("id").single() : await supabase.from("forms").insert(row).select("id").single();

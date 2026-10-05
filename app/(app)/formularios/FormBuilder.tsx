@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { FIELD_TYPES, FORM_USES, FORM_STATUS } from "@/lib/consts";
+import FileUpload from "@/components/FileUpload";
 
 type Fld = { id: string; label: string; type: string; req: boolean; options?: string[] };
 const LBL = Object.fromEntries(FIELD_TYPES);
@@ -27,6 +28,7 @@ export default function FormBuilder({ f, campaigns, brands = [], action, site }:
         <div className="field"><label htmlFor="fb_c">Campanha (opcional)</label><select className="input" id="fb_c" name="campaign_id" defaultValue={f?.campaign_id || ""}><option value="">Geral</option>{campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
         <div className="field"><label htmlFor="fb_b">Marca (formulário exclusivo)</label><select className="input" id="fb_b" name="brand_id" value={brand} onChange={(e) => setBrand(e.target.value)}><option value="">Nenhuma · formulário da Conecta</option>{brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
         <div className="field"><label htmlFor="fb_st">Status</label><select className="input" id="fb_st" name="status" defaultValue={f?.status || "Rascunho"}>{FORM_STATUS.map((u) => <option key={u}>{u}</option>)}</select></div>
+        <div className="field full"><FileUpload name="logo_path" bucket="perfis" folder="formularios" accept="image/*" current={f?.logo_path} label={brand ? "Logo no topo do formulário (se deixar vazio, usa o logo da marca)" : "Logo no topo do formulário (opcional)"} /></div>
         <div className="field full"><label htmlFor="fb_d">Descrição (aparece no topo do formulário)</label><textarea className="input" id="fb_d" name="description" defaultValue={f?.description || ""} /></div>
       </div>
       {brand ? <fieldset className="fs"><legend>Formulário da marca</legend>
