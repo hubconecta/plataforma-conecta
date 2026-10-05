@@ -4,8 +4,11 @@ import { can } from "@/lib/perms";
 import { PageH, Notice, Pill, fd } from "@/components/ui";
 import ConfirmDelete from "@/components/ConfirmDelete";
 import { saveEvent, deleteEvent } from "./actions";
+import { loadLabels } from "@/lib/labels";
+import LabelPicker from "@/components/LabelPicker";
+import { LabelFilter, LabelChecks } from "@/components/Labels";
 
-type Item = { day: string; time?: string; title: string; kind: string; href: string; owner?: string | null; late?: boolean; id?: string; ev?: any };
+type Item = { day: string; time?: string; title: string; kind: string; href: string; owner?: string | null; late?: boolean; id?: string; ev?: any; ent?: "event" | "task" };
 const KIND: Record<string, string> = { Compromisso: "#E6007E", Tarefa: "#111111", Campanha: "#2F6FDB", Desafio: "#B7791F", "Follow-up": "#7A1F5C", Vencimento: "#C53030" };
 const WD = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
@@ -30,20 +33,25 @@ export default async function Calendario({ searchParams }: { searchParams: Promi
     supabase.from("brands").select("id,name").order("name"),
   ]);
   const TN = new Map((team || []).map((t: any) => [t.id, t.name]));
+  const canTasks = can(profile, "demandas");
+  const L = await loadLabels(supabase, canTasks ? (["event", "task"] as const).slice() : ["event" as const]);
+  const CL = L.all.filter((l) => ["Todas", "Calendário", ...(canTasks ? ["Tarefas"] : [])].includes(l.scope));
+  const et = CL.some((l) => l.id === q.et) ? q.et : "";
   const items: Item[] = [];
-  (evs || []).forEach((e: any) => items.push({ day: e.day, time: e.start_time?.slice(0, 5), title: e.title, kind: "Compromisso", href: `/calendario?m=${m}&dia=${e.day}${q.who ? `&who=${q.who}` : ""}`, owner: e.owner_id, id: e.id, ev: e }));
-  (tasks || []).forEach((t: any) => items.push({ day: t.due, title: t.title, kind: "Tarefa", href: "/tarefas", owner: t.owner_id, late: t.status !== "Concluído" && t.due < today }));
+  (evs || []).forEach((e: any) => items.push({ day: e.day, time: e.start_time?.slice(0, 5), title: e.title, kind: "Compromisso", href: `/calendario?m=${m}&dia=${e.day}${q.who ? `&who=${q.who}` : ""}`, owner: e.owner_id, id: e.id, ev: e, ent: "event" }));
+  (tasks || []).forEach((t: any) => items.push({ day: t.due, title: t.title, kind: "Tarefa", href: "/tarefas", owner: t.owner_id, late: t.status !== "Concluído" && t.due < today, id: t.id, ent: "task" }));
   (camps || []).forEach((c: any) => { if (c.start_date >= start && c.start_date <= end) items.push({ day: c.start_date, title: `Início · ${c.name}`, kind: "Campanha", href: "/campanhas" }); if (c.end_date && c.end_date >= start && c.end_date <= end) items.push({ day: c.end_date, title: `Fim · ${c.name}`, kind: "Campanha", href: "/campanhas" }); });
   (chs || []).forEach((c: any) => items.push({ day: c.due_date, title: `Prazo · ${c.name}`, kind: "Desafio", href: `/desafios/${c.id}` }));
   (leads || []).filter((l: any) => !["Cliente convertido", "Não convertido"].includes(l.stage)).forEach((l: any) => items.push({ day: l.follow_up, title: `Follow-up · ${l.brand_name || l.company}`, kind: "Follow-up", href: `/leads/${l.id}`, owner: l.owner_id }));
   (fin || []).forEach((f: any) => items.push({ day: f.due, title: `${f.kind === "receber" ? "Receber" : "Pagar"} · ${f.description}`, kind: "Vencimento", href: "/financeiro?tab=" + f.kind }));
   const mineOnly = (i: Item) => !who || !i.owner || i.owner === who || ["Campanha", "Desafio", "Vencimento"].includes(i.kind);
-  const shown = items.filter(mineOnly);
+  const labelsOf = (i: Item) => (i.ent && i.id ? L.of(i.ent, i.id) : []);
+  const shown = items.filter((i) => mineOnly(i) && (!et || (i.ent && i.id && L.has(i.ent, i.id, et))));
   const byDay = (d: string) => shown.filter((i) => i.day === d).sort((a, b) => (a.time || "99").localeCompare(b.time || "99"));
   const lead = first.getUTCDay();
   const cells = Array.from({ length: Math.ceil((lead + daysIn) / 7) * 7 }).map((_, i) => { const n = i - lead + 1; return n >= 1 && n <= daysIn ? `${m}-${String(n).padStart(2, "0")}` : null; });
   const sel = /^\d{4}-\d{2}-\d{2}$/.test(q.dia || "") ? q.dia : today.startsWith(m) ? today : start;
-  const qsWho = q.who ? `&who=${q.who}` : "";
+  const qsWho = (q.who ? `&who=${q.who}` : "") + (et ? `&et=${et}` : "");
   const here = `/calendario?m=${m}&dia=${sel}${qsWho}`;
   const monthName = first.toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" });
   return (
@@ -54,15 +62,16 @@ export default async function Calendario({ searchParams }: { searchParams: Promi
         <div className="chips"><Link className={`chip ${who === profile.id ? "on" : ""}`} href={`/calendario?m=${m}`}>Minha agenda</Link>{(team || []).filter((t: any) => t.id !== profile.id).map((t: any) => <Link key={t.id} className={`chip ${who === t.id ? "on" : ""}`} href={`/calendario?m=${m}&who=${t.id}`}>{t.name}</Link>)}<Link className={`chip ${!who ? "on" : ""}`} href={`/calendario?m=${m}&who=todos`}>Todos</Link></div>
         <div className="actions" style={{ alignItems: "center" }}><Link className="btn btn-ghost btn-sm" href={`/calendario?m=${prev}${qsWho}`} aria-label="Mês anterior">←</Link><b style={{ textTransform: "capitalize", minWidth: 150, textAlign: "center" }}>{monthName}</b><Link className="btn btn-ghost btn-sm" href={`/calendario?m=${next}${qsWho}`} aria-label="Próximo mês">→</Link><Link className="btn btn-ghost btn-sm" href={`/calendario${q.who ? `?who=${q.who}` : ""}`}>Hoje</Link></div>
       </div>
+      <LabelFilter labels={CL} active={et} base={`/calendario?m=${m}&dia=${sel}${q.who ? `&who=${q.who}` : ""}`} />
       <div className="chips">{Object.entries(KIND).map(([k, c]) => <span key={k} className="small" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><i style={{ width: 10, height: 10, borderRadius: 3, background: c, display: "inline-block" }} />{k}</span>)}</div>
       <div className="grid g-main">
         <div className="card" style={{ padding: 10 }}>
           <div className="cal">{WD.map((d) => <div key={d} className="cal-h">{d}</div>)}
-            {cells.map((d, i) => d ? <Link key={i} href={`/calendario?m=${m}&dia=${d}${qsWho}`} className={`cal-d ${d === today ? "today" : ""} ${d === sel ? "sel" : ""}`}><span className="cal-n">{Number(d.slice(8))}</span>{byDay(d).slice(0, 3).map((it, j) => <span key={j} className="cal-i" style={{ borderLeftColor: KIND[it.kind], color: it.late ? "var(--bad)" : undefined }}>{it.time ? `${it.time} ` : ""}{it.title}</span>)}{byDay(d).length > 3 ? <span className="cal-more">+{byDay(d).length - 3}</span> : null}</Link> : <div key={i} className="cal-d off" />)}
+            {cells.map((d, i) => d ? <Link key={i} href={`/calendario?m=${m}&dia=${d}${qsWho}`} className={`cal-d ${d === today ? "today" : ""} ${d === sel ? "sel" : ""}`}><span className="cal-n">{Number(d.slice(8))}</span>{byDay(d).slice(0, 3).map((it, j) => <span key={j} className="cal-i" style={{ borderLeftColor: KIND[it.kind], color: it.late ? "var(--bad)" : undefined }}>{labelsOf(it).length ? <span className="cal-dots">{labelsOf(it).slice(0, 3).map((l) => <i key={l.id} style={{ background: l.color }} />)}</span> : null}{it.time ? `${it.time} ` : ""}{it.title}</span>)}{byDay(d).length > 3 ? <span className="cal-more">+{byDay(d).length - 3}</span> : null}</Link> : <div key={i} className="cal-d off" />)}
           </div>
         </div>
         <div className="card"><div className="card-h"><h2>{fd(sel)}</h2></div>
-          {byDay(sel).length ? <div className="list">{byDay(sel).map((it, j) => <div className="li" key={j} style={{ alignItems: "flex-start", flexWrap: "wrap" }}><i style={{ width: 4, alignSelf: "stretch", borderRadius: 4, background: KIND[it.kind] }} /><div className="grow"><b>{it.time ? `${it.time} · ` : ""}{it.title}</b><span>{it.kind}{it.owner ? ` · ${TN.get(it.owner) || ""}` : ""}{it.ev?.brands?.name ? ` · ${it.ev.brands.name}` : ""}{it.ev?.location ? ` · ${it.ev.location}` : ""}</span>{it.ev?.notes ? <span style={{ whiteSpace: "pre-wrap" }}>{it.ev.notes}</span> : null}</div>{it.late ? <Pill s="Atrasado" /> : null}
+          {byDay(sel).length ? <div className="list">{byDay(sel).map((it, j) => <div className="li" key={j} style={{ alignItems: "flex-start", flexWrap: "wrap" }}><i style={{ width: 4, alignSelf: "stretch", borderRadius: 4, background: KIND[it.kind] }} /><div className="grow">{it.ent === "event" ? <LabelPicker all={L.usable("event")} on={L.ids("event", it.id!)} entity="event" id={it.id!} compact /> : it.ent === "task" ? <LabelPicker all={L.usable("task")} on={L.ids("task", it.id!)} entity="task" id={it.id!} compact /> : null}<b>{it.time ? `${it.time} · ` : ""}{it.title}</b><span>{it.kind}{it.owner ? ` · ${TN.get(it.owner) || ""}` : ""}{it.ev?.brands?.name ? ` · ${it.ev.brands.name}` : ""}{it.ev?.location ? ` · ${it.ev.location}` : ""}</span>{it.ev?.notes ? <span style={{ whiteSpace: "pre-wrap" }}>{it.ev.notes}</span> : null}</div>{it.late ? <Pill s="Atrasado" /> : null}
             {it.kind === "Compromisso" ? <ConfirmDelete action={deleteEvent} fields={{ id: it.id!, back: here }} warning="O compromisso será apagado." /> : <Link className="btn btn-ghost btn-sm" href={it.href}>Abrir</Link>}</div>)}</div> : <p className="muted">Nada marcado neste dia.</p>}
           <details className="mod" style={{ marginTop: 12 }} open={!byDay(sel).length}><summary>+ Novo compromisso em {fd(sel)}</summary>
             <form action={saveEvent} className="form-grid" style={{ paddingBottom: 14 }}><input type="hidden" name="back" value={here} />
@@ -73,6 +82,7 @@ export default async function Calendario({ searchParams }: { searchParams: Promi
               <div className="field"><label>Marca (opcional)</label><select className="input" name="brand_id"><option value="">—</option>{(brands || []).map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
               <div className="field"><label>Local ou link</label><input className="input" name="location" /></div>
               <div className="field full"><label>Observações</label><textarea className="input" name="notes" /></div>
+              <LabelChecks labels={L.usable("event")} on={et && L.usable("event").some((l) => l.id === et) ? [et] : []} />
               <div><button className="btn btn-primary btn-sm">Agendar</button></div></form></details>
           {can(profile, "demandas") ? <Link className="btn btn-ghost btn-sm" style={{ marginTop: 10 }} href={`/tarefas?novo=1&due=${sel}`}>+ Nova tarefa com prazo em {fd(sel)}</Link> : null}
         </div>

@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { loadLabels } from "@/lib/labels";
+import LabelPicker from "@/components/LabelPicker";
 import { requireModule } from "@/lib/session";
 import { can } from "@/lib/perms";
 import { PageH, Pill, Notice, fd, brl } from "@/components/ui";
@@ -26,10 +28,12 @@ export default async function Marca({ params, searchParams }: { params: Promise<
   const u = users?.[0];
   const accLabel = u ? (u.status !== "ativo" ? ACC[u.status] || u.status : u.last_login_at ? "Ativo" : ACC[u.access_status] || "Convite enviado") : "Acesso não criado";
   const back = `/marcas/${id}`;
+  const LB = await loadLabels(supabase, "marca", [id]);
   return (
     <>
       <PageH eyebrow={b.category || "Marca"} title={b.name} right={<div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}><Pill s={b.status} />{can(profile, "relatorios") ? <a className="btn btn-ghost btn-sm" href={`/relatorios?marca=${id}&tab=vivo`}>Relatório da marca</a> : null}{profile.role === "ceo" ? <ConfirmDelete action={deleteBrand} fields={{ id }} label="Excluir marca" warning={`Exclui ${b.name}, os dados de contrato e os acessos ao portal. Só é possível se a marca não tiver campanhas; se tiver, mude o status para Inativa.`} /> : null}</div>} />
       <Notice q={q} />
+      <div className="lbl-detail"><span className="small muted">🏷 Etiquetas</span><LabelPicker all={LB.usable("marca")} on={LB.ids("marca", id)} entity="marca" id={id} /></div>
       <div className="card profile-head">{b.logo_path ? <img className="brand-logo" src={photoUrl(b.logo_path)} alt={`Logo ${b.name}`} /> : <span className="brand-logo" style={{ display: "grid", placeItems: "center", fontWeight: 800 }}>{b.name.slice(0, 2).toUpperCase()}</span>}<div style={{ flex: 1, minWidth: 200 }}><h2>{b.name}</h2>{b.description ? <p className="small muted" style={{ whiteSpace: "pre-wrap" }}>{b.description}</p> : null}</div>
         <details className="mod" style={{ width: "100%" }}><summary className="small">Logo e apresentação da marca</summary><form action={saveBrandProfile} className="form-grid" style={{ paddingBottom: 12 }}><input type="hidden" name="brand_id" value={id} />
           <FileUpload name="logo_path" bucket="perfis" folder="marcas" accept="image/*" current={b.logo_path} label="Logo da marca" />

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { loadLabels } from "@/lib/labels";
+import LabelPicker from "@/components/LabelPicker";
 import { notFound } from "next/navigation";
 import { requireModule } from "@/lib/session";
 import { can } from "@/lib/perms";
@@ -25,10 +27,12 @@ export default async function CreatorPerfil({ params, searchParams }: { params: 
   const links = await Promise.all((files || []).map((f: any) => signedDoc(f.path)));
   const here = `/creators/${id}`;
   const ig = c.instagram ? `https://instagram.com/${String(c.instagram).replace(/^@/, "")}` : "", tt = c.tiktok ? `https://tiktok.com/@${String(c.tiktok).replace(/^@/, "")}` : "";
+  const LB = await loadLabels(supabase, "creator", [id]);
   return (
     <>
       <PageH eyebrow="Perfil da creator" title={c.artist_name || c.name} right={<Link className="btn btn-ghost btn-sm" href="/creators">Voltar</Link>} />
       <Notice q={q} />
+      <div className="lbl-detail"><span className="small muted">🏷 Etiquetas</span><LabelPicker all={LB.usable("creator")} on={LB.ids("creator", id)} entity="creator" id={id} /></div>
       <div className="card profile-head">
         <Avatar name={c.name} src={c.avatar_path} size={88} star={lv.cur?.color} title={lv.cur?.name} />
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}><h2>{c.name}</h2><div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}><LevelBadge level={lv.cur} /><span className="small muted">{c.xp || 0} pontos{lv.next ? ` · faltam ${lv.next.min_points - (c.xp || 0)} para ${lv.next.name}` : ""}</span></div>

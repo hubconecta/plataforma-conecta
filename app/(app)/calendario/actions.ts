@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { requireModule, logAction } from "@/lib/session";
 import { g, orNull, back, notifyProfiles, notifyCeo } from "@/lib/act";
+import { applyLabels } from "@/lib/labels";
 
 export async function saveEvent(fd: FormData) {
   const { supabase, profile } = await requireModule("calendario");
@@ -9,8 +10,9 @@ export async function saveEvent(fd: FormData) {
   const row: any = { title: g(fd, "title"), notes: orNull(g(fd, "notes")), location: orNull(g(fd, "location")), day: g(fd, "day"), start_time: orNull(g(fd, "start_time")), end_time: orNull(g(fd, "end_time")), owner_id: orNull(g(fd, "owner_id")) || profile.id, brand_id: orNull(g(fd, "brand_id")) };
   if (!row.title || !row.day) back(path, "Informe o título e a data.", false);
   if (!id) row.created_by = profile.id;
-  const { error } = id ? await supabase.from("calendar_events").update(row).eq("id", id) : await supabase.from("calendar_events").insert(row);
+  const { data: saved, error } = id ? await supabase.from("calendar_events").update(row).eq("id", id).select("id").single() : await supabase.from("calendar_events").insert(row).select("id").single();
   if (error) back(path, "Não foi possível salvar: " + error.message, false);
+  if (!id && saved?.id) await applyLabels(supabase, "event", saved.id, fd);
   if (row.owner_id !== profile.id && !id) await notifyProfiles(supabase, { ids: [row.owner_id] }, `📅 Novo compromisso na sua agenda: ${row.title} em ${row.day.split("-").reverse().join("/")}${row.start_time ? ` às ${row.start_time.slice(0, 5)}` : ""}`, `/calendario?m=${row.day.slice(0, 7)}`);
   const when = `${row.day.split("-").reverse().join("/")}${row.start_time ? ` às ${row.start_time.slice(0, 5)}` : ""}`;
   await notifyCeo(supabase, profile, `📅 ${profile.name} ${id ? "alterou" : "agendou"}: ${row.title} em ${when}`, `/calendario?m=${row.day.slice(0, 7)}&dia=${row.day}&who=todos`);

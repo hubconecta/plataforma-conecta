@@ -22,6 +22,7 @@ export const MODS: Mod[] = [
   { key: "formularios", label: "Formulários", icon: "form", href: "/formularios", roles: ST},
   { key: "demandas", label: "Tarefas", icon: "tasks", href: "/tarefas", roles: ST },
   { key: "calendario", label: "Calendário", icon: "calendar", href: "/calendario", roles: ST },
+  { key: "etiquetas", label: "Etiquetas", icon: "tag", href: "/etiquetas", roles: ST },
   { key: "gamificacao", label: "Níveis e pontos", icon: "star", href: "/gamificacao", roles: ST },
   { key: "crm", label: "Leads de marcas", icon: "funnel", href: "/leads", roles: ST },
   { key: "relatorios", label: "Relatórios", icon: "chart", href: "/relatorios", roles: [...ST, "marca"] },
@@ -47,8 +48,8 @@ export const MODS: Mod[] = [
 ];
 
 export const MENU: Record<string, [string, string[]][]> = {
-  ceo: [["Visão", ["ceo", "ops"]], ["Pessoas", ["cad_creators", "creators", "marcas", "colaboradoras"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "gamificacao", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["conta", "notificacoes", "auditoria", "config"]]],
-  equipe: [["Visão", ["ops", "conta"]], ["Pessoas", ["cad_creators", "creators", "marcas"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "gamificacao", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["notificacoes"]]],
+  ceo: [["Visão", ["ceo", "ops"]], ["Pessoas", ["cad_creators", "creators", "marcas", "colaboradoras"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "etiquetas", "gamificacao", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["conta", "notificacoes", "auditoria", "config"]]],
+  equipe: [["Visão", ["ops", "conta"]], ["Pessoas", ["cad_creators", "creators", "marcas"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "etiquetas", "gamificacao", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["notificacoes"]]],
   financeiro: [["Financeiro", ["fin"]], ["Sistema", ["conta", "notificacoes"]]],
   marca: [["Sua marca", ["marca_home", "perfil_marca", "campanhas", "desafios", "conteudos", "marca_envios", "relatorios"]], ["Acompanhamento", ["fin_marca"]], ["Ajuda", ["notificacoes"]]],
   creator: [["Clube", ["clube", "oportunidades", "minhas", "meus_desafios", "cr_presskits"]], ["Evolução", ["jornada"]], ["Ganhos", ["comissoes"]], ["Educação", ["metodo"]], ["Você", ["perfil", "notificacoes"]]],
@@ -58,7 +59,7 @@ export const MENU: Record<string, [string, string[]][]> = {
 export const HOME: Record<string, string> = { ceo: "/ceo", equipe: "/operacao", financeiro: "/financeiro", marca: "/portal", creator: "/clube", pendente: "/sem-acesso" };
 export const ENV: Record<string, string> = { ceo: "Conecta ADM", equipe: "Conecta ADM", financeiro: "Conecta Financeiro", marca: "Portal da Marca", creator: "Clube Conecta", pendente: "Conecta" };
 export const ROLE_LABEL: Record<string, string> = { ceo: "Super Admin · CEO", equipe: "Equipe Conecta", financeiro: "Financeiro", marca: "Marca", creator: "Creator", pendente: "Sem acesso" };
-const ALWAYS = ["ops", "notificacoes", "calendario", "conta"];
+const ALWAYS = ["ops", "notificacoes", "calendario", "conta", "etiquetas"];
 
 export function grantable(): Mod[] {
   return MODS.filter((m) => !ALWAYS.includes(m.key) && (m.roles.includes("equipe") || (m.grant || []).includes("equipe")));

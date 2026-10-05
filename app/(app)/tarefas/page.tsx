@@ -4,6 +4,9 @@ import { PageH, Pill, Notice, fd } from "@/components/ui";
 import ConfirmDelete from "@/components/ConfirmDelete";
 import { TASK_STATUS, PRIOS } from "@/lib/consts";
 import { saveTask, moveTask, deleteTask } from "./actions";
+import { loadLabels } from "@/lib/labels";
+import LabelPicker from "@/components/LabelPicker";
+import { LabelFilter, LabelChecks } from "@/components/Labels";
 
 export default async function Tarefas({ searchParams }: { searchParams: Promise<any> }) {
   const q = await searchParams;
@@ -15,12 +18,16 @@ export default async function Tarefas({ searchParams }: { searchParams: Promise<
     supabase.from("campaigns").select("id,name").order("created_at", { ascending: false }),
     supabase.from("creators").select("id,name").order("name"),
   ]);
+  const L = await loadLabels(supabase, "task");
+  const TL = L.usable("task");
   const TN = new Map((team || []).map((t: any) => [t.id, t.name]));
   const today = new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10);
   const late = (t: any) => t.status !== "Concluído" && t.due && t.due < today;
   const who = q.who || "";
-  const list = (tasks || []).filter((t: any) => !who || t.owner_id === who);
-  const here = `/tarefas${who ? `?who=${who}` : ""}`;
+  const et = TL.some((l) => l.id === q.et) ? q.et : "";
+  const list = (tasks || []).filter((t: any) => (!who || t.owner_id === who) && (!et || L.has("task", t.id, et)));
+  const base = `/tarefas${who ? `?who=${who}` : ""}`;
+  const here = et ? `${base}${who ? "&" : "?"}et=${et}` : base;
   const Form = ({ t }: { t?: any }) => (
     <form action={saveTask} className="form-grid">
       {t ? <input type="hidden" name="id" value={t.id} /> : null}<input type="hidden" name="back" value={here} />
@@ -33,6 +40,7 @@ export default async function Tarefas({ searchParams }: { searchParams: Promise<
       <div className="field"><label>Campanha</label><select className="input" name="campaign_id" defaultValue={t?.campaign_id || ""}><option value="">—</option>{(camps || []).map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
       <div className="field"><label>Creator</label><select className="input" name="creator_id" defaultValue={t?.creator_id || ""}><option value="">—</option>{(creators || []).map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
       <div className="field full"><label>Descrição</label><textarea className="input" name="description" defaultValue={t?.description || ""} /></div>
+      {!t ? <LabelChecks labels={TL} on={et ? [et] : []} /> : null}
       <div><button className="btn btn-primary btn-sm">{t ? "Salvar" : "Criar tarefa"}</button></div>
     </form>
   );
@@ -41,10 +49,12 @@ export default async function Tarefas({ searchParams }: { searchParams: Promise<
       <PageH eyebrow="Gestão" title="Tarefas" sub={`${list.filter(late).length} atrasadas · tarefas vencidas ficam marcadas como atrasadas automaticamente`} />
       <Notice q={q} />
       <details className="mod" open={q.novo === "1"}><summary>+ Nova tarefa</summary><div style={{ paddingBottom: 16 }}><Form /></div></details>
-      <div className="chips"><Link className={`chip ${!who ? "on" : ""}`} href="/tarefas">Todos</Link>{(team || []).map((p: any) => <Link key={p.id} className={`chip ${who === p.id ? "on" : ""}`} href={`/tarefas?who=${p.id}`}>{p.name}</Link>)}</div>
+      <div className="chips"><Link className={`chip ${!who ? "on" : ""}`} href={`/tarefas${et ? `?et=${et}` : ""}`}>Todos</Link>{(team || []).map((p: any) => <Link key={p.id} className={`chip ${who === p.id ? "on" : ""}`} href={`/tarefas?who=${p.id}${et ? `&et=${et}` : ""}`}>{p.name}</Link>)}</div>
+      <LabelFilter labels={TL} active={et} base={base} />
       <div className="kanban">{TASK_STATUS.map((st, ci) => { const col = list.filter((t: any) => t.status === st); return (
         <div className="kcol" key={st}><div className="kcol-h"><span>{st === "Concluído" ? "Concluída" : st}</span><span className="count" style={{ fontSize: 14 }}>{col.length}</span></div>
           {col.map((t: any) => <div key={t.id} className={`kcard ${late(t) ? "late" : ""}`}>
+            <LabelPicker all={TL} on={L.ids("task", t.id)} entity="task" id={t.id} compact />
             <b>{t.title}</b>
             <span className="small muted">{[t.brands?.name && `Marca · ${t.brands.name}`, t.campaigns?.name && `Campanha · ${t.campaigns.name}`, t.creators?.name && `Creator · ${t.creators.name}`].filter(Boolean).join(" · ") || "Interno"}</span>
             {t.description ? <span className="small" style={{ whiteSpace: "pre-wrap" }}>{t.description}</span> : null}

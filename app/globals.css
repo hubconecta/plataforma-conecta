@@ -552,3 +552,28 @@ img.av{display:block;border-radius:50%;background:var(--surface-2)}
 .ig-band .btn{background:#fff;color:#E6007E;display:inline-flex}
 .ig-dot{width:46px;height:46px;border-radius:14px;border:2.5px solid #fff;display:grid!important;place-items:center;font-weight:900;font-size:14px!important;flex:none}
 @media (max-width:640px){.ig-link{display:none}}
+
+/* etiquetas (estilo Trello) */
+.lbl-row{display:inline-flex;flex-wrap:wrap;gap:5px;align-items:center}
+.lbl{display:inline-flex;align-items:center;border-radius:6px;padding:3px 9px;font-size:12px;font-weight:700;line-height:1.3;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lbl.sm{font-size:11px;padding:2px 7px;border-radius:5px}
+.lbl-add{border:1px dashed var(--line-2);background:transparent;color:var(--muted);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700;cursor:pointer;line-height:1.4}
+.lbl-add:hover{color:var(--ink);border-color:var(--ink)}
+.lbl-modal{max-width:420px}
+.lbl-list{display:flex;flex-direction:column;gap:6px;max-height:46vh;overflow-y:auto}
+.lbl-opt{display:flex;align-items:center;gap:8px;background:none;border:0;padding:0;cursor:pointer;text-align:left;width:100%}
+.lbl-check{width:20px;height:20px;border-radius:5px;border:1.5px solid var(--line-2);display:grid;place-items:center;font-size:13px;font-weight:800;flex:none}
+.lbl-opt.on .lbl-check{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.lbl-bar{flex:1;border-radius:7px;padding:9px 12px;font-weight:700;font-size:13.5px;min-height:36px;display:flex;align-items:center}
+.lbl-opt:hover .lbl-bar{filter:brightness(.93)}
+.lbl-preview{background:var(--bg);border-radius:10px;padding:14px;display:flex}
+.lbl-colors{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.lbl-sw{height:32px;border-radius:7px;border:0;cursor:pointer;outline-offset:2px}
+.lbl-sw.on{outline:2.5px solid var(--ink)}
+.lbl-dot{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:6px;vertical-align:-1px}
+.lbl-checks{display:flex;flex-wrap:wrap;gap:6px}
+.lbl-ck{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.lbl-ck input{accent-color:var(--ink)}
+.cal-dots{display:inline-flex;gap:2px;margin-right:3px;vertical-align:1px}
+.cal-dots i{width:6px;height:6px;border-radius:2px;display:inline-block}
+.lbl-detail{display:flex;align-items:center;gap:10px;flex-wrap:wrap}

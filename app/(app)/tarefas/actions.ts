@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { requireModule, logAction } from "@/lib/session";
 import { g, orNull, back, notifyProfiles, notifyCeo } from "@/lib/act";
 import { TASK_STATUS } from "@/lib/consts";
+import { applyLabels } from "@/lib/labels";
 
 export async function saveTask(fd: FormData) {
   const { supabase, profile } = await requireModule("demandas");
@@ -13,8 +14,9 @@ export async function saveTask(fd: FormData) {
   let prevOwner: string | null = null;
   if (id) { const { data: p } = await supabase.from("tasks").select("owner_id").eq("id", id).single(); prevOwner = p?.owner_id || null; }
   else row.created_by = profile.id;
-  const { error } = id ? await supabase.from("tasks").update(row).eq("id", id) : await supabase.from("tasks").insert(row);
+  const { data: saved, error } = id ? await supabase.from("tasks").update(row).eq("id", id).select("id").single() : await supabase.from("tasks").insert(row).select("id").single();
   if (error) back(path, "Não foi possível salvar: " + error.message, false);
+  if (!id && saved?.id) await applyLabels(supabase, "task", saved.id, fd);
   if (row.owner_id && row.owner_id !== profile.id && row.owner_id !== prevOwner) await notifyProfiles(supabase, { ids: [row.owner_id] }, `Nova tarefa para você: ${row.title}`, "/tarefas");
   if (!id) await notifyCeo(supabase, profile, `📝 ${profile.name} criou a tarefa: ${row.title}`, "/tarefas");
   await logAction(supabase, profile, `${id ? "editou" : "criou"} a tarefa ${row.title}`, "Tarefas", id || null);
