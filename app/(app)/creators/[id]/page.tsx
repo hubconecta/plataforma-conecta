@@ -7,7 +7,6 @@ import { addCreatorToCampaign } from "../../actions";
 import { can } from "@/lib/perms";
 import { notFound } from "next/navigation";
 import { requireModule } from "@/lib/session";
-import { can } from "@/lib/perms";
 import { PageH, Pill, Notice, Avatar, Kpi, fd, brl } from "@/components/ui";
 import LevelBadge, { levelOf } from "@/components/LevelBadge";
 import FileUpload from "@/components/FileUpload";
