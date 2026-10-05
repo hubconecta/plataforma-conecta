@@ -1,7 +1,8 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { requireModule, logAction } from "@/lib/session";
-import { g, back, notifyProfiles } from "@/lib/act";
+import { requireModule, getSession, logAction } from "@/lib/session";
+import { can } from "@/lib/perms";
+import { g, back, notifyProfiles, notifyCreators } from "@/lib/act";
 
 // Muda a creator entre "só da marca" e "base completa da Conecta"
 export async function setCreatorBase(fd: FormData) {
@@ -37,4 +38,33 @@ export async function removeCreatorBrand(fd: FormData) {
   await logAction(supabase, profile, `tirou ${c?.name || "a creator"} da base da marca ${b?.name || ""}`, "Creators", creator);
   revalidatePath("/creators", "layout"); revalidatePath("/marcas", "layout");
   back(path, `${c?.name || "Creator"} saiu da base da ${b?.name || "marca"}.`);
+}
+
+// Grupos de WhatsApp da marca (comunidade da marca, afiliação, campanha…)
+export async function saveBrandLink(fd: FormData) {
+  const s = await getSession();
+  const brand = g(fd, "brand_id"), path = `/marcas/${brand}`;
+  if (!s.profile || !(can(s.profile, "marcas") || can(s.profile, "campanhas"))) back(path, "Sem permissão.", false);
+  const url = g(fd, "url");
+  if (!/^https?:\/\//.test(url)) back(path, "Cole o link completo do grupo (https://chat.whatsapp.com/…).", false);
+  const kinds = ["Comunidade da marca", "Afiliação", "Campanha", "Outro"];
+  const kind = kinds.includes(g(fd, "kind")) ? g(fd, "kind") : "Comunidade da marca";
+  const { error } = await s.supabase.from("brand_links").insert({ brand_id: brand, title: g(fd, "title") || kind, url, kind });
+  if (error) back(path, "Não foi possível salvar: " + error.message, false);
+  // avisa as creators da base da marca
+  const { data: cbs } = await s.supabase.from("creator_brands").select("creator_id").eq("brand_id", brand);
+  const { data: b } = await s.supabase.from("brands").select("name").eq("id", brand).single();
+  if (cbs?.length) await notifyCreators(s.supabase, `💬 Novo grupo da ${b?.name || "marca"} no WhatsApp: ${g(fd, "title") || kind}`, "/clube/marcas", cbs.map((x: any) => x.creator_id));
+  await logAction(s.supabase, s.profile!, `adicionou o grupo ${g(fd, "title") || kind} na marca ${b?.name || ""}`, "Marcas", brand);
+  revalidatePath("/marcas", "layout");
+  back(path, "Grupo adicionado. As creators da marca já veem e foram avisadas.");
+}
+
+export async function deleteBrandLink(fd: FormData) {
+  const s = await getSession();
+  const brand = g(fd, "brand_id"), path = `/marcas/${brand}`;
+  if (!s.profile || !(can(s.profile, "marcas") || can(s.profile, "campanhas"))) back(path, "Sem permissão.", false);
+  await s.supabase.from("brand_links").delete().eq("id", g(fd, "id"));
+  revalidatePath("/marcas", "layout");
+  back(path, "Grupo removido da plataforma.");
 }

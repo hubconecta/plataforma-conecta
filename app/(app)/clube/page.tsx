@@ -54,7 +54,7 @@ export default async function Clube({ searchParams }: { searchParams: Promise<an
             <label className="perm full"><input type="checkbox" name="aceite" required />Quero fazer parte da comunidade de creators da Conecta e receber oportunidades das marcas parceiras.</label>
             <div><button className="btn btn-primary">Entrar no Clube Conecta</button></div>
           </form></details></div> : null}
-      <GroupLinks supabase={supabase} />
+      <GroupLinks supabase={supabase} brands />
       {!addr ? <div className="notice info">Complete seu endereço em <Link href="/clube/perfil">Meu perfil e endereço</Link> para receber produtos e press kits.</div> : null}
       {lim ? <div className="kpis"><Kpi k="Pontos" v={xp} hero /><Kpi k="Desafios participando" v={joined.size} /></div> : <div className="kpis"><Kpi k="Pontos" v={xp} hero /><Kpi k="Inscrições enviadas" v={mine?.length || 0} /><Kpi k="Aprovadas" v={(mine || []).filter((a: any) => a.status === "Aprovada").length} /><Kpi k="Desafios participando" v={joined.size} /></div>}
       <div className="grid g2">

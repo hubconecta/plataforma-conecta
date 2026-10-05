@@ -4,7 +4,7 @@ import { PageH, Pill, Person, Empty, Notice, fd } from "@/components/ui";
 import { setApplicationStatus, deleteApplication } from "../actions";
 import ConfirmDelete from "@/components/ConfirmDelete";
 
-const LABELS: Record<string, string> = { what: "O que faz", artist: "Nome artístico", birth: "Nascimento", cep: "CEP", niches2: "Nichos secundários", worksBrands: "Trabalha com marcas", brandTypes: "Tipos de marcas", since: "Há quanto tempo", campaigns: "Já fez campanhas", affiliates: "Já trabalhou com afiliados", soldLinks: "Já vendeu com links/cupons", yt: "YouTube", followers: "Seguidores (informado)", want: "Quer trabalhar com", avoid: "Não quer", acceptProducts: "Recebe produtos", acceptPaid: "Campanhas pagas", acceptComm: "Por comissão", acceptUgc: "UGC", events: "Eventos", eventCity: "Cidade para eventos" };
+const LABELS: Record<string, string> = { ttShop: "Tem TikTok Shop", ttGmv: "GMV no TikTok Shop", ttLevel: "Nível no TikTok Shop", street: "Rua", number: "Número", comp: "Complemento", district: "Bairro", what: "O que faz", artist: "Nome artístico", birth: "Nascimento", cep: "CEP", niches2: "Nichos secundários", worksBrands: "Trabalha com marcas", brandTypes: "Tipos de marcas", since: "Há quanto tempo", campaigns: "Já fez campanhas", affiliates: "Já trabalhou com afiliados", soldLinks: "Já vendeu com links/cupons", yt: "YouTube", followers: "Seguidores (informado)", want: "Quer trabalhar com", avoid: "Não quer", acceptProducts: "Recebe produtos", acceptPaid: "Campanhas pagas", acceptComm: "Por comissão", acceptUgc: "UGC", events: "Eventos", eventCity: "Cidade para eventos" };
 
 export default async function Cadastros({ searchParams }: { searchParams: Promise<any> }) {
   const q = await searchParams;

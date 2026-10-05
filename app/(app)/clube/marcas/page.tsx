@@ -17,12 +17,13 @@ export default async function MinhasAfiliacoes({ searchParams }: { searchParams:
   (cbs || []).forEach((x: any) => since.set(x.brand_id, String(x.created_at).slice(0, 10)));
   (apps || []).filter((a: any) => a.status === "Aprovada" && a.campaigns?.brand_id).forEach((a: any) => { if (!since.has(a.campaigns.brand_id)) since.set(a.campaigns.brand_id, a.campaigns.start_date || ""); });
   const ids = [...since.keys()];
-  const [{ data: brands }, { data: chs }, { data: open }, { data: glinks }] = ids.length ? await Promise.all([
+  const [{ data: brands }, { data: chs }, { data: open }, { data: glinks }, { data: blinks }] = ids.length ? await Promise.all([
     supabase.from("brand_public").select("id,name,logo_path,instagram,category").in("id", ids),
     supabase.from("challenges").select("id,name,brand_id,due_date,prizes,reward_label,reward_type,reward_value,winners").eq("status", "Ativo").in("brand_id", ids),
     supabase.from("campaigns").select("id,name,brand_id,end_date").eq("status", "Inscrições abertas").in("brand_id", ids),
     supabase.from("campaign_links").select("campaign_id,url"),
-  ]) : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }] as any[];
+    supabase.from("brand_links").select("brand_id,title,url,kind").in("brand_id", ids).order("position"),
+  ]) : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }] as any[];
   const GL = new Map((glinks || []).map((x: any) => [x.campaign_id, x.url]));
   const list = (brands || []).sort((a: any, b: any) => a.name.localeCompare(b.name));
   const ig = (h?: string) => (h ? `https://instagram.com/${String(h).replace(/^@/, "")}` : "");
@@ -38,6 +39,7 @@ export default async function MinhasAfiliacoes({ searchParams }: { searchParams:
             <div className="aff-head">{b.logo_path ? <img src={photoUrl(b.logo_path)} alt={`Logo ${b.name}`} /> : <span className="aff-ph">{b.name.slice(0, 2).toUpperCase()}</span>}
               <div style={{ minWidth: 0 }}><span className="eyebrow">Afiliada{since.get(b.id) ? ` desde ${fd(since.get(b.id)!)}` : ""}</span><h2 style={{ margin: "2px 0" }}>{b.name}</h2><span className="small muted">{[b.category, b.instagram].filter(Boolean).join(" · ")}</span></div></div>
             {b.instagram ? <a className="btn btn-ghost btn-sm" href={ig(b.instagram)} target="_blank" rel="noopener noreferrer">Seguir {b.instagram} no Instagram</a> : null}
+            {(blinks || []).filter((l: any) => l.brand_id === b.id).map((l: any, i: number) => <a key={i} className="btn btn-ok btn-sm" href={l.url} target="_blank" rel="noopener noreferrer">💬 Entrar no grupo · {l.title}</a>)}
             <div><b className="small">🔥 Desafios ativos ({bc.length})</b>{bc.length ? <div className="list">{bc.map((x: any) => <Link key={x.id} href="/clube/desafios" className="li" style={{ textDecoration: "none", color: "inherit" }}><div className="grow"><b>{x.name}</b><span>Prêmio: {prizeSummary(x)}{x.due_date ? ` · até ${fd(x.due_date)}` : ""}</span></div></Link>)}</div> : <p className="small muted">Nenhum desafio ativo agora.</p>}</div>
             <div><b className="small">📣 Oportunidades abertas ({bo.length})</b>{bo.length ? <div className="list">{bo.map((x: any) => <Link key={x.id} href="/clube/oportunidades" className="li" style={{ textDecoration: "none", color: "inherit" }}><div className="grow"><b>{x.name}</b><span>{x.end_date ? `até ${fd(x.end_date)}` : "inscrições abertas"}</span></div></Link>)}</div> : <p className="small muted">Nenhuma campanha com inscrições abertas.</p>}</div>
             {mine.length ? <div><b className="small">⭐ Minhas campanhas com a marca</b><div className="list">{mine.map((a: any) => <div className="li" key={a.campaign_id}><div className="grow"><b>{a.campaigns?.name}</b><span>{a.campaigns?.status}</span></div><Pill s={a.status} />{a.status === "Aprovada" && GL.get(a.campaign_id) ? <a className="btn btn-ok btn-sm" href={GL.get(a.campaign_id) as string} target="_blank" rel="noopener noreferrer">Grupo</a> : null}</div>)}</div></div> : null}

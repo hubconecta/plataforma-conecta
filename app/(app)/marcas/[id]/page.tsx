@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Social from "@/components/Social";
-import { addCreatorBrand, removeCreatorBrand } from "../../creators/actions";
+import { addCreatorBrand, removeCreatorBrand, saveBrandLink, deleteBrandLink } from "../../creators/actions";
 import { notFound } from "next/navigation";
 import { loadLabels } from "@/lib/labels";
 import LabelPicker from "@/components/LabelPicker";
@@ -32,6 +32,7 @@ export default async function Marca({ params, searchParams }: { params: Promise<
   const accLabel = u ? (u.status !== "ativo" ? ACC[u.status] || u.status : u.last_login_at ? "Ativo" : ACC[u.access_status] || "Convite enviado") : "Acesso não criado";
   const back = `/marcas/${id}`;
   const LB = await loadLabels(supabase, "marca", [id]);
+  const { data: blinks } = await supabase.from("brand_links").select("*").eq("brand_id", id).order("position").order("created_at");
   const { data: allCreators } = await supabase.from("creators").select("id,name,instagram").order("name");
   const { data: base } = await supabase.from("creator_brands").select("created_at, source, creators(id,name,instagram,tiktok,whatsapp,city,state,brand_only,avatar_path)").eq("brand_id", id).order("created_at", { ascending: false });
   return (
@@ -39,6 +40,13 @@ export default async function Marca({ params, searchParams }: { params: Promise<
       <PageH eyebrow={b.category || "Marca"} title={b.name} right={<div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}><Pill s={b.status} />{can(profile, "relatorios") ? <a className="btn btn-ghost btn-sm" href={`/relatorios?marca=${id}&tab=vivo`}>Relatório da marca</a> : null}{profile.role === "ceo" ? <ConfirmDelete action={deleteBrand} fields={{ id }} label="Excluir marca" warning={`Exclui ${b.name}, os dados de contrato e os acessos ao portal. Só é possível se a marca não tiver campanhas; se tiver, mude o status para Inativa.`} /> : null}</div>} />
       <Notice q={q} />
       <div className="lbl-detail"><span className="small muted">🏷 Etiquetas</span><LabelPicker all={LB.usable("marca")} on={LB.ids("marca", id)} entity="marca" id={id} /></div>
+      <div className="card"><div className="card-h"><div><h2>Grupos da marca no WhatsApp</h2><span className="small muted">Comunidade da marca, grupo de afiliação ou de campanha. Aparecem para as creators da marca (base e aprovadas nas campanhas dela) e para a marca.</span></div></div>
+        {blinks?.length ? <div className="list">{blinks.map((l: any) => <div className="li" key={l.id}><div className="grow"><b>{l.title}</b><span>{l.kind} · <a href={l.url} target="_blank" rel="noopener noreferrer">{l.url}</a></span></div><form action={deleteBrandLink}><input type="hidden" name="id" value={l.id} /><input type="hidden" name="brand_id" value={id} /><button className="btn btn-ghost btn-sm">Remover</button></form></div>)}</div> : <p className="small muted">Nenhum grupo ainda.</p>}
+        <form action={saveBrandLink} className="form-grid" style={{ marginTop: 10 }}><input type="hidden" name="brand_id" value={id} />
+          <div className="field"><label>Nome do grupo</label><input className="input" name="title" placeholder={`Comunidade ${b.name}`} /></div>
+          <div className="field"><label>Tipo</label><select className="input" name="kind">{["Comunidade da marca", "Afiliação", "Campanha", "Outro"].map((k) => <option key={k}>{k}</option>)}</select></div>
+          <div className="field full"><label>Link do grupo</label><input className="input" name="url" type="url" required placeholder="https://chat.whatsapp.com/…" /></div>
+          <div><button className="btn btn-dark btn-sm">Adicionar grupo</button></div></form></div>
       <div className="card" id="base"><div className="card-h"><div><h2>Creators da marca · {base?.length || 0}</h2><span className="small muted">Quem entrou pelo formulário exclusivo da marca. Clique no nome para ver o perfil.</span></div><Link className="btn btn-ghost btn-sm" href={`/creators?marca=${id}`}>Ver em Creators</Link></div>
         {base?.length ? <div className="table-wrap"><table><thead><tr><th>Creator</th><th>Redes</th><th>WhatsApp</th><th>Cidade</th><th>Base</th><th>Entrou em</th><th></th></tr></thead><tbody>
           {base.map((b: any, i: number) => b.creators ? <tr key={i}><td><Link href={`/creators/${b.creators.id}`} style={{ color: "inherit", textDecoration: "none" }}><Person name={b.creators.name} src={b.creators.avatar_path} /></Link></td><td className="small">{b.creators.instagram || b.creators.tiktok ? <Social ig={b.creators.instagram} tt={b.creators.tiktok} /> : "—"}</td><td className="small">{b.creators.whatsapp || "—"}</td><td className="small">{b.creators.city ? `${b.creators.city}/${b.creators.state || ""}` : "—"}</td><td><Pill s={b.creators.brand_only ? "Só da marca" : "Base Conecta"} /></td><td className="num small">{fd(String(b.created_at).slice(0, 10))}</td><td><form action={removeCreatorBrand}><input type="hidden" name="creator_id" value={b.creators.id} /><input type="hidden" name="brand_id" value={id} /><input type="hidden" name="back" value={`/marcas/${id}`} /><button className="btn btn-ghost btn-sm" title="Tirar da base desta marca">Tirar</button></form></td></tr> : null)}
