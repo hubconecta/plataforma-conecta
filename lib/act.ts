@@ -1,5 +1,6 @@
 // Ajudantes das ações do servidor (formulários).
 import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const g = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 export const orNull = (v: string) => (v === "" ? null : v);
@@ -39,11 +40,24 @@ export async function notifyCeo(supabase: any, actor: { id: string; role: string
   if (ids.length) await supabase.from("notifications").insert(ids.map((id: string) => ({ user_id: id, text, link })));
 }
 
+// Creators "só da marca" que NÃO são da marca informada (não devem receber avisos dela).
+export async function hiddenForBrand(_supabase: any, brandId?: string | null): Promise<Set<string>> {
+  let supabase: any;
+  try { supabase = createAdminClient(); } catch { return new Set(); }
+  const { data: lim, error } = await supabase.from("creators").select("id").eq("brand_only", true);
+  if (error || !lim?.length) return new Set();
+  const { data: mine } = brandId ? await supabase.from("creator_brands").select("creator_id").eq("brand_id", brandId) : { data: [] as any[] };
+  const ok = new Set((mine || []).map((x: any) => x.creator_id));
+  return new Set(lim.map((x: any) => x.id).filter((id: string) => !ok.has(id)));
+}
+
 // Avisa todas as creators com acesso ao Clube (ou só as de uma lista).
-export async function notifyCreators(supabase: any, text: string, link: string, creatorIds?: string[]) {
-  let q = supabase.from("profiles").select("id").eq("role", "creator").eq("status", "ativo");
+// Com brandId, as creators "só da marca" recebem apenas os avisos das marcas delas.
+export async function notifyCreators(supabase: any, text: string, link: string, creatorIds?: string[], brandId?: string | null) {
+  let q = supabase.from("profiles").select("id,creator_id").eq("role", "creator").eq("status", "ativo");
   if (creatorIds) { if (!creatorIds.length) return; q = q.in("creator_id", creatorIds); }
   const { data } = await q;
-  const ids = (data || []).map((p: any) => p.id);
+  const hide = creatorIds ? new Set<string>() : await hiddenForBrand(supabase, brandId);
+  const ids = (data || []).filter((p: any) => !hide.has(p.creator_id)).map((p: any) => p.id);
   for (let i = 0; i < ids.length; i += 500) await supabase.from("notifications").insert(ids.slice(i, i + 500).map((id: string) => ({ user_id: id, text, link })));
 }

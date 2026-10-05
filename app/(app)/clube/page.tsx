@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireModule } from "@/lib/session";
 import { Kpi, Pill, fd } from "@/components/ui";
 import LevelBadge, { levelOf } from "@/components/LevelBadge";
+import { photoUrl } from "@/lib/storage";
 
 export default async function Clube() {
   const { supabase, profile } = await requireModule("clube");
@@ -18,6 +19,12 @@ export default async function Clube() {
     supabase.from("points_log").select("points").eq("creator_id", me),
   ]);
   const first = (c?.name || profile.name || "").split(" ")[0];
+  // Marcas em que ela está (entrou pelo formulário exclusivo da marca)
+  const { data: cbs } = await supabase.from("creator_brands").select("brand_id").eq("creator_id", me);
+  const myBrandIds = (cbs || []).map((x: any) => x.brand_id);
+  const { data: myBrands } = myBrandIds.length ? await supabase.from("brand_public").select("id,name,logo_path,instagram").in("id", myBrandIds) : { data: [] as any[] };
+  const { data: brandChs } = myBrandIds.length ? await supabase.from("challenges").select("id,brand_id").eq("status", "Ativo").in("brand_id", myBrandIds) : { data: [] as any[] };
+  const { data: brandCamps } = myBrandIds.length ? await supabase.from("campaigns").select("id,brand_id").eq("status", "Inscrições abertas").in("brand_id", myBrandIds) : { data: [] as any[] };
   const { data: levels } = await supabase.from("levels").select("*").order("position");
   const joined = new Set((parts || []).map((p: any) => p.challenge_id));
   const avail = (chs || []).filter((x: any) => !joined.has(x.id)).slice(0, 2);
@@ -26,7 +33,13 @@ export default async function Clube() {
   const xp = c?.xp || (pts || []).reduce((s: number, p: any) => s + p.points, 0);
   return (
     <>
-      <div className="club-hero"><span className="eyebrow" style={{ color: "#FF8CC4" }}>Clube Conecta</span><h1>Olá, {first} 👋</h1>{(levels || []).length ? (() => { const lv = levelOf(levels || [], c?.xp || 0); return <Link href={lim ? "/clube/desafios" : "/clube/jornada"} style={{ textDecoration: "none", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}><LevelBadge level={lv.cur} />{lv.next ? <span className="small" style={{ color: "#C9BFC6" }}>faltam {lv.next.min_points - (c?.xp || 0)} pts para {lv.next.name}</span> : null}</Link>; })() : null}{lim ? <p style={{ color: "#C9BFC6" }}>Aqui você acompanha os desafios das marcas parceiras.</p> : <p style={{ color: "#C9BFC6" }}>Você tem {open?.length || 0} campanhas com inscrições abertas.</p>}<div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{lim ? null : <Link className="btn btn-primary" href="/clube/oportunidades">Ver oportunidades</Link>}<Link className="btn btn-ghost" style={{ background: "#111", color: "#fff", borderColor: "#333" }} href="/clube/desafios">Desafios</Link></div></div>
+      <div className="club-hero"><span className="eyebrow" style={{ color: "#FF8CC4" }}>Clube Conecta</span><h1>Olá, {first} 👋</h1>{(levels || []).length ? (() => { const lv = levelOf(levels || [], c?.xp || 0); return <Link href={lim ? "/clube/desafios" : "/clube/jornada"} style={{ textDecoration: "none", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}><LevelBadge level={lv.cur} />{lv.next ? <span className="small" style={{ color: "#C9BFC6" }}>faltam {lv.next.min_points - (c?.xp || 0)} pts para {lv.next.name}</span> : null}</Link>; })() : null}{lim ? <p style={{ color: "#C9BFC6" }}>{(myBrands || []).length ? `Você faz parte da base de creators da ${(myBrands || []).map((b: any) => b.name).join(", ")}. Aqui você acompanha os desafios e as oportunidades da marca.` : "Aqui você acompanha os desafios e as oportunidades das marcas parceiras."}</p> : <p style={{ color: "#C9BFC6" }}>Você tem {open?.length || 0} campanhas com inscrições abertas.</p>}<div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><Link className="btn btn-primary" href="/clube/oportunidades">Ver oportunidades</Link><Link className="btn btn-ghost" style={{ background: "#111", color: "#fff", borderColor: "#333" }} href="/clube/desafios">Desafios</Link></div></div>
+      {(myBrands || []).length ? <div className="card"><div className="card-h"><h2>{(myBrands || []).length > 1 ? "Suas marcas" : "Sua marca"}</h2><span className="small muted">você faz parte da base de creators</span></div>
+        <div className="list">{(myBrands || []).map((b: any) => { const nc = (brandChs || []).filter((x: any) => x.brand_id === b.id).length, np = (brandCamps || []).filter((x: any) => x.brand_id === b.id).length; return (
+          <div className="li" key={b.id} style={{ flexWrap: "wrap" }}>{b.logo_path ? <img src={photoUrl(b.logo_path)} alt={`Logo ${b.name}`} style={{ width: 44, height: 44, borderRadius: 10, objectFit: "contain", background: "#fff", border: "1px solid var(--line)" }} /> : null}
+            <div className="grow"><b>{b.name}</b><span>{nc} desafio{nc === 1 ? "" : "s"} ativo{nc === 1 ? "" : "s"} · {np} oportunidade{np === 1 ? "" : "s"} aberta{np === 1 ? "" : "s"}{b.instagram ? ` · ${b.instagram}` : ""}</span></div>
+            <Link className="btn btn-ghost btn-sm" href="/clube/desafios">Desafios</Link><Link className="btn btn-ghost btn-sm" href="/clube/oportunidades">Oportunidades</Link></div>); })}</div>
+        {!(brandChs || []).length && !(brandCamps || []).length ? <p className="small muted" style={{ marginTop: 8 }}>Assim que a marca abrir um desafio ou uma campanha, você recebe uma notificação e eles aparecem aqui.</p> : null}</div> : null}
       <GroupLinks supabase={supabase} />
       {!addr ? <div className="notice info">Complete seu endereço em <Link href="/clube/perfil">Meu perfil e endereço</Link> para receber produtos e press kits.</div> : null}
       {lim ? <div className="kpis"><Kpi k="Pontos" v={xp} hero /><Kpi k="Desafios participando" v={joined.size} /></div> : <div className="kpis"><Kpi k="Pontos" v={xp} hero /><Kpi k="Inscrições enviadas" v={mine?.length || 0} /><Kpi k="Aprovadas" v={(mine || []).filter((a: any) => a.status === "Aprovada").length} /><Kpi k="Desafios participando" v={joined.size} /></div>}

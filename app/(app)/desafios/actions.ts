@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireModule, getSession, logAction } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { g, orNull, num, back, notifyProfiles } from "@/lib/act";
+import { g, orNull, num, back, notifyProfiles, hiddenForBrand } from "@/lib/act";
 
 const PLACE = (n: number) => `${n}º lugar`;
 
@@ -25,10 +25,11 @@ async function announce(supabase: any, ch: any) {
     const { data } = await supabase.from("campaign_applications").select("creator_id").eq("campaign_id", ch.campaign_id).eq("status", "Aprovada");
     ids = (data || []).map((a: any) => a.creator_id);
   }
-  let q = supabase.from("profiles").select("id").eq("role", "creator").eq("status", "ativo");
+  let q = supabase.from("profiles").select("id,creator_id").eq("role", "creator").eq("status", "ativo");
   if (ch.campaign_id && ch.audience.startsWith("Participantes")) { if (!ids.length) return; q = q.in("creator_id", ids); }
   const { data: ps } = await q;
-  await notifyProfiles(supabase, { ids: (ps || []).map((p: any) => p.id) }, `🔥 Novo desafio disponível: ${ch.name}`, "/clube/desafios");
+  const hide = await hiddenForBrand(supabase, ch.brand_id);
+  await notifyProfiles(supabase, { ids: (ps || []).filter((p: any) => !hide.has(p.creator_id)).map((p: any) => p.id) }, `🔥 Novo desafio disponível: ${ch.name}`, "/clube/desafios");
 }
 
 export async function saveChallenge(fd: FormData) {

@@ -67,7 +67,7 @@ export function grantable(): Mod[] {
 }
 
 // Creator "só da marca" (veio pelo formulário de uma marca e não entrou na base da Conecta)
-export const LIMITED_KEYS = ["clube", "meus_desafios", "minhas", "perfil", "notificacoes"];
+export const LIMITED_KEYS = ["clube", "oportunidades", "meus_desafios", "minhas", "perfil", "notificacoes"];
 
 export function can(profile: { role: string; perms?: string[] | null; status?: string; limited?: boolean } | null, key: string): boolean {
   if (!profile || profile.status === "inativo" || profile.status === "bloqueado") return false;

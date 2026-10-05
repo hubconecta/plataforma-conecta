@@ -25,7 +25,7 @@ async function notifyProfiles(supabase: any, filter: { creator_id?: string; bran
 // Campanha abriu inscrições → todas as creators; começou → as aprovadas; nova campanha → a marca.
 async function announceCampaign(supabase: any, c: { id: string; name: string; brand_id: string; status: string }, prev: string | null, isNew: boolean) {
   if (c.status === prev) return;
-  if (c.status === "Inscrições abertas") await notifyCreators(supabase, `📣 Nova campanha com inscrições abertas: ${c.name}`, "/clube/oportunidades");
+  if (c.status === "Inscrições abertas") await notifyCreators(supabase, `📣 Nova campanha com inscrições abertas: ${c.name}`, "/clube/oportunidades", undefined, c.brand_id);
   if (c.status === "Ativa") {
     const { data } = await supabase.from("campaign_applications").select("creator_id").eq("campaign_id", c.id).eq("status", "Aprovada");
     await notifyCreators(supabase, `🚀 A campanha ${c.name} começou! Confira o briefing e envie seus conteúdos.`, "/clube/minhas", (data || []).map((a: any) => a.creator_id));
