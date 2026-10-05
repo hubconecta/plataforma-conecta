@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { loadLabels } from "@/lib/labels";
 import LabelPicker from "@/components/LabelPicker";
+import { setCreatorBase } from "../actions";
 import { notFound } from "next/navigation";
 import { requireModule } from "@/lib/session";
 import { can } from "@/lib/perms";
@@ -28,10 +29,15 @@ export default async function CreatorPerfil({ params, searchParams }: { params: 
   const here = `/creators/${id}`;
   const ig = c.instagram ? `https://instagram.com/${String(c.instagram).replace(/^@/, "")}` : "", tt = c.tiktok ? `https://tiktok.com/@${String(c.tiktok).replace(/^@/, "")}` : "";
   const LB = await loadLabels(supabase, "creator", [id]);
+  const { data: cbs } = await supabase.from("creator_brands").select("brand_id, source, created_at").eq("creator_id", id);
+  const { data: bnames } = cbs?.length ? await supabase.from("brands").select("id,name").in("id", cbs.map((x: any) => x.brand_id)) : { data: [] as any[] };
   return (
     <>
       <PageH eyebrow="Perfil da creator" title={c.artist_name || c.name} right={<Link className="btn btn-ghost btn-sm" href="/creators">Voltar</Link>} />
       <Notice q={q} />
+      <div className="card"><div className="card-h"><div><h2>{c.brand_only ? "Creator só da marca" : "Base completa da Conecta"}</h2><span className="small muted">{c.brand_only ? "Vê só os desafios das marcas abaixo (sem oportunidades, comunidade e Club Criadora)." : "Tem o Clube Conecta completo."}</span></div>
+        <form action={setCreatorBase}><input type="hidden" name="creator_id" value={id} /><input type="hidden" name="full" value={c.brand_only ? "1" : "0"} /><button className={`btn btn-sm ${c.brand_only ? "btn-primary" : "btn-ghost"}`}>{c.brand_only ? "Colocar na base da Conecta" : "Deixar só com as marcas dela"}</button></form></div>
+        <div className="chips">{(bnames || []).length ? (bnames || []).map((b: any) => <Link key={b.id} className="chip" href={`/marcas/${b.id}`}>🏷️ {b.name}</Link>) : <span className="small muted">Ainda não está na base de nenhuma marca (entra respondendo o formulário de uma marca).</span>}</div></div>
       <div className="lbl-detail"><span className="small muted">🏷 Etiquetas</span><LabelPicker all={LB.usable("creator")} on={LB.ids("creator", id)} entity="creator" id={id} /></div>
       <div className="card profile-head">
         <Avatar name={c.name} src={c.avatar_path} size={88} star={lv.cur?.color} title={lv.cur?.name} />

@@ -577,3 +577,7 @@ img.av{display:block;border-radius:50%;background:var(--surface-2)}
 .cal-dots{display:inline-flex;gap:2px;margin-right:3px;vertical-align:1px}
 .cal-dots i{width:6px;height:6px;border-radius:2px;display:inline-block}
 .lbl-detail{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.brand-form-head{display:flex;align-items:center;gap:12px}
+.brand-form-head img{width:52px;height:52px;border-radius:12px;object-fit:contain;background:#fff;border:1px solid var(--line)}
+.join-box{align-items:flex-start;gap:10px;padding:14px;border:1.5px solid var(--pink, #E6007E);border-radius:12px;background:var(--surface)}
+.join-box input{margin-top:3px}

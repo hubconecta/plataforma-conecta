@@ -43,6 +43,7 @@ export const MODS: Mod[] = [
   { key: "metodo", label: "Club Criadora", icon: "play", href: "/club", roles: ["creator"] },
   { key: "comissoes", label: "Comissões e recompensas", icon: "coins", href: "/clube/comissoes", roles: ["creator"] },
   { key: "fin_marca", label: "Financeiro", icon: "wallet", href: "/portal/financeiro", roles: ["marca"] },
+  { key: "marca_forms", label: "Formulários e creators", icon: "form", href: "/portal/formularios", roles: ["marca"] },
   { key: "jornada", label: "Minha jornada", icon: "star", href: "/clube/jornada", roles: ["creator"] },
   { key: "meus_desafios", label: "Desafios", icon: "trophy", href: "/clube/desafios", roles: ["creator"] },
 ];
@@ -51,7 +52,7 @@ export const MENU: Record<string, [string, string[]][]> = {
   ceo: [["Visão", ["ceo", "ops"]], ["Pessoas", ["cad_creators", "creators", "marcas", "colaboradoras"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "etiquetas", "gamificacao", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["conta", "notificacoes", "auditoria", "config"]]],
   equipe: [["Visão", ["ops", "conta"]], ["Pessoas", ["cad_creators", "creators", "marcas"]], ["Operação", ["campanhas", "candidaturas", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "etiquetas", "gamificacao", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["notificacoes"]]],
   financeiro: [["Financeiro", ["fin"]], ["Gestão", ["calendario", "demandas"]], ["Sistema", ["conta", "notificacoes"]]],
-  marca: [["Sua marca", ["marca_home", "perfil_marca", "campanhas", "desafios", "conteudos", "marca_envios", "relatorios"]], ["Acompanhamento", ["fin_marca"]], ["Ajuda", ["notificacoes"]]],
+  marca: [["Sua marca", ["marca_home", "perfil_marca", "campanhas", "desafios", "conteudos", "marca_forms", "marca_envios", "relatorios"]], ["Acompanhamento", ["fin_marca"]], ["Ajuda", ["notificacoes"]]],
   creator: [["Clube", ["clube", "oportunidades", "minhas", "meus_desafios", "cr_presskits"]], ["Evolução", ["jornada"]], ["Ganhos", ["comissoes"]], ["Educação", ["metodo"]], ["Você", ["perfil", "notificacoes"]]],
   pendente: [],
 };
@@ -65,10 +66,14 @@ export function grantable(): Mod[] {
   return MODS.filter((m) => !ALWAYS.includes(m.key) && (m.roles.includes("equipe") || (m.grant || []).includes("equipe")));
 }
 
-export function can(profile: { role: string; perms?: string[] | null; status?: string } | null, key: string): boolean {
+// Creator "só da marca" (veio pelo formulário de uma marca e não entrou na base da Conecta)
+export const LIMITED_KEYS = ["clube", "meus_desafios", "minhas", "perfil", "notificacoes"];
+
+export function can(profile: { role: string; perms?: string[] | null; status?: string; limited?: boolean } | null, key: string): boolean {
   if (!profile || profile.status === "inativo" || profile.status === "bloqueado") return false;
   const m = MODS.find((x) => x.key === key);
   if (!m) return false;
+  if (profile.role === "creator" && profile.limited && !LIMITED_KEYS.includes(key)) return false;
   if (profile.role === "equipe") {
     if (ALWAYS.includes(key)) return true;
     const ok = m.roles.includes("equipe") || (m.grant || []).includes("equipe");

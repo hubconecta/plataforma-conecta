@@ -14,11 +14,13 @@ export default async function Formularios({ searchParams }: { searchParams: Prom
   const L = await loadLabels(supabase, "form");
   const FL = L.usable("form");
   const et = FL.some((l) => l.id === q.et) ? q.et : "";
-  const [{ data: allForms }, { data: resp }] = await Promise.all([
+  const [{ data: allForms }, { data: resp }, { data: brands }] = await Promise.all([
     supabase.from("forms").select("*, campaigns(name)").order("created_at", { ascending: false }),
     supabase.from("form_responses").select("form_id"),
+    supabase.from("brands").select("id,name"),
   ]);
   const forms = (allForms || []).filter((f: any) => !et || L.has("form", f.id, et));
+  const BN = new Map((brands || []).map((b: any) => [b.id, b.name]));
   const cnt = (id: string) => (resp || []).filter((r: any) => r.form_id === id).length;
   return (
     <>
@@ -26,7 +28,7 @@ export default async function Formularios({ searchParams }: { searchParams: Prom
       <Notice q={q} />
       <LabelFilter labels={FL} active={et} base="/formularios" />
       <div className="card">{forms?.length ? <div className="table-wrap"><table><thead><tr><th>Formulário</th><th>Etiquetas</th><th>Uso</th><th className="r">Campos</th><th className="r">Respostas</th><th>Link público</th><th>Status</th><th></th></tr></thead><tbody>
-        {forms.map((f: any) => <tr key={f.id}><td><Link href={`/formularios/${f.id}`}><b>{f.title}</b></Link><div className="small muted">{f.campaigns?.name || "Geral"} · criado {fd(String(f.created_at).slice(0, 10))}</div></td><td><LabelPicker all={FL} on={L.ids("form", f.id)} entity="form" id={f.id} compact /></td><td className="small">{f.use}</td><td className="r num">{f.fields?.length || 0}</td><td className="r num">{cnt(f.id)}</td><td className="small">/f/{f.slug}</td><td><Pill s={f.status} /></td>
+        {forms.map((f: any) => <tr key={f.id}><td><Link href={`/formularios/${f.id}`}><b>{f.title}</b></Link><div className="small muted">{f.brand_id && BN.get(f.brand_id) ? `🏷️ Marca ${BN.get(f.brand_id)}` : f.campaigns?.name || "Geral"} · criado {fd(String(f.created_at).slice(0, 10))}</div></td><td><LabelPicker all={FL} on={L.ids("form", f.id)} entity="form" id={f.id} compact /></td><td className="small">{f.use}</td><td className="r num">{f.fields?.length || 0}</td><td className="r num">{cnt(f.id)}</td><td className="small">/f/{f.slug}</td><td><Pill s={f.status} /></td>
           <td><div className="actions"><Link className="btn btn-ghost btn-sm" href={`/formularios/${f.id}?tab=respostas`}>Respostas</Link><a className="btn btn-ghost btn-sm" href={`/f/${f.slug}`} target="_blank">Ver</a><CopyText text={`${site}/f/${f.slug}`} label="Copiar link" /></div></td></tr>)}
       </tbody></table></div> : <Empty icon="form" title="Nenhum formulário ainda" text="Crie o primeiro formulário e envie o link para as creators." />}</div>
       <div className="card"><div className="card-h"><h2>Formulários do sistema</h2></div><div className="list">

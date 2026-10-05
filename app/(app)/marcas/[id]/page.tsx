@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { loadLabels } from "@/lib/labels";
 import LabelPicker from "@/components/LabelPicker";
@@ -29,11 +30,15 @@ export default async function Marca({ params, searchParams }: { params: Promise<
   const accLabel = u ? (u.status !== "ativo" ? ACC[u.status] || u.status : u.last_login_at ? "Ativo" : ACC[u.access_status] || "Convite enviado") : "Acesso não criado";
   const back = `/marcas/${id}`;
   const LB = await loadLabels(supabase, "marca", [id]);
+  const { data: base } = await supabase.from("creator_brands").select("created_at, creators(id,name,instagram,brand_only)").eq("brand_id", id).order("created_at", { ascending: false });
   return (
     <>
       <PageH eyebrow={b.category || "Marca"} title={b.name} right={<div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}><Pill s={b.status} />{can(profile, "relatorios") ? <a className="btn btn-ghost btn-sm" href={`/relatorios?marca=${id}&tab=vivo`}>Relatório da marca</a> : null}{profile.role === "ceo" ? <ConfirmDelete action={deleteBrand} fields={{ id }} label="Excluir marca" warning={`Exclui ${b.name}, os dados de contrato e os acessos ao portal. Só é possível se a marca não tiver campanhas; se tiver, mude o status para Inativa.`} /> : null}</div>} />
       <Notice q={q} />
       <div className="lbl-detail"><span className="small muted">🏷 Etiquetas</span><LabelPicker all={LB.usable("marca")} on={LB.ids("marca", id)} entity="marca" id={id} /></div>
+      <details className="card"><summary><b>Base de creators da marca · {base?.length || 0}</b> <span className="small muted">entram pelo formulário exclusivo da marca (Formulários → escolher a marca)</span></summary>
+        {base?.length ? <div className="list" style={{ marginTop: 10 }}>{base.map((b: any, i: number) => b.creators ? <Link key={i} className="li" href={`/creators/${b.creators.id}`} style={{ textDecoration: "none", color: "inherit" }}><div className="grow"><b>{b.creators.name}</b><span>{b.creators.instagram || ""}{b.creators.brand_only ? " · só da marca" : " · base Conecta"}</span></div></Link> : null)}</div> : <p className="small muted" style={{ marginTop: 8 }}>Nenhuma creator ainda.</p>}
+      </details>
       <div className="card profile-head">{b.logo_path ? <img className="brand-logo" src={photoUrl(b.logo_path)} alt={`Logo ${b.name}`} /> : <span className="brand-logo" style={{ display: "grid", placeItems: "center", fontWeight: 800 }}>{b.name.slice(0, 2).toUpperCase()}</span>}<div style={{ flex: 1, minWidth: 200 }}><h2>{b.name}</h2>{b.description ? <p className="small muted" style={{ whiteSpace: "pre-wrap" }}>{b.description}</p> : null}</div>
         <details className="mod" style={{ width: "100%" }}><summary className="small">Logo e apresentação da marca</summary><form action={saveBrandProfile} className="form-grid" style={{ paddingBottom: 12 }}><input type="hidden" name="brand_id" value={id} />
           <FileUpload name="logo_path" bucket="perfis" folder="marcas" accept="image/*" current={b.logo_path} label="Logo da marca" />
