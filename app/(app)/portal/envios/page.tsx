@@ -7,13 +7,13 @@ export default async function MarcaEnvios({ searchParams }: { searchParams: Prom
   const q = await searchParams;
   const { supabase } = await requireModule("marca_envios");
   const [{ data: ships }, { data: kits }] = await Promise.all([
-    supabase.from("shipments").select("*, creators(name,instagram), campaigns(name), pk_orders(press_kits(name))").order("created_at", { ascending: false }),
+    supabase.from("shipments").select("*, creators(name,instagram,tiktok), campaigns(name), pk_orders(press_kits(name))").order("created_at", { ascending: false }),
     supabase.from("press_kits").select("*").neq("status", "Rascunho").order("created_at", { ascending: false }),
   ]);
   const all = ships || [];
   const open = all.filter((s: any) => !["Entregue", "Cancelado"].includes(s.status));
   const n = (st: string[]) => all.filter((s: any) => st.includes(s.status)).length;
-  const Row = ({ s }: { s: any }) => <tr><td><Person name={s.creators?.name || "Creator"} sub={s.creators?.instagram || ""} /></td><td><b>{s.product}</b> · {s.qty}<div className="small muted">{s.campaigns?.name ? `Campanha ${s.campaigns.name}` : s.pk_orders?.press_kits?.name ? `Press kit ${s.pk_orders.press_kits.name}` : "Envio avulso"}</div></td><td className="small">{s.carrier || "—"}{s.tracking ? <div className="num">{s.tracking}</div> : null}</td><td className="num small">{fd(s.sent_at)}</td><td><Pill s={s.status} /></td><td>{s.status !== "Cancelado" ? <Link className="btn btn-ghost btn-sm" href={`/envios/${s.id}`}>Dados de envio</Link> : null}</td></tr>;
+  const Row = ({ s }: { s: any }) => <tr><td><Person name={s.creators?.name || "Creator"} ig={s.creators?.instagram} tt={s.creators?.tiktok} /></td><td><b>{s.product}</b> · {s.qty}<div className="small muted">{s.campaigns?.name ? `Campanha ${s.campaigns.name}` : s.pk_orders?.press_kits?.name ? `Press kit ${s.pk_orders.press_kits.name}` : "Envio avulso"}</div></td><td className="small">{s.carrier || "—"}{s.tracking ? <div className="num">{s.tracking}</div> : null}</td><td className="num small">{fd(s.sent_at)}</td><td><Pill s={s.status} /></td><td>{s.status !== "Cancelado" ? <Link className="btn btn-ghost btn-sm" href={`/envios/${s.id}`}>Dados de envio</Link> : null}</td></tr>;
   const T = ({ rows }: { rows: any[] }) => <div className="table-wrap"><table><thead><tr><th>Creator</th><th>Produto</th><th>Transportadora</th><th>Envio</th><th>Status</th><th></th></tr></thead><tbody>{rows.map((s) => <Row key={s.id} s={s} />)}</tbody></table></div>;
   return (
     <>

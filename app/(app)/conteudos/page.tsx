@@ -10,7 +10,7 @@ export default async function Conteudos({ searchParams }: { searchParams: Promis
   const q = await searchParams;
   const { supabase, profile } = await requireModule("conteudos");
   const isBrand = profile.role === "marca";
-  const { data } = await supabase.from("contents").select("*, creators(name,instagram), campaigns(name, brands(name))").order("created_at", { ascending: false });
+  const { data } = await supabase.from("contents").select("*, creators(name,instagram,tiktok), campaigns(name, brands(name))").order("created_at", { ascending: false });
   const all = data || [];
   const [{ data: crs }, { data: cps }] = isBrand ? [{ data: [] as any[] }, { data: [] as any[] }] : await Promise.all([supabase.from("creators").select("id,name").order("name"), supabase.from("campaigns").select("id,name").not("status", "in", "(Em aprovação,Ajuste solicitado,Recusada)").order("created_at", { ascending: false })]);
   const f = CONTENT_STATUS.includes(q.s) ? q.s : q.s === "todos" ? "todos" : isBrand ? "todos" : "abertos";
@@ -31,7 +31,7 @@ export default async function Conteudos({ searchParams }: { searchParams: Promis
       <div className="chips">{(isBrand ? [] : [["abertos", "Aguardando"]]).concat([["todos", "Todos"]], CONTENT_STATUS.filter((s) => all.some((c: any) => c.status === s)).map((s) => [s, s])).map(([k, l]) => <Link key={k} className={`chip ${f === k ? "on" : ""}`} href={`/conteudos?s=${encodeURIComponent(k)}`}>{l}</Link>)}</div>
       <div className="card">{shown.length ? <div className="table-wrap"><table><thead><tr><th>Creator</th><th>Campanha</th><th>Plataforma · tipo</th><th>Data</th><th>Status</th><th className="r">Métricas</th><th></th></tr></thead><tbody>
         {shown.map((c: any) => <tr key={c.id}>
-          <td><Person name={c.creators?.name || "Creator"} sub={c.creators?.instagram || ""} /></td>
+          <td><Person name={c.creators?.name || "Creator"} ig={c.creators?.instagram} tt={c.creators?.tiktok} /></td>
           <td>{c.campaigns?.name || "—"}{isBrand ? null : <div className="small muted">{c.campaigns?.brands?.name}</div>}</td>
           <td className="small">{c.platform} · {c.type}{c.version > 1 ? ` · v${c.version}` : ""}{c.link ? <div><a href={c.link} target="_blank" rel="noopener noreferrer">Abrir ↗</a></div> : null}</td>
           <td className="num small">{fd(c.published_at || String(c.created_at).slice(0, 10))}</td>

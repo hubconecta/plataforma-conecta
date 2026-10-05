@@ -1,5 +1,6 @@
 // Tabela de respostas de um formulário (equipe e Portal da Marca).
 import Link from "next/link";
+import Social from "@/components/Social";
 import CopyText from "@/components/CopyText";
 import { Empty } from "@/components/ui";
 
@@ -19,7 +20,7 @@ export default function FormResponses({ fields, resp, sensitive, join, creatorHr
         <td className="num small">{new Date(r.created_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</td>
         <td>{r.creator_id && creatorHref ? <Link href={creatorHref(r.creator_id)}>{r.creators?.name || "creator"}</Link> : r.creators?.name || "visitante"}</td>
         {join ? <td className="small">{r.join_conecta ? "✅ Sim" : "Não"}</td> : null}
-        {fields.map((x) => { const v = showAnswer(r.answers?.[x.id], x.type, sensitive); return <td key={x.id} className="small">{x.type === "upload" && v.startsWith("http") ? <a href={v} target="_blank" rel="noopener noreferrer">Abrir</a> : v}</td>; })}
+        {fields.map((x) => { const v = showAnswer(r.answers?.[x.id], x.type, sensitive); return <td key={x.id} className="small">{x.type === "upload" && v.startsWith("http") ? <a href={v} target="_blank" rel="noopener noreferrer">Abrir</a> : x.type === "instagram" && v ? <Social ig={v} /> : x.type === "tiktok" && v ? <Social tt={v} /> : v}</td>; })}
       </tr>)}</tbody></table></div> : <Empty icon="inbox" title="Nenhuma resposta ainda" text="Envie o link do formulário para as creators." />}
     </div>
   );

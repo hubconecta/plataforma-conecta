@@ -15,8 +15,8 @@ export default async function Desafio({ params, searchParams }: { params: Promis
   const { data: c } = await supabase.from("challenges").select("*, brands(name), campaigns(name)").eq("id", id).single();
   if (!c || (isBrand && c.status === "Rascunho")) notFound();
   const [{ data: parts }, { data: subs }, { data: brands }, { data: camps }] = await Promise.all([
-    supabase.from("challenge_participants").select("creator_id, progress, joined_at, creators(name,instagram)").eq("challenge_id", id),
-    staff ? supabase.from("challenge_submissions").select("*, creators(name,instagram)").eq("challenge_id", id).order("updated_at", { ascending: false }) : Promise.resolve({ data: [] as any[] }),
+    supabase.from("challenge_participants").select("creator_id, progress, joined_at, creators(name,instagram,tiktok)").eq("challenge_id", id),
+    staff ? supabase.from("challenge_submissions").select("*, creators(name,instagram,tiktok)").eq("challenge_id", id).order("updated_at", { ascending: false }) : Promise.resolve({ data: [] as any[] }),
     staff ? supabase.from("brands").select("id,name").order("name") : Promise.resolve({ data: [] as any[] }),
     supabase.from("campaigns").select("id,name,brands(name)").not("status", "in", "(Recusada)").order("created_at", { ascending: false }),
   ]);
@@ -65,12 +65,12 @@ export default async function Desafio({ params, searchParams }: { params: Promis
         <div className="card"><dl className="dl">
           {[["Público", c.audience], ["Período", `${fd(c.start_date)} – ${fd(c.due_date)}`], ["Descrição", c.description], ["Objetivo", c.objective], ["Regras", c.rules], ["Critérios", c.criteria], ["Comprovante exigido", c.evidence], ["Regulamento", c.regulation]].map(([k, v]) => v ? <div key={k as string}><dt>{k}</dt><dd style={{ whiteSpace: "pre-wrap" }}>{String(v)}</dd></div> : null)}
         </dl></div>
-        {parts?.length ? <div className="card"><div className="card-h"><h2>Participantes</h2></div><div className="list">{parts.map((p: any) => <div className="li" key={p.creator_id}><div className="grow"><Person name={p.creators?.name || "Creator"} sub={p.creators?.instagram || ""} /></div><span className="small muted">{p.progress}/{c.target}</span><div className="bar" style={{ width: 120 }}><i style={{ width: `${Math.min(100, (p.progress / c.target) * 100)}%` }} /></div></div>)}</div></div> : null}
+        {parts?.length ? <div className="card"><div className="card-h"><h2>Participantes</h2></div><div className="list">{parts.map((p: any) => <div className="li" key={p.creator_id}><div className="grow"><Person name={p.creators?.name || "Creator"} ig={p.creators?.instagram} tt={p.creators?.tiktok} /></div><span className="small muted">{p.progress}/{c.target}</span><div className="bar" style={{ width: 120 }}><i style={{ width: `${Math.min(100, (p.progress / c.target) * 100)}%` }} /></div></div>)}</div></div> : null}
       </> : null}
 
       {tab === "comprovantes" && staff ? <div className="card">{subs?.length ? <div className="list">{subs.map((s: any) => (
         <div className="li" key={s.id} style={{ alignItems: "flex-start", flexWrap: "wrap" }}>
-          <div className="grow"><Person name={s.creators?.name} sub={`${s.creators?.instagram || ""} · enviado ${fd(s.updated_at?.slice(0, 10))}`} />
+          <div className="grow"><Person name={s.creators?.name} ig={s.creators?.instagram} tt={s.creators?.tiktok} sub={`enviado ${fd(s.updated_at?.slice(0, 10))}`} />
             {s.evidence ? <p style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>{s.evidence}</p> : null}
             {(s.links?.length ? s.links : s.link ? [s.link] : []).map((l: string, i: number) => <p key={i} className="small"><a href={l} target="_blank" rel="noopener noreferrer">Abrir comprovante {i + 1} ↗</a></p>)}
             {s.note ? <p className="small muted">Retorno: {s.note}</p> : null}</div>

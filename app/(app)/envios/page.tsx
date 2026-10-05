@@ -8,7 +8,7 @@ export default async function Envios({ searchParams }: { searchParams: Promise<a
   const q = await searchParams;
   const { supabase } = await requireModule("amostras");
   const [{ data: ships }, { data: creators }, { data: brands }, { data: camps }, { data: addrs }] = await Promise.all([
-    supabase.from("shipments").select("*, creators(name,instagram), brands(name), campaigns(name), pk_orders(press_kits(name))").order("created_at", { ascending: false }),
+    supabase.from("shipments").select("*, creators(name,instagram,tiktok), brands(name), campaigns(name), pk_orders(press_kits(name))").order("created_at", { ascending: false }),
     supabase.from("creators").select("id,name").order("name"),
     supabase.from("brands").select("id,name").order("name"),
     supabase.from("campaigns").select("id,name").not("status", "in", "(Em aprovação,Ajuste solicitado,Recusada)").order("created_at", { ascending: false }),
@@ -35,7 +35,7 @@ export default async function Envios({ searchParams }: { searchParams: Promise<a
       </div>
       <div className="chips">{[["abertos", "Em aberto"], ["todos", "Todos"], ...SHIP_STATUS.filter((s) => s !== "Aguardando envio").map((s) => [s, s])].map(([k, l]) => <Link key={k} className={`chip ${f === k ? "on" : ""}`} href={`/envios?s=${encodeURIComponent(k)}`}>{l}</Link>)}</div>
       <div className="card">{shown.length ? <div className="table-wrap"><table><thead><tr><th>Creator</th><th>Marca</th><th>Produto</th><th>Transportadora</th><th>Envio</th><th>Previsão</th><th>Status</th><th></th></tr></thead><tbody>
-        {shown.map((s: any) => <tr key={s.id}><td><Person name={s.creators?.name || "Creator"} sub={s.creators?.instagram || ""} /></td><td>{s.brands?.name || "—"}</td><td><b>{s.product}</b> · {s.qty}<div className="small muted">{s.campaigns?.name ? `Campanha ${s.campaigns.name}` : s.pk_orders?.press_kits?.name ? `Press kit ${s.pk_orders.press_kits.name}` : "Envio avulso"}</div></td><td className="small">{s.carrier || "—"}{s.tracking ? <div className="num">{s.tracking}</div> : null}</td><td className="num small">{fd(s.sent_at)}</td><td className="num small">{fd(s.eta)}</td><td><Pill s={s.status} /></td><td><Link className="btn btn-ghost btn-sm" href={`/envios/${s.id}`}>Dados de envio</Link></td></tr>)}
+        {shown.map((s: any) => <tr key={s.id}><td><Person name={s.creators?.name || "Creator"} ig={s.creators?.instagram} tt={s.creators?.tiktok} /></td><td>{s.brands?.name || "—"}</td><td><b>{s.product}</b> · {s.qty}<div className="small muted">{s.campaigns?.name ? `Campanha ${s.campaigns.name}` : s.pk_orders?.press_kits?.name ? `Press kit ${s.pk_orders.press_kits.name}` : "Envio avulso"}</div></td><td className="small">{s.carrier || "—"}{s.tracking ? <div className="num">{s.tracking}</div> : null}</td><td className="num small">{fd(s.sent_at)}</td><td className="num small">{fd(s.eta)}</td><td><Pill s={s.status} /></td><td><Link className="btn btn-ghost btn-sm" href={`/envios/${s.id}`}>Dados de envio</Link></td></tr>)}
       </tbody></table></div> : <Empty icon="truck" title="Nenhum envio aqui" text="Envios nascem quando uma creator é aprovada em campanha com produto, compra ou ganha um press kit, ou quando você autoriza aqui." />}</div>
     </>
   );

@@ -24,7 +24,7 @@ export default async function MarcaFormularios({ searchParams }: { searchParams:
       <div className="kpis"><Kpi k="Creators na sua base" v={base?.length || 0} hero /><Kpi k="Formulários" v={list.length} /><Kpi k="Respostas no formulário" v={resp?.length || 0} /></div>
       <div className="tabs"><Link className={`tab ${tab === "respostas" ? "on" : ""}`} href="/portal/formularios">Respostas</Link><Link className={`tab ${tab === "base" ? "on" : ""}`} href="/portal/formularios?tab=base">Base de creators</Link></div>
       {tab === "base" ? (
-        <div className="card">{base?.length ? <div className="list">{base.map((b: any, i: number) => b.creators ? <div className="li" key={i}><div className="grow"><Person name={b.creators.name} sub={[b.creators.instagram, b.creators.tiktok].filter(Boolean).join(" · ")} src={b.creators.avatar_path} /></div><span className="small muted">desde {fd(String(b.created_at).slice(0, 10))}</span></div> : null)}</div>
+        <div className="card">{base?.length ? <div className="list">{base.map((b: any, i: number) => b.creators ? <div className="li" key={i}><div className="grow"><Person name={b.creators.name} ig={b.creators.instagram} tt={b.creators.tiktok} src={b.creators.avatar_path} /></div><span className="small muted">desde {fd(String(b.created_at).slice(0, 10))}</span></div> : null)}</div>
           : <Empty icon="users" title="Sua base ainda está vazia" text="As creators que responderem ao formulário da sua marca aparecem aqui." />}</div>
       ) : list.length ? (<>
         <div className="chips">{list.map((f: any) => <Link key={f.id} className={`chip ${sel?.id === f.id ? "on" : ""}`} href={`/portal/formularios?f=${f.id}`}>{f.title}</Link>)}</div>

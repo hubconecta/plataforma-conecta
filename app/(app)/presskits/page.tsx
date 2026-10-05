@@ -13,7 +13,7 @@ export default async function PressKits({ searchParams }: { searchParams: Promis
   const [{ data: kits }, { data: brands }, { data: orders }] = await Promise.all([
     supabase.from("press_kits").select("*, brands(name)").order("created_at", { ascending: false }),
     supabase.from("brands").select("id,name").order("name"),
-    supabase.from("pk_orders").select("*, press_kits(name, brands(name)), creators(name,instagram), shipments(id)").order("created_at", { ascending: false }),
+    supabase.from("pk_orders").select("*, press_kits(name, brands(name)), creators(name,instagram,tiktok), shipments(id)").order("created_at", { ascending: false }),
   ]);
   const back = `/presskits?tab=${tab}`;
   const Form = ({ k }: { k?: any }) => (
@@ -51,7 +51,7 @@ export default async function PressKits({ searchParams }: { searchParams: Promis
             <details className="mod"><summary className="small">Editar</summary><div style={{ paddingBottom: 12 }}><Form k={k} /></div></details>
           </div></div>)}</div> : <Empty icon="gift" title="Nenhum press kit ainda" text="Crie o primeiro press kit para as creators pedirem pelo Clube." />}
       </> : <div className="card">{orders?.length ? <div className="table-wrap"><table><thead><tr><th>Creator</th><th>Press kit</th><th>Data</th><th className="r">Valor</th><th>Pagamento</th><th>Status</th><th>Atualizar</th></tr></thead><tbody>
-        {orders.map((o: any) => <tr key={o.id}><td><Person name={o.creators?.name || "Creator"} sub={o.creators?.instagram || ""} /></td><td><b>{o.press_kits?.name}</b><div className="small muted">{o.press_kits?.brands?.name || "Conecta"} · {o.order_code}</div></td><td className="num small">{fd(String(o.created_at).slice(0, 10))}</td><td className="r num">{Number(o.value) > 0 ? brl(o.value) : "—"}</td><td><Pill s={o.payment} /></td><td><Pill s={o.status} />{o.tracking ? <div className="small num">{o.tracking}</div> : null}</td>
+        {orders.map((o: any) => <tr key={o.id}><td><Person name={o.creators?.name || "Creator"} ig={o.creators?.instagram} tt={o.creators?.tiktok} /></td><td><b>{o.press_kits?.name}</b><div className="small muted">{o.press_kits?.brands?.name || "Conecta"} · {o.order_code}</div></td><td className="num small">{fd(String(o.created_at).slice(0, 10))}</td><td className="r num">{Number(o.value) > 0 ? brl(o.value) : "—"}</td><td><Pill s={o.payment} /></td><td><Pill s={o.status} />{o.tracking ? <div className="small num">{o.tracking}</div> : null}</td>
           <td><form action={setOrderStatus} className="inline-form"><input type="hidden" name="id" value={o.id} /><input type="hidden" name="back" value={back} /><select className="input" name="status" defaultValue={o.status} style={{ maxWidth: 170 }}>{PKO_STATUS.map((s) => <option key={s} value={s}>{s === "Pago" ? "Pago (confirmar pagamento)" : s}</option>)}</select><input className="input" name="tracking" placeholder="Rastreio" defaultValue={o.tracking || ""} style={{ maxWidth: 130 }} /><button className="btn btn-dark btn-sm">OK</button></form>
             {o.shipments?.length ? <Link className="small" href={`/envios/${o.shipments[0].id}`}>Ver envio</Link> : null}</td></tr>)}
       </tbody></table></div> : <Empty icon="gift" title="Nenhum pedido ainda" text="Os pedidos das creators aparecem aqui." />}</div>}

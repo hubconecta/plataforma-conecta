@@ -1,4 +1,5 @@
 import Icon from "./Icon";
+import Social from "@/components/Social";
 
 const PILL: Record<string, string> = {
   Ativa: "ok", Ativo: "ok", ativo: "ok", Aprovada: "ok", Aprovado: "ok", Publicado: "ok", Publicada: "ok", Entregue: "ok", Concluído: "ok", Pago: "ok", Paga: "ok", "Em dia": "ok", "Cliente convertido": "ok", Gratuito: "ok", Liberada: "ok",
@@ -36,8 +37,9 @@ export function Avatar({ name, src, star, size = 34, title }: { name: string; sr
     </span>
   );
 }
-export function Person({ name, sub, src, star, starTitle }: { name: string; sub?: string; src?: string | null; star?: string | null; starTitle?: string }) {
-  return <div className="person"><Avatar name={name} src={src} star={star} title={starTitle} /><div><b>{name}</b>{sub ? <span>{sub}</span> : null}</div></div>;
+// ig/tt: arroba do Instagram/TikTok, vira link que abre o perfil.
+export function Person({ name, sub, src, star, starTitle, ig, tt }: { name: string; sub?: string; src?: string | null; star?: string | null; starTitle?: string; ig?: string | null; tt?: string | null }) {
+  return <div className="person"><Avatar name={name} src={src} star={star} title={starTitle} /><div><b>{name}</b>{ig || tt ? <Social ig={ig} tt={tt} /> : null}{sub ? <span>{sub}</span> : null}</div></div>;
 }
 export const fd = (s?: string | null) => (s ? new Date(s + (s.length === 10 ? "T12:00:00" : "")).toLocaleDateString("pt-BR") : "—");
 export const brl = (n?: number | null) => (n == null ? "—" : "R$ " + Math.round(Number(n)).toLocaleString("pt-BR"));

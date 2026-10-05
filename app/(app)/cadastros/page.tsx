@@ -1,4 +1,5 @@
 import { requireModule } from "@/lib/session";
+import Social from "@/components/Social";
 import { PageH, Pill, Person, Empty, Notice, fd } from "@/components/ui";
 import { setApplicationStatus, deleteApplication } from "../actions";
 import ConfirmDelete from "@/components/ConfirmDelete";
@@ -14,9 +15,9 @@ export default async function Cadastros({ searchParams }: { searchParams: Promis
   const done = (data || []).filter((a: any) => !["Nova", "Em análise"].includes(a.status));
   const Card = ({ a }: { a: any }) => (
     <details className="mod">
-      <summary><Person name={a.name} sub={`${a.instagram || ""} · ${a.niche || ""} · ${a.city || ""}/${a.state || ""}`} /><span style={{ marginLeft: "auto" }}><Pill s={a.status} /></span></summary>
+      <summary><Person name={a.name} sub={`${a.niche || ""} · ${a.city || ""}/${a.state || ""}`} /><span style={{ marginLeft: "auto" }}><Pill s={a.status} /></span></summary>
       <div style={{ paddingBottom: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-        <dl className="dl"><div><dt>E-mail</dt><dd>{a.email}</dd></div><div><dt>WhatsApp</dt><dd>{a.whatsapp || "—"}</dd></div><div><dt>Perfil</dt><dd>{a.kind || "—"}</dd></div><div><dt>TikTok</dt><dd>{a.tiktok || "—"}</dd></div><div><dt>Enviado em</dt><dd>{fd(a.created_at?.slice(0, 10))}</dd></div>
+        <dl className="dl"><div><dt>E-mail</dt><dd>{a.email}</dd></div><div><dt>WhatsApp</dt><dd>{a.whatsapp || "—"}</dd></div><div><dt>Perfil</dt><dd>{a.kind || "—"}</dd></div><div><dt>Redes</dt><dd>{a.instagram || a.tiktok ? <Social ig={a.instagram} tt={a.tiktok} /> : "—"}</dd></div><div><dt>Enviado em</dt><dd>{fd(a.created_at?.slice(0, 10))}</dd></div>
           {Object.entries(LABELS).map(([k, l]) => a.answers?.[k] ? <div key={k}><dt>{l}</dt><dd>{String(a.answers[k])}</dd></div> : null)}</dl>
         {["Nova", "Em análise"].includes(a.status) ? (
           <div className="actions" style={{ justifyContent: "flex-start" }}>

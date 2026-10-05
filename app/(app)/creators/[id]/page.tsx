@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { igUrl, ttUrl } from "@/components/Social";
 import { loadLabels } from "@/lib/labels";
 import LabelPicker from "@/components/LabelPicker";
 import { setCreatorBase, addCreatorBrand, removeCreatorBrand } from "../actions";
@@ -29,7 +30,7 @@ export default async function CreatorPerfil({ params, searchParams }: { params: 
   const lv = levelOf(levels || [], c.xp || 0);
   const links = await Promise.all((files || []).map((f: any) => signedDoc(f.path)));
   const here = `/creators/${id}`;
-  const ig = c.instagram ? `https://instagram.com/${String(c.instagram).replace(/^@/, "")}` : "", tt = c.tiktok ? `https://tiktok.com/@${String(c.tiktok).replace(/^@/, "")}` : "";
+  const ig = igUrl(c.instagram), tt = ttUrl(c.tiktok);
   const LB = await loadLabels(supabase, "creator", [id]);
   const { data: cbs } = await supabase.from("creator_brands").select("brand_id, source, created_at").eq("creator_id", id);
   const [{ data: allBrands }, { data: openCamps }] = await Promise.all([
