@@ -4,6 +4,8 @@ import { PageH, Pill, Empty, Notice, fd, brl, Kpi } from "@/components/ui";
 import { RESULT_KEYS as RES, NICHES, CAMPAIGN_TYPES, CREATOR_PROFILES } from "@/lib/consts";
 import { saveCampaign, saveResults, proposeCampaign, reviewCampaign, deleteCampaign } from "../actions";
 import ConfirmDelete from "@/components/ConfirmDelete";
+import StepsEditor from "./StepsEditor";
+import { CONTRACT_TEMPLATE, CONTRACT_VARS } from "@/lib/contracts";
 
 const STS = ["Em aprovação", "Ajuste solicitado", "Futura", "Inscrições abertas", "Ativa", "Encerrada", "Recusada"];
 
@@ -14,6 +16,14 @@ export default async function Campanhas({ searchParams }: { searchParams: Promis
   const { data: camps } = await supabase.from("campaigns").select("*, brands(name)").order("created_at", { ascending: false });
   const { data: glinks } = await supabase.from("campaign_links").select("campaign_id,url");
   const GL = new Map((glinks || []).map((x: any) => [x.campaign_id, x.url]));
+  const [{ data: stepsAll }, { data: ctrs }, { data: sigs }] = isBrand ? [{ data: [] as any[] }, { data: [] as any[] }, { data: [] as any[] }] : await Promise.all([
+    supabase.from("campaign_steps").select("*").order("position"),
+    supabase.from("campaign_contracts").select("*"),
+    supabase.from("contract_signatures").select("campaign_id,status"),
+  ]);
+  const ST = (cid: string) => (stepsAll || []).filter((x: any) => x.campaign_id === cid).map((x: any) => ({ title: x.title, url: x.url || "", description: x.description || "" }));
+  const CT = new Map((ctrs || []).map((x: any) => [x.campaign_id, x]));
+  const sigCount = (cid: string) => { const l = (sigs || []).filter((x: any) => x.campaign_id === cid && x.status !== "Cancelado"); return { all: l.length, ok: l.filter((x: any) => x.status === "Assinado").length }; };
   const { data: brands } = isBrand ? { data: [] as any[] } : await supabase.from("brands").select("id,name").order("name");
   const all = camps || [];
   const f = q.s && STS.includes(q.s) ? q.s : "";
@@ -43,6 +53,16 @@ export default async function Campanhas({ searchParams }: { searchParams: Promis
       <div className="field"><label>Cachê por creator (R$)</label><input placeholder="0,00" className="input" type="text" inputMode="decimal" name="fee" defaultValue={c?.fee || ""} /></div>
       <div className="field"><label>Comissão (%)</label><input placeholder="0,00" className="input" type="text" inputMode="decimal" name="commission_pct" defaultValue={c?.commission_pct || ""} /></div>
       <div className="field full"><label>Link do grupo da campanha no WhatsApp (só aprovadas e a marca veem)</label><input className="input" type="url" name="group_url" defaultValue={c ? GL.get(c.id) || "" : ""} placeholder="https://chat.whatsapp.com/…" /></div>
+      <StepsEditor initial={c ? ST(c.id) : []} />
+      <fieldset className="fs full"><legend>Contrato para as aprovadas</legend><input type="hidden" name="contract_form" value="1" />
+        {(() => { const ct: any = c ? CT.get(c.id) : null; const n = c ? sigCount(c.id) : { all: 0, ok: 0 }; return <>
+          <label className="perm"><input type="checkbox" name="contract_on" defaultChecked={!!ct?.active} />Enviar contrato para ler e assinar quando a creator for aprovada{c && n.all ? ` · ${n.ok}/${n.all} assinados` : ""}</label>
+          <label className="perm"><input type="checkbox" name="contract_brand" defaultChecked={ct ? !!ct.brand_signs : true} />A marca também assina (pelo Portal da Marca)</label>
+          <div className="field full"><label>Título</label><input className="input" name="contract_title" defaultValue={ct?.title || "Contrato de participação e cessão de uso de imagem"} /></div>
+          <div className="field full"><label>Texto do contrato</label><textarea className="input" name="contract_body" rows={12} defaultValue={ct?.body || CONTRACT_TEMPLATE} /><span className="small muted">Campos que se preenchem sozinhos: {CONTRACT_VARS.map(([k, l]) => `${k} (${l})`).join(" · ")}. Este é um modelo base: peça para um advogado revisar antes de usar.</span></div>
+          {c ? <a className="btn btn-ghost btn-sm" href={`/contratos?campanha=${c.id}`}>Ver contratos desta campanha</a> : null}
+        </>; })()}
+      </fieldset>
       <div><button className="btn btn-primary btn-sm">{c ? "Salvar campanha" : "Criar campanha"}</button></div>
     </form>
   );

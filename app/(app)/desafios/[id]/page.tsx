@@ -6,7 +6,9 @@ import { PageH, Pill, Empty, Notice, Kpi, Person, fd, brl } from "@/components/u
 import ConfirmDelete from "@/components/ConfirmDelete";
 import { CH_METRICS } from "@/lib/consts";
 import ChallengeForm from "../ChallengeForm";
-import { setChallengeStatus, reviewSubmission, saveChallengeResult, deleteChallenge } from "../actions";
+import { setChallengeStatus, reviewSubmission, saveChallengeResult, deleteChallenge, deleteChallengeEntry } from "../actions";
+import ChallengeRanking from "@/components/ChallengeRanking";
+import Social from "@/components/Social";
 
 export default async function Desafio({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<any> }) {
   const { id } = await params; const q = await searchParams;
@@ -20,7 +22,7 @@ export default async function Desafio({ params, searchParams }: { params: Promis
     staff ? supabase.from("brands").select("id,name").order("name") : Promise.resolve({ data: [] as any[] }),
     supabase.from("campaigns").select("id,name,brands(name)").not("status", "in", "(Recusada)").order("created_at", { ascending: false }),
   ]);
-  const tabs: [string, string][] = [["detalhes", "Detalhes"], ...(staff ? [["comprovantes", `Comprovantes (${(subs || []).filter((s: any) => ["Enviado", "Em análise"].includes(s.status)).length})`] as [string, string]] : []), ["resultado", c.result ? "Ganhadoras e resultado" : "Resultado"], ...((staff || ["Em aprovação", "Ajuste solicitado"].includes(c.status)) ? [["editar", "Editar"] as [string, string]] : [])];
+  const tabs: [string, string][] = [["detalhes", "Detalhes"], ["ranking", "Ranking"], ["lancamentos", "Conteúdos lançados"], ...(staff ? [["comprovantes", `Comprovantes (${(subs || []).filter((s: any) => ["Enviado", "Em análise"].includes(s.status)).length})`] as [string, string]] : []), ["resultado", c.result ? "Ganhadoras e resultado" : "Resultado"], ...((staff || ["Em aprovação", "Ajuste solicitado"].includes(c.status)) ? [["editar", "Editar"] as [string, string]] : [])];
   const tab = tabs.some((t) => t[0] === q.tab) ? q.tab : "detalhes";
   const S = ({ status, label, cls = "btn-ghost", note }: { status: string; label: string; cls?: string; note?: boolean }) => note
     ? <details className="confirm-del"><summary className={`btn ${cls} btn-sm`}>{label}</summary><form action={setChallengeStatus} className="confirm-box" style={{ borderColor: "var(--line-2)", background: "var(--surface)" }}><input type="hidden" name="id" value={id} /><input type="hidden" name="status" value={status} /><textarea className="input" name="note" placeholder="Explique para a marca o que precisa mudar" required /><button className={`btn ${cls} btn-sm`}>{label}</button></form></details>
@@ -83,6 +85,22 @@ export default async function Desafio({ params, searchParams }: { params: Promis
           </div> : null}
         </div>))}</div> : <Empty icon="inbox" title="Nenhum comprovante ainda" text="Quando uma creator enviar o comprovante, ele aparece aqui e você recebe uma notificação." />}</div> : null}
 
+      {tab === "ranking" ? <div className="card"><ChallengeRanking supabase={supabase} challengeId={id} limit={100} target={c.target} title="Ranking ao vivo" /><p className="small muted" style={{ marginTop: 8 }}>O ranking soma os conteúdos que cada creator lança dia a dia (e as vendas, quando o desafio é de vendas). As creators que participam também veem o ranking, só com o primeiro nome.</p></div> : null}
+      {tab === "lancamentos" ? await (async () => {
+        const [{ data: ents }, { data: rk }] = await Promise.all([
+          supabase.from("challenge_entries").select("*").eq("challenge_id", id).order("day", { ascending: false }).order("created_at", { ascending: false }).limit(500),
+          supabase.rpc("challenge_ranking", { ch: id }),
+        ]);
+        const NM = new Map((rk || []).map((r: any) => [r.creator_id, r.display_name]));
+        const PI = new Map((parts || []).map((p: any) => [p.creator_id, p.creators]));
+        const kinds = ["Vídeo", "Reels", "Stories", "TikTok", "Carrossel", "Live", "Outro"];
+        const tot = (ents || []).filter((e: any) => e.kind !== "Venda").reduce((a: number, e: any) => a + (e.qty || 0), 0);
+        const sales = (ents || []).reduce((a: number, e: any) => a + Number(e.sales || 0), 0);
+        return <div className="card"><div className="card-h"><div><h2>Conteúdos lançados</h2><span className="small muted">{tot} conteúdos{sales ? ` · R$ ${sales.toLocaleString("pt-BR")} em vendas` : ""} · {kinds.map((k) => { const n = (ents || []).filter((e: any) => e.kind === k).reduce((a: number, e: any) => a + e.qty, 0); return n ? `${n} ${k}` : null; }).filter(Boolean).join(" · ")}</span></div></div>
+          {ents?.length ? <div className="table-wrap"><table><thead><tr><th>Dia</th><th>Creator</th><th>O que</th><th className="r">Qtd</th><th>Link</th><th className="r">Venda</th><th>Obs.</th>{staff ? <th></th> : null}</tr></thead><tbody>
+            {ents.map((e: any) => { const p: any = PI.get(e.creator_id); return <tr key={e.id}><td className="num small">{fd(e.day)}</td><td><b>{p?.name || NM.get(e.creator_id) || "Creator"}</b>{p ? <div><Social ig={p.instagram} tt={p.tiktok} /></div> : null}</td><td>{e.kind}</td><td className="r num">{e.kind === "Venda" ? "—" : e.qty}</td><td>{e.link ? <a href={e.link} target="_blank" rel="noopener noreferrer">Abrir</a> : "—"}</td><td className="r num">{Number(e.sales) ? `R$ ${Number(e.sales).toLocaleString("pt-BR")}` : "—"}</td><td className="small">{e.note || ""}</td>{staff ? <td><form action={deleteChallengeEntry}><input type="hidden" name="id" value={e.id} /><input type="hidden" name="back" value={`/desafios/${id}?tab=lancamentos`} /><button className="btn btn-ghost btn-sm">Apagar</button></form></td> : null}</tr>; })}
+          </tbody></table></div> : <p className="muted">Nenhum conteúdo lançado ainda. As creators lançam pelo Clube, em Desafios.</p>}</div>;
+      })() : null}
       {tab === "resultado" ? <>
         {r ? <>
           <div className="section-t"><h2>Ganhadoras</h2></div>

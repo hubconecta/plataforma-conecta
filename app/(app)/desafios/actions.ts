@@ -227,3 +227,31 @@ export async function submitEvidence(fd: FormData) {
   back("/clube/desafios?tab=ativos", "Comprovante enviado! A equipe Conecta vai analisar e você será avisada.");
 }
 
+
+/* ---------- Desafio diário: lançamentos da creator ---------- */
+const ENTRY_KINDS = ["Vídeo", "Reels", "Stories", "TikTok", "Carrossel", "Live", "Venda", "Outro"];
+
+export async function addChallengeEntry(fd: FormData) {
+  const s = await getSession();
+  if (!s.profile?.creator_id) redirect("/login");
+  const id = g(fd, "id"), path = "/clube/desafios?tab=ativos";
+  const kind = ENTRY_KINDS.includes(g(fd, "kind")) ? g(fd, "kind") : "Vídeo";
+  const qty = Math.max(0, Math.min(1000, parseInt(g(fd, "qty")) || (kind === "Venda" ? 1 : 1)));
+  const sales = kind === "Venda" ? money(g(fd, "sales")) || 0 : 0;
+  const day = /^\d{4}-\d{2}-\d{2}$/.test(g(fd, "day")) ? g(fd, "day") : new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10);
+  const link = g(fd, "link").slice(0, 500);
+  if (link && !/^https?:\/\//.test(link)) back(path, "Cole o link completo (começando com https://).", false);
+  const { error } = await s.supabase.from("challenge_entries").insert({ challenge_id: id, creator_id: s.profile.creator_id, kind, qty, sales, day, link: link || null, note: g(fd, "note").slice(0, 300) || null });
+  if (error) back(path, "Não foi possível lançar: o desafio precisa estar ativo e você precisa estar participando.", false);
+  revalidatePath("/clube/desafios"); revalidatePath(`/desafios/${id}`);
+  back(path, kind === "Venda" ? "Venda lançada! 💰" : `${qty} ${kind.toLowerCase()}${qty > 1 ? "s" : ""} lançado${qty > 1 ? "s" : ""}! Continue assim 🔥`);
+}
+
+export async function deleteChallengeEntry(fd: FormData) {
+  const s = await getSession();
+  if (!s.profile) redirect("/login");
+  const path = g(fd, "back") || "/clube/desafios?tab=ativos";
+  await s.supabase.from("challenge_entries").delete().eq("id", g(fd, "id"));
+  revalidatePath("/clube/desafios");
+  back(path, "Lançamento apagado.");
+}

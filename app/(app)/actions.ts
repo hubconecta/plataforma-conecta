@@ -7,6 +7,7 @@ import { can } from "@/lib/perms";
 import { cookies } from "next/headers";
 import { accessLink, showLink } from "@/lib/access";
 import { notifyCreators, notifyModule, num } from "@/lib/act";
+import { sendContract } from "@/lib/contracts";
 
 const g = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const orNull = (v: string) => (v === "" ? null : v);
@@ -197,6 +198,25 @@ export async function saveCampaign(fd: FormData) {
       await notifyProfiles(supabase, { brand_id: row.brand_id }, `💬 Grupo da campanha ${row.name} disponível`, "/campanhas");
     }
   } else if (fd.has("group_url") && !gurl) await supabase.from("campaign_links").delete().eq("campaign_id", cid);
+  // Próximos passos para as aprovadas (cadastro de afiliada, grupo, formulário…)
+  if (fd.has("steps")) {
+    let steps: any[] = [];
+    try { steps = JSON.parse(g(fd, "steps") || "[]"); } catch {}
+    steps = (Array.isArray(steps) ? steps : []).map((x: any, i: number) => ({ campaign_id: cid, title: String(x?.title || "").trim().slice(0, 120), url: /^https?:\/\//.test(String(x?.url || "").trim()) ? String(x.url).trim().slice(0, 500) : null, description: String(x?.description || "").trim().slice(0, 300) || null, position: i })).filter((x) => x.title);
+    await supabase.from("campaign_steps").delete().eq("campaign_id", cid);
+    if (steps.length) await supabase.from("campaign_steps").insert(steps);
+  }
+  // Contrato da campanha
+  if (fd.has("contract_form")) {
+    if (fd.get("contract_on") && g(fd, "contract_body")) {
+      const { error: ce } = await supabase.from("campaign_contracts").upsert({ campaign_id: cid, title: g(fd, "contract_title") || "Contrato de participação e cessão de uso de imagem", body: g(fd, "contract_body"), brand_signs: !!fd.get("contract_brand"), active: true, updated_at: new Date().toISOString() });
+      if (!ce) {
+        const admin = createAdminClient();
+        const { data: ap } = await admin.from("campaign_applications").select("creator_id").eq("campaign_id", cid).eq("status", "Aprovada");
+        for (const a of ap || []) await sendContract(admin, cid!, a.creator_id);
+      }
+    } else await supabase.from("campaign_contracts").update({ active: false }).eq("campaign_id", cid);
+  }
   await announceCampaign(supabase, { id: cid, name: row.name, brand_id: row.brand_id, status: row.status }, prevStatus, !id);
   await logAction(supabase, profile, `${id ? "editou" : "criou"} a campanha ${row.name}`, "Campanhas", cid);
   revalidatePath("/campanhas");
@@ -249,6 +269,7 @@ async function applyAppStatus(supabase: any, profile: any, id: string, status: s
   if (a) {
     const cname = (a as any).campaigns?.name, crname = (a as any).creators?.name;
     if (status === "Aprovada") {
+      try { await sendContract(createAdminClient(), a.campaign_id, a.creator_id); } catch {}
       await notifyProfiles(supabase, { creator_id: a.creator_id }, `🎉 Você foi aprovada na campanha ${cname}!`, "/clube/minhas");
       const { data: cp } = await supabase.from("campaigns").select("requires_shipping, product, brand_id").eq("id", a.campaign_id).single();
       let shipId: string | null = null;

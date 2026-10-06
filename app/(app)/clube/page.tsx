@@ -1,4 +1,5 @@
 import GroupLinks from "@/components/GroupLinks";
+import ClassList from "@/components/ClassList";
 import Link from "next/link";
 import { requireModule } from "@/lib/session";
 import { Kpi, Pill, Notice, fd } from "@/components/ui";
@@ -54,6 +55,8 @@ export default async function Clube({ searchParams }: { searchParams: Promise<an
             <label className="perm full"><input type="checkbox" name="aceite" required />Quero fazer parte da comunidade de creators da Conecta e receber oportunidades das marcas parceiras.</label>
             <div><button className="btn btn-primary">Entrar no Clube Conecta</button></div>
           </form></details></div> : null}
+      {await (async () => { const { count } = await supabase.from("contract_signatures").select("id", { count: "exact", head: true }).eq("creator_id", me).eq("status", "Aguardando creator"); return count ? <div className="notice bad">📄 Você tem {count} contrato{count > 1 ? "s" : ""} para ler e assinar. <Link href="/contratos">Assinar agora</Link></div> : null; })()}
+      <ClassList supabase={supabase} />
       <GroupLinks supabase={supabase} brands />
       {!addr ? <div className="notice info">Complete seu endereço em <Link href="/clube/perfil">Meu perfil e endereço</Link> para receber produtos e press kits.</div> : null}
       {lim ? <div className="kpis"><Kpi k="Pontos" v={xp} hero /><Kpi k="Desafios participando" v={joined.size} /></div> : <div className="kpis"><Kpi k="Pontos" v={xp} hero /><Kpi k="Inscrições enviadas" v={mine?.length || 0} /><Kpi k="Aprovadas" v={(mine || []).filter((a: any) => a.status === "Aprovada").length} /><Kpi k="Desafios participando" v={joined.size} /></div>}

@@ -9,7 +9,7 @@ import LabelPicker from "@/components/LabelPicker";
 import { LabelFilter, LabelChecks } from "@/components/Labels";
 
 type Item = { day: string; time?: string; title: string; kind: string; href: string; owner?: string | null; late?: boolean; id?: string; ev?: any; ent?: "event" | "task" };
-const KIND: Record<string, string> = { Compromisso: "#E6007E", Tarefa: "#111111", Campanha: "#2F6FDB", Desafio: "#B7791F", "Follow-up": "#7A1F5C", Vencimento: "#C53030" };
+const KIND: Record<string, string> = { Compromisso: "#E6007E", Tarefa: "#111111", Campanha: "#2F6FDB", Desafio: "#B7791F", Aula: "#0E9F6E", "Follow-up": "#7A1F5C", Vencimento: "#C53030" };
 const WD = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 export default async function Calendario({ searchParams }: { searchParams: Promise<any> }) {
@@ -43,8 +43,10 @@ export default async function Calendario({ searchParams }: { searchParams: Promi
   (camps || []).forEach((c: any) => { if (c.start_date >= start && c.start_date <= end) items.push({ day: c.start_date, title: `Início · ${c.name}`, kind: "Campanha", href: "/campanhas" }); if (c.end_date && c.end_date >= start && c.end_date <= end) items.push({ day: c.end_date, title: `Fim · ${c.name}`, kind: "Campanha", href: "/campanhas" }); });
   (chs || []).forEach((c: any) => items.push({ day: c.due_date, title: `Prazo · ${c.name}`, kind: "Desafio", href: `/desafios/${c.id}` }));
   (leads || []).filter((l: any) => !["Cliente convertido", "Não convertido"].includes(l.stage)).forEach((l: any) => items.push({ day: l.follow_up, title: `Follow-up · ${l.brand_name || l.company}`, kind: "Follow-up", href: `/leads/${l.id}`, owner: l.owner_id }));
+  { const { data: cls } = await supabase.from("classes").select("id,title,starts_at,status,brands(name)").neq("status", "Cancelada").gte("starts_at", `${start}T00:00:00-03:00`).lte("starts_at", `${end}T23:59:59-03:00`);
+    (cls || []).forEach((c: any) => { const loc = new Date(new Date(c.starts_at).getTime() - 3 * 3600e3).toISOString(); items.push({ day: loc.slice(0, 10), time: loc.slice(11, 16), title: `Aula · ${c.title}${c.brands?.name ? ` (${c.brands.name})` : ""}`, kind: "Aula", href: "/aulas" }); }); }
   (fin || []).forEach((f: any) => items.push({ day: f.due, title: `${f.kind === "receber" ? "Receber" : "Pagar"} · ${f.description}`, kind: "Vencimento", href: "/financeiro?tab=" + f.kind }));
-  const mineOnly = (i: Item) => !who || !i.owner || i.owner === who || ["Campanha", "Desafio", "Vencimento"].includes(i.kind);
+  const mineOnly = (i: Item) => !who || !i.owner || i.owner === who || ["Campanha", "Desafio", "Vencimento", "Aula"].includes(i.kind);
   const labelsOf = (i: Item) => (i.ent && i.id ? L.of(i.ent, i.id) : []);
   const shown = items.filter((i) => mineOnly(i) && (!et || (i.ent && i.id && L.has(i.ent, i.id, et))));
   const byDay = (d: string) => shown.filter((i) => i.day === d).sort((a, b) => (a.time || "99").localeCompare(b.time || "99"));
