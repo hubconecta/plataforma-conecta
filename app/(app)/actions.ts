@@ -243,7 +243,21 @@ export async function setCampaignAppStatus(fd: FormData) {
   const { supabase, profile } = await requireModule("candidaturas");
   const id = g(fd, "id"), status = g(fd, "status");
   await applyAppStatus(supabase, profile, id, status);
-  back("/inscricoes", `Inscrição atualizada: ${status}.`);
+  back(g(fd, "back") || "/inscricoes", `Inscrição atualizada: ${status}.`);
+}
+
+// Várias inscrições de uma vez (aprovar/reprovar/lista de espera em lote)
+export async function setCampaignAppStatusBulk(fd: FormData) {
+  const { supabase, profile } = await requireModule("candidaturas");
+  const path = g(fd, "back") || "/inscricoes";
+  const one = g(fd, "one").split("|");
+  const status = one.length === 2 ? one[1] : g(fd, "status");
+  const ids = one.length === 2 ? [one[0]] : fd.getAll("ids").map(String).filter(Boolean).slice(0, 200);
+  if (!["Aprovada", "Reprovada", "Lista de espera", "Em análise"].includes(status)) back(path, "Escolha a ação.", false);
+  if (!ids.length) back(path, "Marque pelo menos uma creator.", false);
+  for (const id of ids) await applyAppStatus(supabase, profile, id, status);
+  revalidatePath("/inscricoes");
+  back(path, `${ids.length} inscrição(ões) marcada(s) como ${status}.`);
 }
 
 // Equipe coloca uma creator direto numa campanha (já aprovada).

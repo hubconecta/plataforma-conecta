@@ -617,3 +617,12 @@ img.av{display:block;border-radius:50%;background:var(--surface-2)}
 .sign-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:16px}
 .sign-box{border:1px dashed var(--line-2);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:4px}
 @media print{.no-print,.sidebar,.topbar,.bnav,nav,header,.wa-fab,.push-toggle{display:none!important}.main,.content{margin:0!important;padding:0!important}.card{border:0!important;box-shadow:none!important}}
+.camp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.camp-card{display:flex;flex-direction:column;gap:8px;text-decoration:none;color:inherit;transition:transform .12s}
+.camp-card:hover{transform:translateY(-2px)}
+.camp-card.has-pend{border:1.5px solid #E6007E}
+.camp-card h3{margin:0}
+.camp-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center}
+.camp-nums div{background:var(--bg);border-radius:10px;padding:8px 4px;display:flex;flex-direction:column}
+.camp-nums b{font-size:18px}
+.camp-nums span{font-size:11px;color:var(--muted)}
