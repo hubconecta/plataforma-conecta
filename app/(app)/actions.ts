@@ -83,7 +83,7 @@ export async function createBrandAccess(fd: FormData) {
   if (existing && !["pendente", "marca"].includes(existing.role)) back(`/marcas/${brandId}`, "Este e-mail já é usado por outro tipo de acesso na plataforma.", false);
   await admin.from("profiles").update({ role: "marca", brand_id: brandId, name, cargo: orNull(g(fd, "cargo")), whatsapp: orNull(g(fd, "whatsapp")), access_status: "convite_enviado", status: "ativo" }).eq("id", r.user.id);
   await logAction(supabase, profile, `criou o acesso do Portal da Marca para ${email}`, "Acesso da marca", brandId);
-  await showLink(email, name, r.link);
+  await showLink(email, name, r.link, "marca");
   back(`/marcas/${brandId}`, `Acesso criado para ${email}. Envie o link de primeiro acesso que apareceu no topo da tela.`);
 }
 
@@ -98,7 +98,7 @@ export async function resendAccess(fd: FormData) {
   const r = await accessLink(admin, email);
   if ("error" in r) back(path, "Não foi possível gerar o novo link: " + r.error, false);
   await logAction(supabase, profile, `gerou novo link de acesso para ${email}`, "Acessos", tp.id);
-  await showLink(email, tp.name || "", r.link);
+  await showLink(email, tp.name || "", r.link, tp.role === "marca" ? "marca" : tp.role === "creator" ? "creator" : tp.role === "equipe" || tp.role === "financeiro" ? "equipe" : "geral");
   back(path, `Novo link gerado para ${email}. Envie o link que apareceu no topo da tela.`);
 }
 
@@ -138,7 +138,7 @@ export async function saveTeamMember(fd: FormData) {
   if (existing && !["pendente", "equipe"].includes(existing.role)) back("/colaboradoras", "Este e-mail já é usado por outro tipo de acesso na plataforma.", false);
   await admin.from("profiles").update({ ...data, role: "equipe", access_status: "convite_enviado" }).eq("id", r.user.id);
   await logAction(supabase, profile, `convidou a colaboradora ${data.name} (${email})`, "Colaboradoras", r.user.id);
-  await showLink(email, data.name, r.link);
+  await showLink(email, data.name, r.link, "equipe");
   back("/colaboradoras", `Acesso criado para ${data.name}. Envie o link de primeiro acesso que apareceu no topo da tela.`);
 }
 
@@ -163,7 +163,7 @@ export async function setApplicationStatus(fd: FormData) {
           const { data: existing } = await admin.from("profiles").select("role").eq("id", r.user.id).single();
           if (!existing || ["pendente", "creator"].includes(existing.role)) {
             await admin.from("profiles").update({ role: "creator", creator_id: cr.id, name: app.name, access_status: "convite_enviado", status: "ativo" }).eq("id", r.user.id);
-            await showLink(app.email, app.name, r.link);
+            await showLink(app.email, app.name, r.link, "creator_aprovada");
           }
         }
       } catch {}
@@ -302,7 +302,7 @@ export async function creatorAccess(fd: FormData) {
   if (existing && !["pendente", "creator"].includes(existing.role)) back(path, "Este e-mail já é usado por outro tipo de acesso na plataforma.", false);
   await admin.from("profiles").update({ role: "creator", creator_id: c.id, name: c.name, access_status: "convite_enviado", status: "ativo" }).eq("id", r.user.id);
   await logAction(supabase, profile, `gerou o acesso ao Clube Conecta para ${c.name}`, "Creators", c.id);
-  await showLink(c.email, c.name, r.link);
+  await showLink(c.email, c.name, r.link, "creator");
   back(path, `Link do Clube Conecta gerado para ${c.name}. Envie o link que apareceu no topo da tela.`);
 }
 
