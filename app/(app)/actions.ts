@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { can } from "@/lib/perms";
 import { cookies } from "next/headers";
 import { accessLink, showLink } from "@/lib/access";
-import { notifyCreators, notifyModule } from "@/lib/act";
+import { notifyCreators, notifyModule, num } from "@/lib/act";
 
 const g = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const orNull = (v: string) => (v === "" ? null : v);
@@ -64,7 +64,7 @@ export async function saveBrand(fd: FormData) {
   }
   if (row.owner_id && row.owner_id !== profile.id && row.owner_id !== prevOwner) await notifyProfiles(supabase, { ids: [row.owner_id] }, `🏷️ Você é a responsável pela marca ${row.name}`, `/marcas/${brandId}`);
   if (can(profile, "fin") && fd.has("monthly_value")) {
-    await supabase.from("brand_contracts").upsert({ brand_id: brandId, monthly_value: Number(g(fd, "monthly_value")) || null, commission_pct: Number(g(fd, "commission_pct")) || null, due_day: Number(g(fd, "due_day")) || null, updated_at: new Date().toISOString() });
+    await supabase.from("brand_contracts").upsert({ brand_id: brandId, monthly_value: num(fd, "monthly_value") || null, commission_pct: num(fd, "commission_pct") || null, due_day: Number(g(fd, "due_day")) || null, updated_at: new Date().toISOString() });
   }
   await logAction(supabase, profile, `${id ? "editou" : "cadastrou"} a marca ${row.name}`, "Marcas", brandId);
   revalidatePath("/marcas");
@@ -182,7 +182,7 @@ export async function saveCampaign(fd: FormData) {
   const { supabase, profile } = await requireModule("campanhas");
   const id = g(fd, "id");
   const extra = { niches: fd.getAll("niches").map(String), campaign_types: fd.getAll("campaign_types").map(String), profiles_wanted: fd.getAll("profiles_wanted").map(String), contents_per_creator: Number(g(fd, "contents_per_creator")) || null };
-  const row = { ...extra, brand_id: g(fd, "brand_id"), name: g(fd, "name"), product: orNull(g(fd, "product")), objective: orNull(g(fd, "objective")), description: orNull(g(fd, "description")), briefing: orNull(g(fd, "briefing")), status: g(fd, "status") || "Futura", start_date: orNull(g(fd, "start_date")), end_date: orNull(g(fd, "end_date")), slots: Number(g(fd, "slots")) || 10, fee: Number(g(fd, "fee")) || null, commission_pct: Number(g(fd, "commission_pct")) || null, niche: fd.getAll("niches").map(String).join(", ") || null, requirements: orNull(g(fd, "requirements")), deliverables: orNull(g(fd, "deliverables")), requires_shipping: !!fd.get("requires_shipping") };
+  const row = { ...extra, brand_id: g(fd, "brand_id"), name: g(fd, "name"), product: orNull(g(fd, "product")), objective: orNull(g(fd, "objective")), description: orNull(g(fd, "description")), briefing: orNull(g(fd, "briefing")), status: g(fd, "status") || "Futura", start_date: orNull(g(fd, "start_date")), end_date: orNull(g(fd, "end_date")), slots: Number(g(fd, "slots")) || 10, fee: num(fd, "fee") || null, commission_pct: num(fd, "commission_pct") || null, niche: fd.getAll("niches").map(String).join(", ") || null, requirements: orNull(g(fd, "requirements")), deliverables: orNull(g(fd, "deliverables")), requires_shipping: !!fd.get("requires_shipping") };
   if (!row.brand_id || !row.name) back("/campanhas", "Escolha a marca e dê um nome à campanha.", false);
   let cid = id, prevStatus: string | null = null;
   if (id) { const { data: pv } = await supabase.from("campaigns").select("status").eq("id", id).single(); prevStatus = pv?.status || null; const { error } = await supabase.from("campaigns").update(row).eq("id", id); if (error) back("/campanhas", error.message, false); }
@@ -207,7 +207,7 @@ export async function saveResults(fd: FormData) {
   const { supabase, profile } = await requireModule("campanhas");
   const id = g(fd, "id");
   const results: Record<string, number> = {};
-  ["creators", "concluded", "views", "interactions", "clicks", "orders", "gmv"].forEach((k) => (results[k] = Number(g(fd, k)) || 0));
+  ["creators", "concluded", "views", "interactions", "clicks", "orders", "gmv"].forEach((k) => (results[k] = num(fd, k) || 0));
   const { data: c0 } = await supabase.from("campaigns").select("commission_pct").eq("id", id).single();
   (results as any).commissions = Math.round((results.gmv || 0) * (Number(c0?.commission_pct) || 0)) / 100;
   const { data: c } = await supabase.from("campaigns").update({ results }).eq("id", id).select("name,brand_id").single();
@@ -385,7 +385,7 @@ export async function proposeCampaign(fd: FormData) {
   const { supabase, profile } = await requireModule("campanhas");
   if (profile.role !== "marca" || !profile.brand_id) back("/campanhas", "Sem permissão.", false);
   const id = g(fd, "id");
-  const row: any = { niches: fd.getAll("niches").map(String), campaign_types: fd.getAll("campaign_types").map(String), profiles_wanted: fd.getAll("profiles_wanted").map(String), contents_per_creator: Number(g(fd, "contents_per_creator")) || null, brand_id: profile.brand_id, name: g(fd, "name"), product: orNull(g(fd, "product")), objective: orNull(g(fd, "objective")), description: orNull(g(fd, "description")), briefing: orNull(g(fd, "briefing")), start_date: orNull(g(fd, "start_date")), end_date: orNull(g(fd, "end_date")), slots: Number(g(fd, "slots")) || 10, niche: fd.getAll("niches").map(String).join(", ") || null, requirements: orNull(g(fd, "requirements")), deliverables: orNull(g(fd, "deliverables")), requires_shipping: !!fd.get("requires_shipping"), budget: Number(g(fd, "budget")) || null, status: "Em aprovação", proposed_by: profile.id };
+  const row: any = { niches: fd.getAll("niches").map(String), campaign_types: fd.getAll("campaign_types").map(String), profiles_wanted: fd.getAll("profiles_wanted").map(String), contents_per_creator: Number(g(fd, "contents_per_creator")) || null, brand_id: profile.brand_id, name: g(fd, "name"), product: orNull(g(fd, "product")), objective: orNull(g(fd, "objective")), description: orNull(g(fd, "description")), briefing: orNull(g(fd, "briefing")), start_date: orNull(g(fd, "start_date")), end_date: orNull(g(fd, "end_date")), slots: Number(g(fd, "slots")) || 10, niche: fd.getAll("niches").map(String).join(", ") || null, requirements: orNull(g(fd, "requirements")), deliverables: orNull(g(fd, "deliverables")), requires_shipping: !!fd.get("requires_shipping"), budget: num(fd, "budget") || null, status: "Em aprovação", proposed_by: profile.id };
   if (!row.name) back("/campanhas", "Dê um nome à campanha.", false);
   if (row.start_date && row.end_date && row.end_date < row.start_date) back("/campanhas", "A data final precisa ser depois do início.", false);
   const { error } = id ? await supabase.from("campaigns").update(row).eq("id", id) : await supabase.from("campaigns").insert(row);

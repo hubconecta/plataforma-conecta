@@ -26,7 +26,7 @@ export default function PrizesEditor({ initial }: { initial?: Prize[] }) {
           <div className="form-grid">
             <div className="field full"><label>Requisitos para ganhar</label><input className="input" value={r.requirement} onChange={(e) => up(i, { requirement: e.target.value })} placeholder="Ex.: 100 vídeos e 70 vendas" /></div>
             <div className="field"><label>Tipo de prêmio</label><select className="input" value={r.reward_type} onChange={(e) => up(i, { reward_type: e.target.value })}>{REWARD_TYPES.map((t) => <option key={t}>{t}</option>)}</select></div>
-            <div className="field"><label>Valor (R$, opcional)</label><input className="input" type="number" step="any" value={r.reward_value} onChange={(e) => up(i, { reward_value: e.target.value })} /></div>
+            <div className="field"><label>Valor (R$, opcional)</label><input className="input" type="text" inputMode="decimal" placeholder="0,00" value={r.reward_value} onChange={(e) => up(i, { reward_value: e.target.value })} /></div>
             <div className="field full"><label>Prêmio (o que ela ganha)</label><input className="input" value={r.reward_label} onChange={(e) => up(i, { reward_label: e.target.value })} placeholder="Ex.: R$ 1.000 no Pix, kit completo Anagrow, iPhone…" /></div>
           </div>
         </div>))}

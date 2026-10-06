@@ -62,7 +62,7 @@ export default async function Financeiro({ searchParams }: { searchParams: Promi
       {kind === "receber" ? <div className="field"><label>Marca</label><select className="input" name="brand_id" defaultValue={e?.brand_id || ""}><option value="">—</option>{(brands || []).map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div> : null}
       <div className="field"><label>{kind === "receber" ? "Pagador" : "Fornecedor / favorecido"}</label><input className="input" name="party" defaultValue={e?.party || ""} /></div>
       <div className="field"><label>Categoria</label><select className="input" name="category" defaultValue={e?.category || ""}><option value="">—</option>{FIN_CATS.map((c) => <option key={c}>{c}</option>)}</select></div>
-      <div className="field"><label>Valor (R$)</label><input className="input" type="number" step="0.01" name="value" required defaultValue={e?.value ?? ""} /></div>
+      <div className="field"><label>Valor (R$)</label><input placeholder="0,00" className="input" type="text" inputMode="decimal" name="value" required defaultValue={e?.value ?? ""} /></div>
       <div className="field"><label>Vencimento</label><input className="input" type="date" name="due" required defaultValue={e?.due || ""} /></div>
       <div><button className="btn btn-primary btn-sm">{e ? "Salvar" : "Lançar"}</button></div></form>
   );
@@ -134,17 +134,17 @@ export default async function Financeiro({ searchParams }: { searchParams: Promi
             <div className="field"><label>Marca</label><select className="input" name="brand_id" required><option value="">Escolha</option>{(brands || []).map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
             <div className="field"><label>Produto</label><input className="input" name="name" required /></div>
             <div className="field"><label>ID ou nome do produto na B4YOU</label><input className="input" name="b4you_product" required /></div>
-            <div className="field"><label>Preço (R$)</label><input className="input" type="number" step="0.01" name="price" /></div>
-            <div className="field"><label>Comissão da creator (%)</label><input className="input" type="number" step="0.01" name="creator_pct" /></div>
-            <div className="field"><label>Comissão da Conecta (%)</label><input className="input" type="number" step="0.01" name="conecta_pct" required /></div>
+            <div className="field"><label>Preço (R$)</label><input placeholder="0,00" className="input" type="text" inputMode="decimal" name="price" /></div>
+            <div className="field"><label>Comissão da creator (%)</label><input placeholder="0,00" className="input" type="text" inputMode="decimal" name="creator_pct" /></div>
+            <div className="field"><label>Comissão da Conecta (%)</label><input placeholder="0,00" className="input" type="text" inputMode="decimal" name="conecta_pct" required /></div>
             <div><button className="btn btn-primary btn-sm">Cadastrar produto da marca</button></div></form>
         </div></details>
         <details className="mod"><summary>+ Registrar venda</summary><form action={saveSale} className="form-grid" style={{ paddingBottom: 14 }}><input type="hidden" name="back" value={here} />
-          <div className="field"><label>Produto</label><input className="input" name="product" required /></div><div className="field"><label>Valor vendido (R$)</label><input className="input" type="number" step="0.01" name="sold" required /></div>
+          <div className="field"><label>Produto</label><input className="input" name="product" required /></div><div className="field"><label>Valor vendido (R$)</label><input placeholder="0,00" className="input" type="text" inputMode="decimal" name="sold" required /></div>
           <div className="field"><label>Creator</label><select className="input" name="creator_id"><option value="">—</option>{(creators || []).map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
           <div className="field"><label>Marca</label><select className="input" name="brand_id"><option value="">Conecta (produto próprio)</option>{(brands || []).map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
           <div className="field"><label>Campanha</label><select className="input" name="campaign_id"><option value="">—</option>{(camps || []).map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
-          <div className="field"><label>Comissão da creator (%)</label><input className="input" type="number" step="0.01" name="creator_pct" /></div><div className="field"><label>Comissão da Conecta (%)</label><input className="input" type="number" step="0.01" name="conecta_pct" /></div>
+          <div className="field"><label>Comissão da creator (%)</label><input placeholder="0,00" className="input" type="text" inputMode="decimal" name="creator_pct" /></div><div className="field"><label>Comissão da Conecta (%)</label><input placeholder="0,00" className="input" type="text" inputMode="decimal" name="conecta_pct" /></div>
           <div className="field"><label>Origem</label><select className="input" name="kind">{KINDS.map((k) => <option key={k}>{k}</option>)}</select></div>
           <div className="field"><label>Regra</label><select className="input" name="rule">{["Contrato", "Campanha", "Produto", "Marca"].map((r) => <option key={r}>{r}</option>)}</select></div>
           <div className="field"><label>Status</label><select className="input" name="status">{SALE_STATUS.map((s) => <option key={s}>{s}</option>)}</select></div><div className="field"><label>Data</label><input className="input" type="date" name="sale_date" defaultValue={today} /></div>

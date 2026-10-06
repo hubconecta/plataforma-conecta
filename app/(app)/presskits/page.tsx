@@ -23,8 +23,8 @@ export default async function PressKits({ searchParams }: { searchParams: Promis
       <div className="field"><label>Marca</label><select className="input" name="brand_id" defaultValue={k?.brand_id || q.marca || ""}><option value="">Conecta</option>{(brands || []).map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
       <div className="field"><label>Tipo</label><select className="input" name="type" defaultValue={k?.type || "Gratuito"}>{PK_TYPES.map((t) => <option key={t}>{t}</option>)}</select></div>
       <div className="field"><label>Status</label><select className="input" name="status" defaultValue={k?.status || "Rascunho"}>{PK_STATUS.map((t) => <option key={t}>{t}</option>)}</select></div>
-      <div className="field"><label>Preço para a creator (R$)</label><input className="input" type="number" step="0.01" name="price" defaultValue={k?.price ?? ""} /></div>
-      <div className="field"><label>Custo (R$)</label><input className="input" type="number" step="0.01" name="cost" defaultValue={k?.cost ?? ""} /></div>
+      <div className="field"><label>Preço para a creator (R$)</label><input placeholder="0,00" className="input" type="text" inputMode="decimal" name="price" defaultValue={k?.price ?? ""} /></div>
+      <div className="field"><label>Custo (R$)</label><input placeholder="0,00" className="input" type="text" inputMode="decimal" name="cost" defaultValue={k?.cost ?? ""} /></div>
       <div className="field"><label>Itens por kit</label><input className="input" type="number" name="qty" defaultValue={k?.qty ?? 1} /></div>
       <div className="field"><label>Estoque</label><input className="input" type="number" name="stock" defaultValue={k?.stock ?? 0} /></div>
       <div className="field"><label>Link do checkout (B4YOU)</label><input className="input" name="checkout_url" type="url" defaultValue={k?.checkout_url || ""} placeholder="https://" /></div>

@@ -102,7 +102,7 @@ export default async function Desafio({ params, searchParams }: { params: Promis
                 <div className="field full"><label>Destaque (por que ganhou)</label><input className="input" name={`w${i}_highlight`} defaultValue={w?.highlight || ""} /></div>
               </div>); })}
             <div><Link className="btn btn-ghost btn-sm" href={`/desafios/${id}?tab=resultado&mais=${(Number(q.mais) || 0) + 1}`}>+ Adicionar colocação</Link></div>
-            <div className="form-grid">{CH_METRICS.map(([k, l]) => <div className="field" key={k}><label>{l}</label><input className="input" type="number" step="any" name={`m_${k}`} defaultValue={r?.metrics?.[k] ?? pre[k] ?? 0} /></div>)}</div>
+            <div className="form-grid">{CH_METRICS.map(([k, l]) => <div className="field" key={k}><label>{l}</label><input placeholder="0,00" className="input" type="text" inputMode="decimal" name={`m_${k}`} defaultValue={r?.metrics?.[k] ?? pre[k] ?? 0} /></div>)}</div>
             <div className="field"><label>Destaques e observações</label><textarea className="input" name="notes" defaultValue={r?.notes || ""} /></div>
             <div className="field"><label>Links (posts, relatórios)</label><textarea className="input" name="links" defaultValue={r?.links || ""} /></div>
             <label className="check"><input type="checkbox" name="close" defaultChecked={c.status !== "Encerrado"} /> Encerrar o desafio</label>

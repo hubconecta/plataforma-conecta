@@ -4,7 +4,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const g = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 export const orNull = (v: string) => (v === "" ? null : v);
-export const num = (fd: FormData, k: string) => { const v = g(fd, k).replace(",", "."); return v === "" ? null : Number(v) || 0; };
+// Lê valores no formato brasileiro: "3.000", "3.000,50", "3000,5", "R$ 3.000" → 3000 / 3000.5
+export const money = (raw: string): number | null => {
+  let v = String(raw ?? "").replace(/R\$|\s/g, "").trim();
+  if (v === "") return null;
+  if (v.includes(",")) v = v.replace(/\./g, "").replace(",", ".");
+  else if (/^\d{1,3}(\.\d{3})+$/.test(v)) v = v.replace(/\./g, "");
+  const n = Number(v);
+  return isNaN(n) ? 0 : n;
+};
+export const num = (fd: FormData, k: string) => money(g(fd, k));
 export const back = (path: string, msg: string, ok = true): never => {
   const sep = path.includes("?") ? "&" : "?";
   return redirect(`${path}${sep}${ok ? "ok" : "erro"}=${encodeURIComponent(msg)}`);

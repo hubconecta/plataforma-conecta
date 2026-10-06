@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireModule, getSession, logAction } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { g, orNull, num, back, notifyProfiles, hiddenForBrand } from "@/lib/act";
+import { g, orNull, num, money, back, notifyProfiles, hiddenForBrand } from "@/lib/act";
 
 const PLACE = (n: number) => `${n}º lugar`;
 
@@ -16,7 +16,7 @@ function readPrizes(fd: FormData) {
     requirement: String(p?.requirement || "").trim().slice(0, 300),
     reward_type: String(p?.reward_type || "Produto").slice(0, 40),
     reward_label: String(p?.reward_label || "").trim().slice(0, 200),
-    reward_value: Number(String(p?.reward_value ?? "").replace(",", ".")) || null,
+    reward_value: money(String(p?.reward_value ?? "")) || null,
   })).filter((p) => p.reward_label || p.requirement || p.reward_value);
 }
 
@@ -158,7 +158,7 @@ export async function saveChallengeResult(fd: FormData) {
   const nm = new Map((crs || []).map((c: any) => [c.id, c.name]));
   winners.forEach((w) => (w.name = nm.get(w.creator_id) || ""));
   const metrics: Record<string, number> = {};
-  ["participants", "contents", "views", "interactions", "clicks", "orders", "sales"].forEach((k) => (metrics[k] = Number(g(fd, `m_${k}`)) || 0));
+  ["participants", "contents", "views", "interactions", "clicks", "orders", "sales"].forEach((k) => (metrics[k] = money(g(fd, `m_${k}`)) || 0));
   const first = !ch.result;
   const result = { at: new Date().toISOString(), by: profile.name, winners, metrics, notes: g(fd, "notes"), links: g(fd, "links") };
   const upd: any = { result, winners: Math.max(ch.winners || 0, winners.length) };

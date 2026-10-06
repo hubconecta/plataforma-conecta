@@ -40,8 +40,8 @@ export default async function Campanhas({ searchParams }: { searchParams: Promis
       <div className="field"><label>Marca</label><select className="input" name="brand_id" required defaultValue={c?.brand_id || ""}><option value="">Escolha</option>{(brands || []).map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></div>
       <div className="field"><label>Status</label><select className="input" name="status" defaultValue={c?.status || "Futura"}>{STS.map((s) => <option key={s}>{s}</option>)}</select></div>
       <Common c={c} />
-      <div className="field"><label>Cachê por creator (R$)</label><input className="input" type="number" step="0.01" name="fee" defaultValue={c?.fee || ""} /></div>
-      <div className="field"><label>Comissão (%)</label><input className="input" type="number" step="0.01" name="commission_pct" defaultValue={c?.commission_pct || ""} /></div>
+      <div className="field"><label>Cachê por creator (R$)</label><input placeholder="0,00" className="input" type="text" inputMode="decimal" name="fee" defaultValue={c?.fee || ""} /></div>
+      <div className="field"><label>Comissão (%)</label><input placeholder="0,00" className="input" type="text" inputMode="decimal" name="commission_pct" defaultValue={c?.commission_pct || ""} /></div>
       <div className="field full"><label>Link do grupo da campanha no WhatsApp (só aprovadas e a marca veem)</label><input className="input" type="url" name="group_url" defaultValue={c ? GL.get(c.id) || "" : ""} placeholder="https://chat.whatsapp.com/…" /></div>
       <div><button className="btn btn-primary btn-sm">{c ? "Salvar campanha" : "Criar campanha"}</button></div>
     </form>
@@ -50,7 +50,7 @@ export default async function Campanhas({ searchParams }: { searchParams: Promis
     <form action={proposeCampaign} className="form-grid">
       {c ? <input type="hidden" name="id" value={c.id} /> : null}
       <Common c={c} />
-      <div className="field"><label>Verba prevista (R$, opcional)</label><input className="input" type="number" step="0.01" name="budget" defaultValue={c?.budget || ""} /></div>
+      <div className="field"><label>Verba prevista (R$, opcional)</label><input placeholder="0,00" className="input" type="text" inputMode="decimal" name="budget" defaultValue={c?.budget || ""} /></div>
       <div className="full"><button className="btn btn-primary btn-sm">{c ? "Salvar e reenviar para aprovação" : "Enviar para aprovação da Conecta"}</button></div>
     </form>
   );
