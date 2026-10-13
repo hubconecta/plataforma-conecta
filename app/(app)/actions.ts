@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { can } from "@/lib/perms";
 import { cookies } from "next/headers";
 import { accessLink, showLink } from "@/lib/access";
-import { notifyCreators, notifyModule, num } from "@/lib/act";
+import { notifyCreators, notifyModule, num, followersOf } from "@/lib/act";
 import { sendContract } from "@/lib/contracts";
 
 const g = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
@@ -151,7 +151,7 @@ export async function setApplicationStatus(fd: FormData) {
   if (!app) back("/cadastros", "Cadastro não encontrado.", false);
   if (status === "Aprovada") {
     const a = app.answers || {};
-    const { data: cr, error } = await supabase.from("creators").insert({ name: app.name, artist_name: a.artist || null, email: app.email, whatsapp: app.whatsapp, city: app.city, state: app.state, instagram: app.instagram, tiktok: app.tiktok, niche: app.niche, kind: app.kind, followers: parseInt(String(a.followers || "").replace(/\D/g, "")) || 0, status: "Nova" }).select("id").single();
+    const { data: cr, error } = await supabase.from("creators").insert({ name: app.name, artist_name: a.artist || null, email: app.email, whatsapp: app.whatsapp, city: app.city, state: app.state, instagram: app.instagram, tiktok: app.tiktok, niche: app.niche, kind: app.kind, followers: followersOf(a.followers) || 0, status: "Nova" }).select("id").single();
     if (error) back("/cadastros", "Não foi possível ativar: " + error.message, false);
     await supabase.from("creator_applications").update({ status, creator_id: cr.id }).eq("id", id);
     // Endereço informado no cadastro já vai para o perfil dela

@@ -14,6 +14,21 @@ export const money = (raw: string): number | null => {
   return isNaN(n) ? 0 : n;
 };
 export const num = (fd: FormData, k: string) => money(g(fd, k));
+
+// Seguidores escritos de qualquer jeito: "35.000", "35 mil", "35k", "1,2M", "35k insta / 42k tiktok" → primeiro número
+export const followersOf = (raw: any): number | null => {
+  const t = String(raw ?? "").toLowerCase().replace(/\s+/g, " ");
+  const m = t.match(/(\d{1,3}(?:[.\s]\d{3})+|\d+(?:[.,]\d+)?)\s*(mi\b|milh|m\b|mil|k)?/);
+  if (!m) return null;
+  let n = m[1].replace(/\s/g, "");
+  if (/^\d{1,3}(\.\d{3})+$/.test(n)) n = n.replace(/\./g, ""); else n = n.replace(",", ".");
+  let v = Number(n);
+  const suf = m[2] || "";
+  if (suf === "k" || suf === "mil") v *= 1000;
+  else if (suf.startsWith("m")) v *= 1000000;
+  if (!isFinite(v) || v < 0) return null;
+  return v > 500000000 ? null : Math.round(v); // número absurdo (ex.: dois números grudados) fica em branco para corrigir no perfil
+};
 export const back = (path: string, msg: string, ok = true): never => {
   const sep = path.includes("?") ? "&" : "?";
   return redirect(`${path}${sep}${ok ? "ok" : "erro"}=${encodeURIComponent(msg)}`);

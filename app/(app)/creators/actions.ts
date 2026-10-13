@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { requireModule, getSession, logAction } from "@/lib/session";
 import { can } from "@/lib/perms";
-import { g, back, notifyProfiles, notifyCreators } from "@/lib/act";
+import { g, back, notifyProfiles, notifyCreators, followersOf } from "@/lib/act";
 
 // Muda a creator entre "só da marca" e "base completa da Conecta"
 export async function setCreatorBase(fd: FormData) {
@@ -73,7 +73,7 @@ export async function deleteBrandLink(fd: FormData) {
 export async function saveFollowers(fd: FormData) {
   const { supabase, profile } = await requireModule("creators");
   const id = g(fd, "creator_id"), path = `/creators/${id}`;
-  const fi = parseInt(g(fd, "followers").replace(/\D/g, "")), ft = parseInt(g(fd, "tiktok_followers").replace(/\D/g, ""));
+  const fi = followersOf(g(fd, "followers")) ?? NaN, ft = followersOf(g(fd, "tiktok_followers")) ?? NaN;
   const { error } = await supabase.from("creators").update({ followers: isNaN(fi) ? 0 : fi, tiktok_followers: isNaN(ft) ? null : ft, followers_updated_at: new Date().toISOString() }).eq("id", id);
   if (error) back(path, "Não foi possível salvar: " + error.message, false);
   await logAction(supabase, profile, `atualizou os seguidores da creator`, "Creators", id);

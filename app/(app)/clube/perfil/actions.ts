@@ -1,7 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { getSession, logAction } from "@/lib/session";
-import { g, orNull, back } from "@/lib/act";
+import { g, orNull, back, followersOf } from "@/lib/act";
 
 export async function saveMyProfile(fd: FormData) {
   const s = await getSession();
@@ -15,7 +15,7 @@ export async function saveMyProfile(fd: FormData) {
     if (error) back("/clube/perfil", "Não foi possível salvar o endereço.", false);
   }
   // Seguidores informados por ela (o Instagram não libera esse número para outros sites sem login dela)
-  const fi = parseInt(g(fd, "followers").replace(/\D/g, "")), ft = parseInt(g(fd, "tiktok_followers").replace(/\D/g, ""));
+  const fi = followersOf(g(fd, "followers")) ?? NaN, ft = followersOf(g(fd, "tiktok_followers")) ?? NaN;
   if (fd.has("followers") && (!isNaN(fi) || !isNaN(ft))) await s.supabase.from("creators").update({ ...(isNaN(fi) ? {} : { followers: fi }), ...(isNaN(ft) ? {} : { tiktok_followers: ft }), followers_updated_at: new Date().toISOString() }).eq("id", me);
   await logAction(s.supabase, s.profile, "atualizou o próprio perfil e endereço", "Perfil", me);
   back("/clube/perfil", "Perfil salvo! Seu endereço só é mostrado para quem for enviar um produto autorizado para você.");
