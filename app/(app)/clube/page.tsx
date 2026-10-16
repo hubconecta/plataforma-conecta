@@ -1,4 +1,5 @@
 import GroupLinks from "@/components/GroupLinks";
+import PinnedAnnouncements from "@/components/PinnedAnnouncements";
 import ClassList from "@/components/ClassList";
 import Link from "next/link";
 import { requireModule } from "@/lib/session";
@@ -45,6 +46,7 @@ export default async function Clube({ searchParams }: { searchParams: Promise<an
             <Link className="btn btn-ghost btn-sm" href="/clube/desafios">Desafios</Link><Link className="btn btn-ghost btn-sm" href="/clube/oportunidades">Oportunidades</Link></div>); })}</div>
         {!(brandChs || []).length && !(brandCamps || []).length ? <p className="small muted" style={{ marginTop: 8 }}>Assim que a marca abrir um desafio ou uma campanha, você recebe uma notificação e eles aparecem aqui.</p> : null}</div> : null}
       <Notice q={q} />
+      <PinnedAnnouncements supabase={supabase} userId={profile.id} />
       {lim ? <div className="card join-clube"><span className="eyebrow">Clube Conecta</span><h2 style={{ margin: "4px 0 6px" }}>Quero fazer parte do Clube Conecta 💖</h2>
         <p className="small" style={{ color: "var(--muted)" }}>Hoje você vê só a sua marca. No Clube Conecta você recebe oportunidades de outras marcas parceiras, desafios com prêmios, a comunidade no WhatsApp e o Club Criadora.</p>
         <details className="mod" style={{ marginTop: 10 }}><summary className="btn btn-primary">Quero participar</summary>

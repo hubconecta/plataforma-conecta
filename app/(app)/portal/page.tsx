@@ -1,4 +1,5 @@
 import GroupLinks from "@/components/GroupLinks";
+import PinnedAnnouncements from "@/components/PinnedAnnouncements";
 import ClassList from "@/components/ClassList";
 import Link from "next/link";
 import { requireModule } from "@/lib/session";
@@ -25,6 +26,7 @@ export default async function Portal() {
       {nx ? <div className="card"><div className="li"><div className="grow"><b>Próximo pagamento: {nx.description}</b><span>vence {fd(nx.due)}</span></div><span className="count">{brl(nx.value)}</span><Pill s={nx.due < today ? "Vencido" : "Em aberto"} /><Link className="btn btn-ghost btn-sm" href="/portal/financeiro">Ver financeiro</Link></div></div> : null}
       <div className="card"><div className="card-h"><h2>Campanhas</h2><Link className="btn btn-ghost btn-sm" href="/campanhas">Ver todas</Link></div>{camps?.length ? <div className="table-wrap"><table><thead><tr><th>Campanha</th><th>Status</th><th>Período</th><th className="r">Concluíram</th><th className="r">GMV</th></tr></thead><tbody>{camps.slice(0, 8).map((c: any) => <tr key={c.id}><td><b>{c.name}</b></td><td><Pill s={c.status} /></td><td className="num">{fd(c.start_date)} – {fd(c.end_date)}</td><td className="r num">{c.results?.concluded || 0}/{c.results?.creators || 0}</td><td className="r num">{brl(c.results?.gmv || 0)}</td></tr>)}</tbody></table></div> : <Empty icon="megaphone" title="Nenhuma campanha ainda" text="Proponha uma campanha: ela vai para a aprovação da Conecta." />}</div>
       {await (async () => { const { count } = await supabase.from("contract_signatures").select("id", { count: "exact", head: true }).eq("status", "Aguardando marca"); return count ? <div className="notice bad">✍️ {count} contrato{count > 1 ? "s" : ""} de creators aguardando a assinatura da marca. <a href="/contratos">Assinar</a></div> : null; })()}
+      <PinnedAnnouncements supabase={supabase} userId={profile.id} />
       <ClassList supabase={supabase} empty="Nenhuma aula agendada para a sua marca." />
       <GroupLinks supabase={supabase} brands />
       <div className="grid g2">
