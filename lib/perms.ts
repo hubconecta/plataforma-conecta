@@ -74,7 +74,7 @@ export const MENU: Record<string, [string, string[]][]> = {
   equipe: [["Visão", ["ops", "conta"]], ["Pessoas", ["cad_creators", "creators", "marcas"]], ["Operação", ["campanhas", "candidaturas", "contratos", "aulas", "avisos", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "etiquetas", "gamificacao", "crm", "relatorios", "metodo_adm", "assinaturas"]], ["Financeiro", ["fin"]], ["Sistema", ["notificacoes"]]],
   financeiro: [["Financeiro", ["fin"]], ["Gestão", ["calendario", "demandas"]], ["Sistema", ["conta", "notificacoes"]]],
   marca: [["Sua marca", ["marca_home", "perfil_marca", "campanhas", "desafios", "conteudos", "marca_forms", "marca_contratos", "marca_aulas", "marca_avisos", "marca_envios", "relatorios"]], ["Acompanhamento", ["fin_marca"]], ["Ajuda", ["notificacoes"]]],
-  creator: [["Conecta Hub", ["hub", ...HUB_KEYS]], ["Clube", ["clube", "minhas_marcas", "oportunidades", "minhas", "meus_desafios", "cr_presskits", "cr_contratos", "cr_aulas", "cr_avisos"]], ["Evolução", ["jornada"]], ["Ganhos", ["comissoes"]], ["Educação", ["metodo"]], ["Você", ["perfil", "notificacoes"]]],
+  creator: [["Conecta Hub", ["hub"]], ["Clube", ["clube", "minhas_marcas", "oportunidades", "minhas", "meus_desafios", "cr_presskits", "cr_contratos", "cr_aulas", "cr_avisos"]], ["Evolução", ["jornada"]], ["Ganhos", ["comissoes"]], ["Educação", ["metodo"]], ["Você", ["perfil", "notificacoes"]]],
   pendente: [],
 };
 
