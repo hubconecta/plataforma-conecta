@@ -5,7 +5,7 @@ import { PageH, Kpi, Empty, Notice, fd } from "@/components/ui";
 import ConfirmDelete from "@/components/ConfirmDelete";
 import { hubSettings, hasAccess } from "@/lib/hub";
 import { brl2 } from "@/lib/hub-areas";
-import { saveHubSettings, grantHub, saveHubItem, deleteHubItem, resolveHubEvent, reprocessHubEvents, launchHub, pauseHub } from "./actions";
+import { saveHubSettings, grantHub, saveHubItem, deleteHubItem, resolveHubEvent, reprocessHubEvents, launchHub, pauseHub, saveHubGroup, deleteHubGroup } from "./actions";
 
 const ST_LABEL: Record<string, string> = { ativa: "Ativa", em_atraso: "Em atraso", cancelada: "Cancelada", pendente: "Pendente", expirada: "Expirada", reembolsada: "Reembolsada" };
 const ST_CLS: Record<string, string> = { ativa: "ok", em_atraso: "warn", cancelada: "bad", pendente: "info", expirada: "neutral", reembolsada: "bad" };
@@ -101,6 +101,7 @@ export default async function Assinaturas({ searchParams }: { searchParams: Prom
     </>);
   }
   if (tab === "conteudos") {
+    const { data: hubGroups } = await admin.from("community_links").select("id,title,url").eq("audience", "Hub").order("position").order("created_at");
     const { data: items } = await supabase.from("hub_items").select("*").order("section").order("pinned", { ascending: false }).order("created_at", { ascending: false });
     const Form = ({ i }: { i?: any }) => (
       <form action={saveHubItem} className="form-grid">{i ? <input type="hidden" name="id" value={i.id} /> : null}
@@ -116,6 +117,14 @@ export default async function Assinaturas({ searchParams }: { searchParams: Prom
         <div className="full"><button className="btn btn-primary">{i ? "Salvar" : "Publicar"}</button></div>
       </form>);
     body = (<>
+      <div className="card" style={{ marginBottom: 14 }}><div className="card-h"><h2>💬 Grupos exclusivos das assinantes</h2></div>
+        <p className="small muted">O link aparece só para quem assina o Conecta Hub (em Meu Hub › Comunidade e nos grupos do início). As Free não veem o link, nem pela API.</p>
+        {hubGroups?.length ? <div className="list" style={{ marginBottom: 12 }}>{hubGroups.map((l: any) => <div className="li" key={l.id}><div className="grow"><b>{l.title}</b><span className="small muted">{l.url}</span></div><ConfirmDelete action={deleteHubGroup} fields={{ id: l.id }} label="Remover" warning="O grupo deixa de aparecer para as assinantes (o grupo no WhatsApp continua existindo)." /></div>)}</div> : null}
+        <form action={saveHubGroup} className="form-grid">
+          <div className="field"><label htmlFor="hg_t">Nome do grupo</label><input className="input" id="hg_t" name="title" maxLength={120} placeholder="Ex.: Comunidade Conecta Hub" /></div>
+          <div className="field"><label htmlFor="hg_u">Link do grupo</label><input className="input" id="hg_u" name="url" required placeholder="https://chat.whatsapp.com/…" /></div>
+          <div className="full"><button className="btn btn-primary">Adicionar grupo exclusivo</button></div>
+        </form></div>
       <div className="card"><div className="card-h"><h2>Novo conteúdo exclusivo</h2></div><p className="small muted">Campanhas, desafios e aulas exclusivas são marcadas no próprio cadastro (“Quem pode ver: Exclusivo Conecta Hub”). Grupos exclusivos: Configurações › Grupos da comunidade, com “Só assinantes do Conecta Hub”. A Conecta Academy é montada no Club Criadora (produto “Conecta Academy”).</p><Form /></div>
       {SECTIONS.map(([sec, label]) => { const list = (items || []).filter((i: any) => i.section === sec); return (
         <div className="card" key={sec} style={{ marginTop: 14 }}><div className="card-h"><h2>{label} ({list.length})</h2></div>

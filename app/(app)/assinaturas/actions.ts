@@ -158,3 +158,22 @@ export async function launchHub() {
   revalidatePath(P); revalidatePath("/clube");
   back(`${P}?tab=config`, `Conecta Hub lançado! ${people.length} creator(s) receberam a notificação. 💎`);
 }
+
+// Grupos (WhatsApp, Telegram…) só para assinantes do Conecta Hub
+export async function saveHubGroup(fd: FormData) {
+  const { supabase, profile } = await requireModule("assinaturas");
+  const url = g(fd, "url"), title = g(fd, "title").slice(0, 120) || "Comunidade Conecta Hub";
+  if (!/^https?:\/\//.test(url)) back(`${P}?tab=conteudos`, "Cole o link completo do grupo (https://chat.whatsapp.com/…).", false);
+  const { error } = await createAdminClient().from("community_links").insert({ title, url: url.slice(0, 500), audience: "Hub" });
+  if (error) back(`${P}?tab=conteudos`, /audience/.test(error.message) ? "Rode antes o arquivo supabase/23_conecta_hub.sql no Supabase." : error.message, false);
+  await logAction(supabase, profile, `adicionou o grupo exclusivo do Conecta Hub "${title}"`, "Conecta Hub", null);
+  revalidatePath(P); revalidatePath("/hub/comunidade");
+  back(`${P}?tab=conteudos`, "Grupo exclusivo adicionado. Só as assinantes do Conecta Hub veem. 💬");
+}
+export async function deleteHubGroup(fd: FormData) {
+  const { supabase, profile } = await requireModule("assinaturas");
+  await createAdminClient().from("community_links").delete().eq("id", g(fd, "id")).eq("audience", "Hub");
+  await logAction(supabase, profile, "removeu um grupo exclusivo do Conecta Hub", "Conecta Hub", null);
+  revalidatePath(P); revalidatePath("/hub/comunidade");
+  back(`${P}?tab=conteudos`, "Grupo removido.");
+}
