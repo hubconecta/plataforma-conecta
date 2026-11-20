@@ -5,7 +5,7 @@ import { PageH, Kpi, Empty, Notice, fd } from "@/components/ui";
 import ConfirmDelete from "@/components/ConfirmDelete";
 import { hubSettings, hasAccess } from "@/lib/hub";
 import { brl2 } from "@/lib/hub-areas";
-import { saveHubSettings, grantHub, saveHubItem, deleteHubItem, resolveHubEvent, reprocessHubEvents, launchHub } from "./actions";
+import { saveHubSettings, grantHub, saveHubItem, deleteHubItem, resolveHubEvent, reprocessHubEvents, launchHub, pauseHub } from "./actions";
 
 const ST_LABEL: Record<string, string> = { ativa: "Ativa", em_atraso: "Em atraso", cancelada: "Cancelada", pendente: "Pendente", expirada: "Expirada", reembolsada: "Reembolsada" };
 const ST_CLS: Record<string, string> = { ativa: "ok", em_atraso: "warn", cancelada: "bad", pendente: "info", expirada: "neutral", reembolsada: "bad" };
@@ -23,7 +23,8 @@ export default async function Assinaturas({ searchParams }: { searchParams: Prom
     admin.from("subscriptions").select("*, creators(name,email,instagram)").eq("plan_code", "hub").order("updated_at", { ascending: false }),
     admin.from("creators").select("id,name,email").order("name"),
   ]);
-  const head = <PageH eyebrow="Monetização" title="💎 Conecta Hub" sub={`Assinatura mensal das creators · ${brl2(cfg.price)}/mês · carência de ${cfg.grace_days} dia(s) no atraso`} />;
+  const head = <><PageH eyebrow="Monetização" title="💎 Conecta Hub" sub={`Assinatura mensal das creators · ${brl2(cfg.price)}/mês · carência de ${cfg.grace_days} dia(s) no atraso`} />
+    {cfg.launched ? null : <div className="notice info" style={{ marginBottom: 14 }}>🧪 <b>Modo teste.</b> O Conecta Hub está escondido das creators: ninguém recebe notificação nem vê o menu. Só as creators de teste ({(cfg.testers || []).length}) enxergam e conseguem assinar. Quando estiver tudo certo, use <Link href="/assinaturas?tab=config">Configurações › Lançar</Link>.</div>}</>;
   if (error) return (<>{head}<div className="card"><Empty icon="alert" title="Falta rodar o SQL do Conecta Hub" text="Rode o arquivo supabase/23_conecta_hub.sql no SQL Editor do Supabase e recarregue esta página." /></div></>);
 
   const all = subs || [];
@@ -129,13 +130,15 @@ export default async function Assinaturas({ searchParams }: { searchParams: Prom
           <div className="field"><label htmlFor="h_gd">Dias de carência no atraso</label><input className="input" id="h_gd" name="grace_days" type="number" min={0} max={30} defaultValue={cfg.grace_days} /><span className="small muted">Quantos dias a creator mantém o acesso depois que a renovação falha.</span></div>
           <div className="field full"><label htmlFor="h_ck">Link do checkout da assinatura (B4YOU)</label><input className="input" id="h_ck" name="checkout_url" defaultValue={cfg.checkout_url} placeholder="https://…" /></div>
           <div className="field full"><label htmlFor="h_id">ID do produto/oferta de assinatura na B4YOU</label><input className="input" id="h_id" name="b4you_product" defaultValue={cfg.b4you_product} placeholder="Copie o ID do produto na B4YOU" /><span className="small muted">É como reconhecemos que o aviso do webhook é do Conecta Hub. Use o mesmo endereço de webhook do Club Criadora e marque, na B4YOU, os eventos de assinatura (aprovada, renovada, atrasada/recusada, cancelada e reembolso).</span></div>
+          <div className="field full"><label htmlFor="h_ts">Creators de teste (e-mails, um por linha)</label><textarea className="input" id="h_ts" name="testers" defaultValue={(cfg.testers || []).join("\n")} placeholder={"seuemail@exemplo.com"} /><span className="small muted">No modo teste, só essas creators veem o Conecta Hub e conseguem assinar. Use o e-mail da conta de creator delas.</span></div>
           <div className="full"><button className="btn btn-primary">Salvar</button></div>
         </form></div>
-      <div className="card" style={{ marginTop: 14 }}><div className="card-h"><h2>Lançamento</h2></div>
+      <div className="card" style={{ marginTop: 14 }}><div className="card-h"><h2>Lançamento</h2><span className={`pill ${cfg.launched ? "ok" : "info"}`}>{cfg.launched ? "Lançado para todas" : "Modo teste"}</span></div>
         <p className="small muted">Todas as creators que ainda não assinam recebem a notificação do Conecta Hub e um aviso fixado no início por 14 dias.{(cfg as any).launched_at ? ` Lançado em ${new Date((cfg as any).launched_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}.` : ""}</p>
         {!cfg.checkout_url ? <p className="small" style={{ color: "var(--warn)" }}>Antes de lançar, preencha o link do checkout para as creators conseguirem assinar.</p> : null}
         <details className="confirm-del"><summary className="btn btn-primary">{(cfg as any).launched ? "Avisar as creators de novo" : "💎 Lançar Conecta Hub"}</summary>
-          <form action={launchHub} className="confirm-box"><p className="small">Todas as creators Free recebem a notificação agora. Confirma?</p><button className="btn btn-primary btn-sm">Sim, avisar agora</button></form></details>
+          <form action={launchHub} className="confirm-box"><p className="small">O Conecta Hub aparece para todas as creators e as Free recebem a notificação agora. Confirma?</p><button className="btn btn-primary btn-sm">Sim, lançar agora</button></form></details>
+        {cfg.launched ? <form action={pauseHub} style={{ marginTop: 10 }}><button className="btn btn-ghost btn-sm">Voltar para o modo teste</button></form> : null}
       </div>
     </>);
   }

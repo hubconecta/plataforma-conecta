@@ -95,6 +95,8 @@ export function can(profile: { role: string; perms?: string[] | null; status?: s
   const m = MODS.find((x) => x.key === key);
   if (!m) return false;
   if (profile.role === "creator" && profile.limited && !LIMITED_KEYS.includes(key)) return false;
+  // Conecta Hub em modo teste: escondido das creators que não são de teste
+  if (profile.role === "creator" && (key === "hub" || key.startsWith("hub_")) && !(profile as any).hubVisible) return false;
   if (profile.role === "equipe") {
     if (ALWAYS.includes(key)) return true;
     const ok = m.roles.includes("equipe") || (m.grant || []).includes("equipe");

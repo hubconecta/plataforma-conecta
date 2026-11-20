@@ -4,8 +4,11 @@
 // um mesmo aviso nunca é aplicado duas vezes (event_key único).
 import { createHash } from "crypto";
 
-export type HubSettings = { price: number; grace_days: number; checkout_url: string; b4you_product: string; launched?: boolean };
-export const HUB_DEFAULT: HubSettings = { price: 37, grace_days: 3, checkout_url: "", b4you_product: "", launched: false };
+// launched = false: modo teste. O Hub fica escondido das creators (sem menu, sem aviso, sem checkout),
+// exceto as creators de teste (testers: e-mails). Ao lançar, aparece para todas.
+export type HubSettings = { price: number; grace_days: number; checkout_url: string; b4you_product: string; launched?: boolean; testers?: string[] };
+export const HUB_DEFAULT: HubSettings = { price: 37, grace_days: 3, checkout_url: "", b4you_product: "", launched: false, testers: [] };
+export const isTester = (cfg: HubSettings, email?: string | null) => !!email && (cfg.testers || []).map((x) => x.toLowerCase()).includes(String(email).toLowerCase());
 
 export async function hubSettings(admin: any): Promise<HubSettings> {
   const { data } = await admin.from("settings").select("value").eq("key", "hub").maybeSingle();

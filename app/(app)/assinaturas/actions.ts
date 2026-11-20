@@ -17,7 +17,8 @@ export async function saveHubSettings(fd: FormData) {
   const url = g(fd, "checkout_url");
   if (price == null || price <= 0) back(`${P}?tab=config`, "Informe o valor da assinatura.", false);
   if (url && !/^https:\/\//.test(url)) back(`${P}?tab=config`, "O link do checkout precisa começar com https://", false);
-  const value = { ...cur, price, grace_days: isNaN(grace) ? 3 : Math.min(30, Math.max(0, grace)), checkout_url: url.slice(0, 500), b4you_product: g(fd, "b4you_product").slice(0, 200) };
+  const value = { ...cur, price, grace_days: isNaN(grace) ? 3 : Math.min(30, Math.max(0, grace)), checkout_url: url.slice(0, 500), b4you_product: g(fd, "b4you_product").slice(0, 200),
+    testers: [...new Set(g(fd, "testers").split(/[\s,;]+/).map((x) => x.trim().toLowerCase()).filter((x) => x.includes("@")))].slice(0, 50) };
   await admin.from("settings").upsert({ key: "hub", value });
   await admin.from("plans").update({ price }).eq("code", "hub");
   await logAction(supabase, profile, "atualizou as configurações do Conecta Hub", "Conecta Hub", null, true);
@@ -117,6 +118,17 @@ export async function deleteHubItem(fd: FormData) {
   await logAction(supabase, profile, `apagou o conteúdo do Conecta Hub "${data?.title || ""}"`, "Conecta Hub", null);
   revalidatePath(P);
   back(`${P}?tab=conteudos`, "Conteúdo apagado.");
+}
+
+// Volta para o modo teste: o Hub some para as creators (menos as de teste e quem já assina)
+export async function pauseHub() {
+  const { supabase, profile } = await requireModule("assinaturas");
+  const admin = createAdminClient();
+  const cfg = await hubSettings(admin);
+  await admin.from("settings").upsert({ key: "hub", value: { ...cfg, launched: false } });
+  await logAction(supabase, profile, "colocou o Conecta Hub em modo teste", "Conecta Hub", null);
+  revalidatePath(P); revalidatePath("/clube");
+  back(`${P}?tab=config`, "Conecta Hub em modo teste: só as creators de teste veem.");
 }
 
 // Lançamento: todas as creators (que ainda não assinam) recebem a notificação e um aviso fixado no início

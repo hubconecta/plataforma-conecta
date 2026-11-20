@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { can, HOME } from "@/lib/perms";
+import { createAdminClient } from "@/lib/supabase/admin";
 
-export type Profile = { id: string; email: string; name: string; role: string; status: string; perms: string[]; brand_id: string | null; creator_id: string | null; cargo: string | null; access_status: string; limited?: boolean; hub?: boolean };
+export type Profile = { id: string; email: string; name: string; role: string; status: string; perms: string[]; brand_id: string | null; creator_id: string | null; cargo: string | null; access_status: string; limited?: boolean; hub?: boolean; hubVisible?: boolean };
 
 export async function getSession() {
   const supabase = await createClient();
@@ -16,6 +17,14 @@ export async function getSession() {
     // Conecta Hub: a mesma regra do banco (my_hub). Se o SQL 23 ainda não rodou, fica Free.
     const { data: hub, error } = await supabase.rpc("my_hub");
     (profile as any).hub = !error && hub === true;
+    // Hub em modo teste: só as creators de teste (e quem já assina) enxergam
+    try {
+      const { data: st } = await createAdminClient().from("settings").select("value").eq("key", "hub").maybeSingle();
+      const v: any = st?.value || {};
+      const { data: cr } = await supabase.from("creators").select("email").eq("id", profile.creator_id).maybeSingle();
+      const emails = [profile.email, (cr as any)?.email].filter(Boolean).map((x: string) => x.toLowerCase());
+      (profile as any).hubVisible = (profile as any).hub || v.launched === true || (v.testers || []).some((t: string) => emails.includes(String(t).toLowerCase()));
+    } catch { (profile as any).hubVisible = (profile as any).hub; }
   }
   return { supabase, user: data.user, profile: (profile as Profile) || null };
 }

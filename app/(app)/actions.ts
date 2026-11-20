@@ -32,9 +32,10 @@ async function announceCampaign(supabase: any, c: { id: string; name: string; br
     const admin = createAdminClient();
     const H = await hubCreatorIds(admin);
     if (H.length) await notifyCreators(supabase, `💎 Campanha exclusiva do Conecta Hub com inscrições abertas: ${c.name}`, "/hub/campanhas", H);
-    const { data: all } = await admin.from("creators").select("id").eq("brand_only", false);
+    const { data: hc } = await admin.from("settings").select("value").eq("key", "hub").maybeSingle();
+    const { data: all } = hc?.value?.launched === true ? await admin.from("creators").select("id").eq("brand_only", false) : { data: [] as any[] }; // modo teste: Free não recebe nada
     const HS = new Set(H);
-    await notifyCreators(supabase, "🔒 Abriu uma campanha exclusiva para quem faz parte do Conecta Hub. Assine para participar!", "/hub", (all || []).map((x: any) => x.id).filter((id: string) => !HS.has(id)));
+    if ((all || []).length) await notifyCreators(supabase, "🔒 Abriu uma campanha exclusiva para quem faz parte do Conecta Hub. Assine para participar!", "/hub", (all || []).map((x: any) => x.id).filter((id: string) => !HS.has(id)));
   } else if (c.status === "Inscrições abertas") await notifyCreators(supabase, `📣 Nova campanha com inscrições abertas: ${c.name}`, "/clube/oportunidades", undefined, c.brand_id);
   if (c.status === "Ativa") {
     const { data } = await supabase.from("campaign_applications").select("creator_id").eq("campaign_id", c.id).eq("status", "Aprovada");
