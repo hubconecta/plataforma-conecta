@@ -14,11 +14,11 @@ export default async function Produto({ params, searchParams }: { params: Promis
 
   if (!access) return (
     <div className="mx">
-      <Link href={p.slug === "conecta-academy" ? "/hub" : "/club"} className="small" style={{ color: "#FF8CC4" }}>{p.slug === "conecta-academy" ? "← Meu Hub" : "← Club Criadora"}</Link>
+      <Link href="/club" className="small" style={{ color: "#FF8CC4" }}>{"← Club Criadora"}</Link>
       <Notice q={q} />
-      <section className="mx-hero" style={heroBg}><span className="eyebrow" style={{ color: "#FF8CC4" }}>🔒 Club Criadora</span><h1>{p.title}</h1>{p.tagline ? <p><b>{p.tagline}</b></p> : null}{p.description ? <p style={{ whiteSpace: "pre-wrap" }}>{p.description}</p> : null}
+      <section className="mx-hero" style={heroBg}><span className="eyebrow" style={{ color: "#FF8CC4" }}>🔒 {p.hubOnly ? "Exclusivo Conecta Hub" : "Club Criadora"}</span><h1>{p.title}</h1>{p.tagline ? <p><b>{p.tagline}</b></p> : null}{p.description ? <p style={{ whiteSpace: "pre-wrap" }}>{p.description}</p> : null}
         {pendingCheckout ? <p className="mx-note">Checkout iniciado em {fd(String(pendingCheckout.created_at).slice(0, 10))}. O acesso é liberado assim que a B4YOU confirmar o pagamento.</p> : null}
-        {p.slug === "conecta-academy" ? <><p className="mx-note">A Conecta Academy faz parte da assinatura do Conecta Hub.</p><Link href="/hub#assinar" className="btn btn-primary mx-cta">DESBLOQUEAR CONECTA HUB</Link></> : <><form action={startCheckout}><input type="hidden" name="slug" value={p.slug} /><button className="btn btn-primary mx-cta">QUERO ACESSAR{p.price ? ` · ${brl(p.price)}` : ""}</button></form>
+        {p.hubOnly ? <><p className="mx-note">💎 Exclusivo para assinantes do Conecta Hub: {p.title} está incluído na assinatura.</p><Link href="/hub#assinar" className="btn btn-primary mx-cta">DESBLOQUEAR CONECTA HUB</Link></> : <><form action={startCheckout}><input type="hidden" name="slug" value={p.slug} /><button className="btn btn-primary mx-cta">QUERO ACESSAR{p.price ? ` · ${brl(p.price)}` : ""}</button></form>
         <p className="mx-note">Use no pagamento o mesmo e-mail do seu cadastro na Conecta ({profile?.email}) para o acesso ser liberado automaticamente.</p></>}
       </section>
       {mods.length ? <><h2 className="mx-h">O que tem dentro</h2><div className="mx-row">{mods.map((m: any, i: number) => <div key={m.id} className="mx-card locked" style={{ background: covers.get(m.id) ? `center/cover url(${covers.get(m.id)})` : `linear-gradient(160deg,${m.color || "#E6007E"},#000)` }}><span className="mx-num">Módulo {i + 1}</span><b>{m.title}</b><span className="mx-lock">🔒</span></div>)}</div></> : null}
@@ -27,7 +27,7 @@ export default async function Produto({ params, searchParams }: { params: Promis
 
   return (
     <div className="mx">
-      <Link href={p.slug === "conecta-academy" ? "/hub" : "/club"} className="small" style={{ color: "#FF8CC4" }}>{p.slug === "conecta-academy" ? "← Meu Hub" : "← Club Criadora"}</Link>
+      <Link href="/club" className="small" style={{ color: "#FF8CC4" }}>{"← Club Criadora"}</Link>
       <Notice q={q} />
       {staff && profile?.role !== "creator" ? <div className="notice info">Prévia da área de membros como a aluna vê. <Link href={`/club/admin/${p.id}`}>Gerenciar este produto</Link></div> : null}
       <section className="mx-hero" style={heroBg}><span className="eyebrow" style={{ color: "#FF8CC4" }}>{p.title}</span><h1>{first ? `Bora, ${first}!` : p.title}</h1>

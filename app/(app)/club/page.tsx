@@ -14,7 +14,7 @@ export default async function Club({ searchParams }: { searchParams: Promise<any
       <div className="mx-shelf">{products.map((p: any) => (
         <Link key={p.id} href={`/club/${p.slug}`} className={`mx-prod ${p.access ? "" : "locked"}`}>
           <div className="mx-poster" style={{ background: p.cover ? `center/cover url(${p.cover})` : `linear-gradient(160deg,${p.color || "#E6007E"},#000)` }}>{p.cover ? null : <b>{p.title}</b>}{p.access ? null : <span className="mx-lock">🔒</span>}</div>
-          <div className="mx-prod-b"><b>{p.title}</b>{p.tagline ? <span>{p.tagline}</span> : null}<span className={`mx-tag ${p.access ? "ok" : ""}`}>{p.access ? "▶ Acessar" : p.pending ? "Pagamento em confirmação" : `Desbloquear${p.price ? ` · ${brl(p.price)}` : ""}`}</span></div>
+          <div className="mx-prod-b"><b>{p.title}</b>{p.tagline ? <span>{p.tagline}</span> : null}<span className={`mx-tag ${p.access ? "ok" : ""}`}>{p.access ? "▶ Acessar" : p.hubOnly ? "💎 Exclusivo Conecta Hub" : p.pending ? "Pagamento em confirmação" : `Desbloquear${p.price ? ` · ${brl(p.price)}` : ""}`}</span></div>
         </Link>))}</div>
       {!products.length ? <p className="muted">Os produtos do Club Criadora aparecem aqui em breve.</p> : null}
     </div>

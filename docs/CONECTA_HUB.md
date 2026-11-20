@@ -22,6 +22,12 @@
   - Um pagamento repetido do mesmo pedido dentro de 20 dias também é ignorado.
   - A venda é registrada uma vez por cobrança e por mês.
 
+## Club Criadora exclusivo do Hub
+- No cadastro do produto (Club Criadora › produto) marque **💎 Exclusivo para assinantes do Conecta Hub** (SQL 24).
+- Assinantes acessam as aulas sem compra avulsa; as Free veem o produto com cadeado e o botão leva para o Hub.
+- A regra vale no banco (`has_product`): a Free não lê as aulas nem pela API. Testado: Free 0 aulas, assinante vê as aulas.
+- Em modo teste, esses produtos ficam escondidos para quem não é creator de teste.
+
 ## O que configurar
 1. **Supabase**: rodar `supabase/23_conecta_hub.sql` no SQL Editor, depois do 22. O arquivo pode ser rodado de novo sem problema.
 2. **B4YOU**:

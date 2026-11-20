@@ -29,9 +29,11 @@ export async function saveProduct(fd: FormData) {
   const id = g(fd, "id");
   const slug = (g(fd, "slug") || g(fd, "title")).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   const row: any = { title: g(fd, "title"), slug, tagline: orNull(g(fd, "tagline")), description: orNull(g(fd, "description")), cover_path: orNull(g(fd, "cover_path")), color: g(fd, "color") || null, checkout_url: orNull(g(fd, "checkout_url")), b4you_product: orNull(g(fd, "b4you_product")), price: num(fd, "price"), status: g(fd, "status") || "Rascunho" };
+  if (fd.has("hub_form")) row.hub_included = !!fd.get("hub_included");
   if (!row.title || !slug) back(id ? ADM(id, "produto") : "/club/admin", "Dê um nome ao produto.", false);
   if (!id) { const { count } = await supabase.from("products").select("id", { count: "exact", head: true }); row.position = count || 0; row.color = row.color || COLORS[(count || 0) % COLORS.length]; }
-  const { data, error } = id ? await supabase.from("products").update(row).eq("id", id).select("id").single() : await supabase.from("products").insert(row).select("id").single();
+  let { data, error } = id ? await supabase.from("products").update(row).eq("id", id).select("id").single() : await supabase.from("products").insert(row).select("id").single();
+  if (error && /hub_included/.test(error.message)) back(id ? ADM(id, "produto") : "/club/admin", "Para usar “Exclusivo Conecta Hub”, rode antes o arquivo supabase/24_club_hub.sql no Supabase.", false);
   if (error) back(id ? ADM(id, "produto") : "/club/admin", error.message.includes("duplicate") ? "Já existe um produto com este endereço." : error.message, false);
   await logAction(supabase, profile, `${id ? "editou" : "criou"} o produto ${row.title} do Club Criadora (${row.status})`, "Club Criadora", data.id);
   revalidatePath("/club");

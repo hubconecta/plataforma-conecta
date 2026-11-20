@@ -14,6 +14,8 @@ export default function ProductForm({ p }: { p?: any }) {
       <div className="field"><label>ID ou nome do produto na B4YOU</label><input className="input" name="b4you_product" defaultValue={p?.b4you_product || ""} placeholder="para liberar sozinho pelo webhook" /></div>
       <FileUpload name="cover_path" bucket="metodo" folder="capas" accept="image/*" current={p?.cover_path} label="Capa (vertical 3:4, estilo pôster)" />
       <div className="field"><label>Cor (se não tiver capa)</label><input className="input" type="color" name="color" defaultValue={p?.color || "#E6007E"} /></div>
+      <input type="hidden" name="hub_form" value="1" />
+      <label className="perm full"><input type="checkbox" name="hub_included" defaultChecked={!!p?.hub_included || p?.slug === "conecta-academy"} />💎 Exclusivo para assinantes do Conecta Hub (liberado pela assinatura; as Free veem com cadeado e o botão leva para o Hub)</label>
       {p ? <div className="field"><label>Endereço</label><input className="input" name="slug" defaultValue={p.slug} /></div> : null}
       <div><button className="btn btn-primary btn-sm">{p ? "Salvar produto" : "Criar produto"}</button></div>
     </form>
