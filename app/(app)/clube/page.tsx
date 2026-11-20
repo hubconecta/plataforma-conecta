@@ -47,6 +47,9 @@ export default async function Clube({ searchParams }: { searchParams: Promise<an
         {!(brandChs || []).length && !(brandCamps || []).length ? <p className="small muted" style={{ marginTop: 8 }}>Assim que a marca abrir um desafio ou uma campanha, você recebe uma notificação e eles aparecem aqui.</p> : null}</div> : null}
       <Notice q={q} />
       <PinnedAnnouncements supabase={supabase} userId={profile.id} />
+      {(profile as any).hub
+        ? <Link href="/hub" className="card hub-status" style={{ textDecoration: "none", color: "inherit", borderColor: "var(--pink)" }}><div><span className="eyebrow">💎 Conecta Hub</span><h2 style={{ margin: "2px 0" }}>Suas áreas exclusivas</h2><span className="small muted">Campanhas exclusivas, comunidade, TikTok Shop, Instagram, Academy, desafios e materiais.</span></div><span className="btn btn-primary btn-sm">Abrir meu Hub</span></Link>
+        : <div className="hub-hero" style={{ padding: "22px 22px" }}><span className="hub-mark"><i />Novo · Conecta Hub</span><b style={{ fontFamily: "var(--display)", fontSize: 22, lineHeight: 1.15 }}>Seu próximo nível como creator começa aqui.</b><p>Campanhas exclusivas, comunidade, TikTok Shop, Instagram, Conecta Academy, desafios exclusivos e materiais.</p><Link href="/hub" className="btn hub-cta">QUERO FAZER PARTE DO CONECTA HUB</Link></div>}
       {lim ? <div className="card join-clube"><span className="eyebrow">Clube Conecta</span><h2 style={{ margin: "4px 0 6px" }}>Quero fazer parte do Clube Conecta 💖</h2>
         <p className="small" style={{ color: "var(--muted)" }}>Hoje você vê só a sua marca. No Clube Conecta você recebe oportunidades de outras marcas parceiras, desafios com prêmios, a comunidade no WhatsApp e o Club Criadora.</p>
         <details className="mod" style={{ marginTop: 10 }}><summary className="btn btn-primary">Quero participar</summary>

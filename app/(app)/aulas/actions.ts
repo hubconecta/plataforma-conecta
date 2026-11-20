@@ -15,7 +15,7 @@ export async function saveClass(fd: FormData) {
   if (!g(fd, "title") || !/^\d{4}-\d{2}-\d{2}$/.test(day)) back("/aulas", "Informe o título e a data da aula.", false);
   const starts_at = new Date(`${day}T${time}:00-03:00`).toISOString();
   const url = g(fd, "url");
-  const row: any = { title: g(fd, "title").slice(0, 160), theme: g(fd, "theme").slice(0, 2000) || null, brand_id: g(fd, "brand_id") || null, starts_at, duration_min: parseInt(g(fd, "duration")) || 60, url: /^https?:\/\//.test(url) ? url : null, audience: g(fd, "audience") === "Todas as creators" ? "Todas as creators" : "Creators da marca" };
+  const row: any = { title: g(fd, "title").slice(0, 160), theme: g(fd, "theme").slice(0, 2000) || null, brand_id: g(fd, "brand_id") || null, starts_at, duration_min: parseInt(g(fd, "duration")) || 60, url: /^https?:\/\//.test(url) ? url : null, audience: g(fd, "audience") === "Todas as creators" ? "Todas as creators" : "Creators da marca", access_level: g(fd, "access_level") === "hub" ? "hub" : "todas" };
   if (!row.brand_id) row.audience = "Todas as creators";
   if (!id) row.created_by = s.profile!.id;
   const { data, error } = id ? await s.supabase.from("classes").update(row).eq("id", id).select("id").single() : await s.supabase.from("classes").insert(row).select("id").single();

@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { can } from "@/lib/perms";
 import { cookies } from "next/headers";
 import { accessLink, showLink } from "@/lib/access";
+import { hubCreatorIds } from "@/lib/hub";
 import { notifyCreators, notifyModule, num, followersOf } from "@/lib/act";
 import { sendContract } from "@/lib/contracts";
 
@@ -24,9 +25,17 @@ async function notifyProfiles(supabase: any, filter: { creator_id?: string; bran
 }
 
 // Campanha abriu inscrições → todas as creators; começou → as aprovadas; nova campanha → a marca.
-async function announceCampaign(supabase: any, c: { id: string; name: string; brand_id: string; status: string }, prev: string | null, isNew: boolean) {
+async function announceCampaign(supabase: any, c: { id: string; name: string; brand_id: string; status: string; access_level?: string | null }, prev: string | null, isNew: boolean) {
   if (c.status === prev) return;
-  if (c.status === "Inscrições abertas") await notifyCreators(supabase, `📣 Nova campanha com inscrições abertas: ${c.name}`, "/clube/oportunidades", undefined, c.brand_id);
+  if (c.status === "Inscrições abertas" && c.access_level === "hub") {
+    // exclusiva do Conecta Hub: assinantes recebem o convite; as Free recebem só o chamado para o Hub (sem detalhes da campanha)
+    const admin = createAdminClient();
+    const H = await hubCreatorIds(admin);
+    if (H.length) await notifyCreators(supabase, `💎 Campanha exclusiva do Conecta Hub com inscrições abertas: ${c.name}`, "/hub/campanhas", H);
+    const { data: all } = await admin.from("creators").select("id").eq("brand_only", false);
+    const HS = new Set(H);
+    await notifyCreators(supabase, "🔒 Abriu uma campanha exclusiva para quem faz parte do Conecta Hub. Assine para participar!", "/hub", (all || []).map((x: any) => x.id).filter((id: string) => !HS.has(id)));
+  } else if (c.status === "Inscrições abertas") await notifyCreators(supabase, `📣 Nova campanha com inscrições abertas: ${c.name}`, "/clube/oportunidades", undefined, c.brand_id);
   if (c.status === "Ativa") {
     const { data } = await supabase.from("campaign_applications").select("creator_id").eq("campaign_id", c.id).eq("status", "Aprovada");
     await notifyCreators(supabase, `🚀 A campanha ${c.name} começou! Confira o briefing e envie seus conteúdos.`, "/clube/minhas", (data || []).map((a: any) => a.creator_id));
@@ -183,7 +192,7 @@ export async function saveCampaign(fd: FormData) {
   const { supabase, profile } = await requireModule("campanhas");
   const id = g(fd, "id");
   const extra = { niches: fd.getAll("niches").map(String), campaign_types: fd.getAll("campaign_types").map(String), profiles_wanted: fd.getAll("profiles_wanted").map(String), contents_per_creator: Number(g(fd, "contents_per_creator")) || null };
-  const row = { ...extra, brand_id: g(fd, "brand_id"), name: g(fd, "name"), product: orNull(g(fd, "product")), objective: orNull(g(fd, "objective")), description: orNull(g(fd, "description")), briefing: orNull(g(fd, "briefing")), status: g(fd, "status") || "Futura", start_date: orNull(g(fd, "start_date")), end_date: orNull(g(fd, "end_date")), slots: Number(g(fd, "slots")) || 10, fee: num(fd, "fee") || null, commission_pct: num(fd, "commission_pct") || null, niche: fd.getAll("niches").map(String).join(", ") || null, requirements: orNull(g(fd, "requirements")), deliverables: orNull(g(fd, "deliverables")), requires_shipping: !!fd.get("requires_shipping") };
+  const row = { ...extra, brand_id: g(fd, "brand_id"), name: g(fd, "name"), product: orNull(g(fd, "product")), objective: orNull(g(fd, "objective")), description: orNull(g(fd, "description")), briefing: orNull(g(fd, "briefing")), status: g(fd, "status") || "Futura", start_date: orNull(g(fd, "start_date")), end_date: orNull(g(fd, "end_date")), slots: Number(g(fd, "slots")) || 10, fee: num(fd, "fee") || null, commission_pct: num(fd, "commission_pct") || null, niche: fd.getAll("niches").map(String).join(", ") || null, requirements: orNull(g(fd, "requirements")), deliverables: orNull(g(fd, "deliverables")), requires_shipping: !!fd.get("requires_shipping"), ...(fd.has("access_level") ? { access_level: g(fd, "access_level") === "hub" ? "hub" : "todas" } : {}) };
   if (!row.brand_id || !row.name) back("/campanhas", "Escolha a marca e dê um nome à campanha.", false);
   let cid = id, prevStatus: string | null = null;
   if (id) { const { data: pv } = await supabase.from("campaigns").select("status").eq("id", id).single(); prevStatus = pv?.status || null; const { error } = await supabase.from("campaigns").update(row).eq("id", id); if (error) back("/campanhas", error.message, false); }
@@ -217,7 +226,7 @@ export async function saveCampaign(fd: FormData) {
       }
     } else await supabase.from("campaign_contracts").update({ active: false }).eq("campaign_id", cid);
   }
-  await announceCampaign(supabase, { id: cid, name: row.name, brand_id: row.brand_id, status: row.status }, prevStatus, !id);
+  await announceCampaign(supabase, { id: cid, name: row.name, brand_id: row.brand_id, status: row.status, access_level: (row as any).access_level }, prevStatus, !id);
   await logAction(supabase, profile, `${id ? "editou" : "criou"} a campanha ${row.name}`, "Campanhas", cid);
   revalidatePath("/campanhas");
   back("/campanhas", id ? "Campanha atualizada." : "Campanha criada.");
@@ -434,9 +443,9 @@ export async function reviewCampaign(fd: FormData) {
   const { supabase, profile } = await requireModule("campanhas");
   if (profile.role === "marca") back("/campanhas", "Sem permissão.", false);
   const id = g(fd, "id"), status = g(fd, "status"), note = orNull(g(fd, "note"));
-  const { data: c } = await supabase.from("campaigns").update({ status, review_note: ["Ajuste solicitado", "Recusada"].includes(status) ? note : null }).eq("id", id).select("name,brand_id").single();
+  const { data: c } = await supabase.from("campaigns").update({ status, review_note: ["Ajuste solicitado", "Recusada"].includes(status) ? note : null }).eq("id", id).select("name,brand_id,access_level").single();
   if (!c) back("/campanhas", "Campanha não encontrada.", false);
-  if (["Inscrições abertas", "Ativa"].includes(status)) await announceCampaign(supabase, { id, name: c.name, brand_id: c.brand_id, status }, "Em aprovação", false);
+  if (["Inscrições abertas", "Ativa"].includes(status)) await announceCampaign(supabase, { id, name: c.name, brand_id: c.brand_id, status, access_level: (c as any).access_level }, "Em aprovação", false);
   const msg = status === "Ajuste solicitado" ? `✏️ A Conecta pediu ajustes na campanha ${c.name}${note ? ": " + note : ""}` : status === "Recusada" ? `A campanha ${c.name} não foi aprovada${note ? ": " + note : ""}` : `✅ Campanha aprovada pela Conecta: ${c.name} (${status})`;
   await notifyProfiles(supabase, { brand_id: c.brand_id }, msg, "/campanhas");
   await logAction(supabase, profile, `${status === "Ajuste solicitado" ? "pediu ajuste na" : status === "Recusada" ? "recusou a" : "aprovou a"} campanha ${c.name}`, "Campanhas", id);

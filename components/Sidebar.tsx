@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Icon from "./Icon";
 
-type Item = { key: string; label: string; icon: string; href: string; soon?: boolean; sens?: boolean };
+type Item = { key: string; label: string; icon: string; href: string; soon?: boolean; sens?: boolean; badge?: string };
 type Group = [string, Item[]];
 
 export default function Sidebar({ groups, env, userName, userLabel, bottom, avatar, star, profileHref }: { groups: Group[]; env: string; userName: string; userLabel: string; bottom: Item[]; avatar?: string; star?: string; profileHref?: string }) {
@@ -32,7 +32,7 @@ export default function Sidebar({ groups, env, userName, userLabel, bottom, avat
                 <Link key={m.key} href={m.href} className={`nav-i ${active(m.href) ? "on" : ""}`} title={m.label}>
                   <Icon name={m.icon} />
                   <span>{m.label}</span>
-                  {m.soon ? <em className="soon" style={{ fontStyle: "normal" }}>breve</em> : null}
+                  {m.soon ? <em className="soon" style={{ fontStyle: "normal" }}>breve</em> : m.badge ? <em className="soon hub-badge" style={{ fontStyle: "normal" }}>{m.badge}</em> : null}
                 </Link>
               ))}
             </div>

@@ -17,7 +17,7 @@ const cover = async (p?: string | null) => (p ? await signed(p, 3600) : "");
 export async function loadVitrine() {
   const s = await base();
   const [{ data: prods }, { data: buys }, { data: prog }] = await Promise.all([
-    s.supabase.from("products").select("*").eq("status", "Publicado").order("position").order("created_at"),
+    s.supabase.from("products").select("*").eq("status", "Publicado").neq("slug", "conecta-academy").order("position").order("created_at"),
     s.me ? s.supabase.from("method_purchases").select("product_id,status").eq("creator_id", s.me) : Promise.resolve({ data: [] as any[] }),
     s.me ? s.supabase.from("method_progress").select("lesson_id").eq("creator_id", s.me) : Promise.resolve({ data: [] as any[] }),
   ]);
@@ -37,7 +37,8 @@ export async function loadProduct(slug: string) {
     s.supabase.from("method_modules").select("*").eq("product_id", product.id).eq("status", "Publicado").order("position").order("created_at"),
     s.me ? s.supabase.from("method_purchases").select("status,created_at").eq("creator_id", s.me).eq("product_id", product.id) : Promise.resolve({ data: [] as any[] }),
   ]);
-  const access = s.staff || (buys || []).some((b: any) => b.status === "Pago");
+  // Conecta Academy: faz parte da assinatura do Conecta Hub (a regra também vale no banco, em has_product)
+  const access = s.staff || (buys || []).some((b: any) => b.status === "Pago") || (product.slug === "conecta-academy" && !!(s.profile as any).hub);
   const pendingCheckout = (buys || []).find((b: any) => b.status === "Aguardando pagamento");
   let lessons: any[] = [], done = new Set<string>();
   if (access) {

@@ -20,7 +20,7 @@ export default async function Oportunidades({ searchParams }: { searchParams: Pr
       <Notice q={q} />
       {camps?.length ? <div className="grid g2">{camps.map((c: any) => (
         <div className="card" key={c.id} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}><span className="eyebrow">{bname(c.brand_id)}</span>{fits(c) ? <span className="pill ok">Combina com o seu perfil</span> : null}</div><h2>{c.name}</h2>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}><span className="eyebrow">{bname(c.brand_id)}</span><span style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{c.access_level === "hub" ? <span className="pill pink">💎 Exclusivo Conecta Hub</span> : null}{fits(c) ? <span className="pill ok">Combina com o seu perfil</span> : null}</span></div><h2>{c.name}</h2>
           {[...(c.campaign_types || []), ...(c.profiles_wanted || [])].length ? <div>{(c.campaign_types || []).map((t: string) => <span key={t} className="tag" style={{ background: "var(--pink-soft)", color: "var(--pink-strong)" }}>{t}</span>)}{(c.profiles_wanted || []).map((t: string) => <span key={t} className="tag">{t}</span>)}</div> : null}
           {c.niches?.length ? <p className="small muted">Nichos: {c.niches.join(", ")}</p> : null}<p className="small muted">{c.description || c.objective || ""}</p>
           <div className="cmeta"><div>Período<b>{fd(c.start_date)}</b></div><div>Cachê<b>{brl(c.fee)}</b></div><div>Comissão<b>{c.commission_pct ? c.commission_pct + "%" : "—"}</b></div></div>

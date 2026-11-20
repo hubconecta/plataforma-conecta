@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { can, HOME } from "@/lib/perms";
 
-export type Profile = { id: string; email: string; name: string; role: string; status: string; perms: string[]; brand_id: string | null; creator_id: string | null; cargo: string | null; access_status: string; limited?: boolean };
+export type Profile = { id: string; email: string; name: string; role: string; status: string; perms: string[]; brand_id: string | null; creator_id: string | null; cargo: string | null; access_status: string; limited?: boolean; hub?: boolean };
 
 export async function getSession() {
   const supabase = await createClient();
@@ -13,6 +13,9 @@ export async function getSession() {
   if (profile?.role === "creator" && profile.creator_id) {
     const { data: c } = await supabase.from("creators").select("brand_only").eq("id", profile.creator_id).maybeSingle();
     (profile as any).limited = !!(c as any)?.brand_only;
+    // Conecta Hub: a mesma regra do banco (my_hub). Se o SQL 23 ainda não rodou, fica Free.
+    const { data: hub, error } = await supabase.rpc("my_hub");
+    (profile as any).hub = !error && hub === true;
   }
   return { supabase, user: data.user, profile: (profile as Profile) || null };
 }

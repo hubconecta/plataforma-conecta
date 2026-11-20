@@ -1,5 +1,7 @@
 // Quem recebe o aviso da aula: creators da marca (base + aprovadas nas campanhas dela) ou todas, e a marca.
-export async function classAudience(admin: any, cls: { brand_id: string | null; audience: string }) {
+import { hubCreatorIds } from "@/lib/hub";
+
+export async function classAudience(admin: any, cls: { brand_id: string | null; audience: string; access_level?: string | null }) {
   let creatorIds: string[] | null = null;
   if (cls.brand_id && cls.audience !== "Todas as creators") {
     const [{ data: base }, { data: camps }] = await Promise.all([
@@ -16,6 +18,8 @@ export async function classAudience(admin: any, cls: { brand_id: string | null; 
     const { data } = await q;
     let list = data || [];
     if (!creatorIds) { const { data: lim } = await admin.from("creators").select("id").eq("brand_only", true); const L = new Set((lim || []).map((x: any) => x.id)); list = list.filter((p: any) => !L.has(p.creator_id)); }
+    // aula exclusiva do Conecta Hub: só as assinantes recebem
+    if (cls.access_level === "hub") { const H = new Set(await hubCreatorIds(admin)); list = list.filter((p: any) => H.has(p.creator_id)); }
     ids = list.map((p: any) => p.id);
   }
   if (cls.brand_id) { const { data: bs } = await admin.from("profiles").select("id").eq("role", "marca").eq("status", "ativo").eq("brand_id", cls.brand_id); ids = ids.concat((bs || []).map((p: any) => p.id)); }

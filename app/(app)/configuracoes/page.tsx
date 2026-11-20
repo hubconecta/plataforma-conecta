@@ -29,7 +29,7 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
         {groups?.length ? <div className="list">{groups.map((g: any) => <div className="li" key={g.id}><div className="grow"><b>{g.title}</b><span>{g.audience} · {g.url}</span></div><ConfirmDelete action={deleteCommunityLink} fields={{ id: g.id, back: "/configuracoes" }} label="Remover" warning="O grupo deixa de aparecer na plataforma (o grupo no WhatsApp continua existindo)." /></div>)}</div> : <p className="muted small">Nenhum grupo cadastrado.</p>}
         <form action={saveCommunityLink} className="form-grid" style={{ marginTop: 10 }}><input type="hidden" name="back" value="/configuracoes" />
           <div className="field"><label>Nome do grupo</label><input className="input" name="title" required placeholder="Comunidade Conecta" /></div>
-          <div className="field"><label>Quem vê</label><select className="input" name="audience">{["Creators", "Marcas", "Todos", "Equipe"].map((a) => <option key={a}>{a}</option>)}</select></div>
+          <div className="field"><label>Quem vê</label><select className="input" name="audience">{[["Creators", "Creators"], ["Hub", "Só assinantes do Conecta Hub"], ["Marcas", "Marcas"], ["Todos", "Todos"], ["Equipe", "Equipe"]].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>
           <div className="field full"><label>Link do grupo</label><input className="input" name="url" type="url" required placeholder="https://chat.whatsapp.com/…" /></div>
           <div><button className="btn btn-dark btn-sm">Adicionar grupo</button></div></form>
         <p className="small muted" style={{ marginTop: 8 }}>O grupo de cada campanha é colocado na própria campanha: só as creators aprovadas e a marca veem.</p></div>

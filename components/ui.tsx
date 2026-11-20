@@ -12,7 +12,7 @@ const PILL: Record<string, string> = {
 export function Pill({ s }: { s: string }) {
   return <span className={`pill ${PILL[s] || "neutral"}`}>{s}</span>;
 }
-export function PageH({ eyebrow, title, sub, right }: { eyebrow?: string; title: React.ReactNode; sub?: React.ReactNode; right?: React.ReactNode }) {
+export function PageH({ eyebrow, title, sub, right }: { eyebrow?: React.ReactNode; title: React.ReactNode; sub?: React.ReactNode; right?: React.ReactNode }) {
   return (
     <div className="page-h">
       <div>{eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}<h1>{title}</h1>{sub ? <p className="muted">{sub}</p> : null}</div>

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { reminderText, daysTo } from "@/lib/fin";
 import { classAudience } from "@/lib/classes";
+import { hubDaily } from "@/lib/hub";
 
 // Lembretes automáticos de pagamento: a Vercel chama todo dia (ver vercel.json).
 export async function GET(req: NextRequest) {
@@ -20,9 +21,12 @@ export async function GET(req: NextRequest) {
       aulas++;
     }
   } catch {}
+  // Conecta Hub: atraso, fim da carência, fim do período cancelado e lembretes
+  let hub = 0;
+  try { hub = await hubDaily(admin); } catch {}
   const { data: cfg } = await admin.from("settings").select("value").eq("key", "rem").maybeSingle();
   const R = cfg?.value || { before: 3, onDay: true, after: 2 };
-  if (R.ativo === false) return NextResponse.json({ ok: true, sent: 0, off: true, aulas });
+  if (R.ativo === false) return NextResponse.json({ ok: true, sent: 0, off: true, aulas, hub });
   const today = new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10);
   const { data: open } = await admin.from("fin_entries").select("*, brands(name)").eq("kind", "receber").eq("status", "Em aberto").not("brand_id", "is", null);
   let sent = 0;
@@ -39,5 +43,5 @@ export async function GET(req: NextRequest) {
     await admin.from("reminder_log").insert({ who: "Sistema", brand_id: e.brand_id, fin_id: e.id, message: msg, channel: "Plataforma", status: "Enviado", mode: "Automático", kind });
     sent++;
   }
-  return NextResponse.json({ ok: true, sent, aulas });
+  return NextResponse.json({ ok: true, sent, aulas, hub });
 }

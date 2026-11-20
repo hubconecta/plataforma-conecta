@@ -43,6 +43,7 @@ export default async function Campanhas({ searchParams }: { searchParams: Promis
     <div className="field full"><label>Objetivo</label><input className="input" name="objective" defaultValue={c?.objective || ""} /></div>
     <T n="description" l="Descrição" c={c} /><T n="briefing" l="Briefing" c={c} /><T n="requirements" l="Requisitos das creators" c={c} /><T n="deliverables" l="Entregáveis" c={c} />
     <label className="check full"><input type="checkbox" name="requires_shipping" defaultChecked={!!c?.requires_shipping} /> Esta campanha envolve envio de produto</label>
+    {isBrand ? null : <div className="field"><label htmlFor={`cp_acc_${c?.id || "n"}`}>Quem pode ver</label><select className="input" id={`cp_acc_${c?.id || "n"}`} name="access_level" defaultValue={c?.access_level === "hub" ? "hub" : "todas"}><option value="todas">Todas as creators</option><option value="hub">💎 Exclusivo Conecta Hub</option></select><span className="small muted">Exclusivo: só assinantes do Conecta Hub veem e recebem o aviso. As Free veem o cadeado.</span></div>}
   </>);
   const StaffForm = ({ c }: { c?: any }) => (
     <form action={saveCampaign} className="form-grid">

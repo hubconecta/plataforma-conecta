@@ -1,7 +1,7 @@
 // Fonte única de módulos e permissões (igual ao protótipo aprovado).
 export type Role = "pendente" | "ceo" | "equipe" | "financeiro" | "marca" | "creator";
 
-export type Mod = { key: string; label: string; icon: string; href: string; roles: Role[]; grant?: Role[]; soon?: boolean; sens?: boolean };
+export type Mod = { key: string; label: string; icon: string; href: string; roles: Role[]; grant?: Role[]; soon?: boolean; sens?: boolean; premium?: boolean };
 
 const ST: Role[] = ["ceo", "equipe"];
 const FR: Role[] = ["ceo", "financeiro"];
@@ -56,14 +56,25 @@ export const MODS: Mod[] = [
   { key: "marca_forms", label: "Formulários e creators", icon: "form", href: "/portal/formularios", roles: ["marca"] },
   { key: "jornada", label: "Minha jornada", icon: "star", href: "/clube/jornada", roles: ["creator"] },
   { key: "meus_desafios", label: "Desafios", icon: "trophy", href: "/clube/desafios", roles: ["creator"] },
+  // CONECTA HUB (assinatura). A página de venda é para todas; as áreas exclusivas abrem só com o Hub ativo (regra no banco).
+  { key: "hub", label: "Conecta Hub", icon: "sparkle", href: "/hub", roles: ["creator"] },
+  { key: "hub_campanhas", label: "Campanhas exclusivas", icon: "megaphone", href: "/hub/campanhas", roles: ["creator"], premium: true },
+  { key: "hub_desafios", label: "Desafios exclusivos", icon: "trophy", href: "/hub/desafios", roles: ["creator"], premium: true },
+  { key: "hub_tiktok", label: "TikTok Shop", icon: "bag", href: "/hub/tiktok", roles: ["creator"], premium: true },
+  { key: "hub_instagram", label: "Instagram", icon: "eye", href: "/hub/instagram", roles: ["creator"], premium: true },
+  { key: "hub_academy", label: "Conecta Academy", icon: "book", href: "/hub/academy", roles: ["creator"], premium: true },
+  { key: "hub_comunidade", label: "Comunidade", icon: "users", href: "/hub/comunidade", roles: ["creator"], premium: true },
+  { key: "hub_materiais", label: "Materiais", icon: "file", href: "/hub/materiais", roles: ["creator"], premium: true },
+  { key: "assinaturas", label: "Conecta Hub · assinaturas", icon: "sparkle", href: "/assinaturas", roles: ST },
 ];
+export const HUB_KEYS = ["hub_campanhas", "hub_desafios", "hub_tiktok", "hub_instagram", "hub_academy", "hub_comunidade", "hub_materiais"];
 
 export const MENU: Record<string, [string, string[]][]> = {
-  ceo: [["Visão", ["ceo", "ops"]], ["Pessoas", ["cad_creators", "creators", "marcas", "colaboradoras"]], ["Operação", ["campanhas", "candidaturas", "contratos", "aulas", "avisos", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "etiquetas", "gamificacao", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["conta", "notificacoes", "auditoria", "config"]]],
-  equipe: [["Visão", ["ops", "conta"]], ["Pessoas", ["cad_creators", "creators", "marcas"]], ["Operação", ["campanhas", "candidaturas", "contratos", "aulas", "avisos", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "etiquetas", "gamificacao", "crm", "relatorios", "metodo_adm"]], ["Financeiro", ["fin"]], ["Sistema", ["notificacoes"]]],
+  ceo: [["Visão", ["ceo", "ops"]], ["Pessoas", ["cad_creators", "creators", "marcas", "colaboradoras"]], ["Operação", ["campanhas", "candidaturas", "contratos", "aulas", "avisos", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "etiquetas", "gamificacao", "crm", "relatorios", "metodo_adm", "assinaturas"]], ["Financeiro", ["fin"]], ["Sistema", ["conta", "notificacoes", "auditoria", "config"]]],
+  equipe: [["Visão", ["ops", "conta"]], ["Pessoas", ["cad_creators", "creators", "marcas"]], ["Operação", ["campanhas", "candidaturas", "contratos", "aulas", "avisos", "desafios", "conteudos", "presskits", "amostras", "formularios"]], ["Gestão", ["calendario", "demandas", "etiquetas", "gamificacao", "crm", "relatorios", "metodo_adm", "assinaturas"]], ["Financeiro", ["fin"]], ["Sistema", ["notificacoes"]]],
   financeiro: [["Financeiro", ["fin"]], ["Gestão", ["calendario", "demandas"]], ["Sistema", ["conta", "notificacoes"]]],
   marca: [["Sua marca", ["marca_home", "perfil_marca", "campanhas", "desafios", "conteudos", "marca_forms", "marca_contratos", "marca_aulas", "marca_avisos", "marca_envios", "relatorios"]], ["Acompanhamento", ["fin_marca"]], ["Ajuda", ["notificacoes"]]],
-  creator: [["Clube", ["clube", "minhas_marcas", "oportunidades", "minhas", "meus_desafios", "cr_presskits", "cr_contratos", "cr_aulas", "cr_avisos"]], ["Evolução", ["jornada"]], ["Ganhos", ["comissoes"]], ["Educação", ["metodo"]], ["Você", ["perfil", "notificacoes"]]],
+  creator: [["Conecta Hub", ["hub", ...HUB_KEYS]], ["Clube", ["clube", "minhas_marcas", "oportunidades", "minhas", "meus_desafios", "cr_presskits", "cr_contratos", "cr_aulas", "cr_avisos"]], ["Evolução", ["jornada"]], ["Ganhos", ["comissoes"]], ["Educação", ["metodo"]], ["Você", ["perfil", "notificacoes"]]],
   pendente: [],
 };
 
@@ -77,7 +88,7 @@ export function grantable(): Mod[] {
 }
 
 // Creator "só da marca" (veio pelo formulário de uma marca e não entrou na base da Conecta)
-export const LIMITED_KEYS = ["clube", "minhas_marcas", "cr_contratos", "cr_aulas", "cr_avisos", "oportunidades", "meus_desafios", "minhas", "perfil", "notificacoes"];
+export const LIMITED_KEYS = ["hub", "clube", "minhas_marcas", "cr_contratos", "cr_aulas", "cr_avisos", "oportunidades", "meus_desafios", "minhas", "perfil", "notificacoes"];
 
 export function can(profile: { role: string; perms?: string[] | null; status?: string; limited?: boolean } | null, key: string): boolean {
   if (!profile || profile.status === "inativo" || profile.status === "bloqueado") return false;

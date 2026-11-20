@@ -1,3 +1,4 @@
+import { processHubEvent } from "@/lib/hub";
 // Leitura dos avisos da B4YOU e liberação automática do acesso.
 // Como a B4YOU não publica o formato exato, a leitura é tolerante: procura o e-mail, o status
 // e o produto em qualquer parte do aviso. O ID cadastrado no produto é comparado com TODOS os
@@ -74,6 +75,10 @@ export async function processB4Event(admin: any, eventId: string) {
   if (!ev) return "erro";
   const info = readB4(ev.payload);
   const finish = async (status: string, note: string, extra: any = {}) => { await admin.from("b4_events").update({ status, note, email: info.email, value: info.value, order_code: info.order, event: info.statuses.slice(0, 3).join(" · ") || null, product: info.productLabel, ...extra }).eq("id", eventId); return status; };
+
+  // Conecta Hub (assinatura): tratado à parte, com renovação, atraso, cancelamento e reembolso
+  const { data: hubCfg } = await admin.from("settings").select("value").eq("key", "hub").maybeSingle();
+  if (hubCfg?.value?.b4you_product && matches(info, hubCfg.value.b4you_product)) return processHubEvent(admin, ev, info, finish);
 
   const [{ data: prods }, { data: kits }, { data: bprods }] = await Promise.all([
     admin.from("products").select("id,title,slug,b4you_product").not("b4you_product", "is", null),

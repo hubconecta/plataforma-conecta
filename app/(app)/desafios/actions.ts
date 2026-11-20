@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireModule, getSession, logAction } from "@/lib/session";
+import { hubCreatorIds } from "@/lib/hub";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { g, orNull, num, money, back, notifyProfiles, hiddenForBrand } from "@/lib/act";
 
@@ -29,6 +30,7 @@ function readChallenge(fd: FormData) {
     name: g(fd, "name"), description: orNull(g(fd, "description")), objective: orNull(g(fd, "objective")), rules: orNull(g(fd, "rules")),
     criteria: orNull(g(fd, "criteria")), evidence: orNull(g(fd, "evidence")), regulation: orNull(g(fd, "regulation")),
     type: g(fd, "type") || "Conteúdo", audience: g(fd, "audience") || "Todas as creators",
+    ...(fd.has("access_level") ? { access_level: g(fd, "access_level") === "hub" ? "hub" : "todas" } : {}),
     campaign_id: orNull(g(fd, "campaign_id")), start_date: orNull(g(fd, "start_date")), due_date: orNull(g(fd, "due_date")),
     target: Math.max(1, Number(g(fd, "target")) || 1), points: Number(g(fd, "points")) || 0,
     ...(fd.has("prizes") ? {} : { winners: Number(g(fd, "winners")) || 0, reward_type: g(fd, "reward_type") || "Produto", reward_label: orNull(g(fd, "reward_label")), reward_value: num(fd, "reward_value") }),
@@ -51,7 +53,10 @@ async function announce(supabase: any, ch: any) {
     if (!base.length) return;
     q = q.in("creator_id", base.map((b: any) => b.creator_id));
   }
-  const { data: ps } = await q;
+  const { data: ps0 } = await q;
+  let ps = ps0 || [];
+  // desafio exclusivo do Conecta Hub: só as assinantes recebem
+  if (ch.access_level === "hub") { const H = new Set(await hubCreatorIds(createAdminClient())); ps = ps.filter((p: any) => H.has(p.creator_id)); }
   const hide = await hiddenForBrand(supabase, ch.brand_id);
   await notifyProfiles(supabase, { ids: (ps || []).filter((p: any) => !hide.has(p.creator_id)).map((p: any) => p.id) }, `🔥 Novo desafio disponível: ${ch.name}`, "/clube/desafios");
 }
@@ -65,7 +70,7 @@ export async function saveChallenge(fd: FormData) {
   if (!row.name) back(path, "Dê um nome ao desafio.", false);
   if (row.start_date && row.due_date && row.due_date < row.start_date) back(path, "A data final precisa ser depois da data inicial.", false);
   if (isBrand) {
-    row.brand_id = profile.brand_id; row.status = "Em aprovação"; row.proposed_by = profile.id;
+    row.brand_id = profile.brand_id; row.status = "Em aprovação"; row.proposed_by = profile.id; delete row.access_level;
     if (row.campaign_id) { const { data: c } = await supabase.from("campaigns").select("brand_id").eq("id", row.campaign_id).single(); if (c?.brand_id !== profile.brand_id) row.campaign_id = null; }
   } else {
     row.brand_id = orNull(g(fd, "brand_id"));

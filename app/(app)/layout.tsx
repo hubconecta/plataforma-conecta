@@ -7,14 +7,16 @@ import PushToggle from "@/components/PushToggle";
 import { getSession } from "@/lib/session";
 import { MENU, MODS, can, ENV, ROLE_LABEL } from "@/lib/perms";
 
-const BNAV: Record<string, string[]> = { ceo: ["ceo", "campanhas", "creators", "marcas"], equipe: ["ops", "campanhas", "creators", "candidaturas"], financeiro: ["fin", "notificacoes"], marca: ["marca_home", "campanhas", "desafios", "relatorios"], creator: ["clube", "oportunidades", "minhas", "meus_desafios"] };
+const BNAV: Record<string, string[]> = { ceo: ["ceo", "campanhas", "creators", "marcas"], equipe: ["ops", "campanhas", "creators", "candidaturas"], financeiro: ["fin", "notificacoes"], marca: ["marca_home", "campanhas", "desafios", "relatorios"], creator: ["clube", "hub", "oportunidades", "meus_desafios"] };
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { supabase, user, profile } = await getSession();
   if (!user) redirect("/login");
   if (!profile || profile.role === "pendente") redirect("/sem-acesso");
   if (profile.status !== "ativo") redirect("/sem-acesso");
-  const pick = (k: string) => { const m = MODS.find((x) => x.key === k)!; return { key: m.key, label: m.label, icon: m.icon, href: m.href, soon: m.soon, sens: m.sens }; };
+  const hub = !!(profile as any).hub;
+  const pick = (k: string) => { const m = MODS.find((x) => x.key === k)!; const h = m.key === "hub"; // creator Free vê a estrutura do Hub com cadeado (as páginas mostram o bloqueio; os dados ficam protegidos no banco)
+    return { key: m.key, label: h && hub ? "Meu Hub" : m.label, icon: m.premium && !hub && profile.role === "creator" ? "lock" : m.icon, href: m.href, soon: m.soon, sens: m.sens, badge: h && !hub ? "novo" : undefined }; };
   const groups = (MENU[profile.role] || []).map(([h, ks]) => [h, ks.filter((k) => can(profile, k)).map(pick)] as [string, any[]]).filter((g) => g[1].length);
   const bottom = (BNAV[profile.role] || []).filter((k) => can(profile, k)).map(pick);
   const { count } = await supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", user.id).is("read_at", null);

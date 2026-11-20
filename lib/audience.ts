@@ -1,7 +1,10 @@
+import { hubCreatorIds } from "@/lib/hub";
 // Quem recebe um aviso, conforme o público escolhido. Devolve perfis (id, e-mail, nome).
 export const AUDIENCES: [string, string][] = [
   ["base", "Creators da base Conecta (Clube completo)"],
   ["todas", "Todas as creators (inclui as só de marca)"],
+  ["hub", "Assinantes do Conecta Hub"],
+  ["free", "Creators Free (sem Conecta Hub)"],
   ["marca", "Creators de uma marca"],
   ["campanha", "Aprovadas em uma campanha"],
   ["marcas", "Marcas (Portal da Marca)"],
@@ -29,6 +32,10 @@ export async function resolveAudience(admin: any, a: { audience: string; brand_i
   let q = admin.from("profiles").select(sel).eq("role", "creator").eq("status", "ativo");
   if (creatorIds) q = q.in("creator_id", creatorIds);
   let list: any[] = (await q).data || [];
+  if (a.audience === "hub" || a.audience === "free") {
+    const H = new Set(await hubCreatorIds(admin));
+    list = list.filter((p) => (a.audience === "hub") === H.has(p.creator_id));
+  }
   if (a.audience === "base") {
     const { data: lim, error } = await admin.from("creators").select("id").eq("brand_only", true);
     if (!error) { const L = new Set((lim || []).map((x: any) => x.id)); list = list.filter((p) => !L.has(p.creator_id)); }
